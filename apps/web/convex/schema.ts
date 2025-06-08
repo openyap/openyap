@@ -2,6 +2,8 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // TODO: add tables
+
   // Better Auth Tables
   user: defineTable({
     name: v.string(),

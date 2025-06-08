@@ -5,9 +5,10 @@ import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { routerWithQueryClient } from "@tanstack/react-router-with-query";
 
 import { routeTree } from "./routeTree.gen";
+import { env } from "~/env";
 
 export function createRouter() {
-  const convexQueryClient = new ConvexQueryClient(import.meta.env.VITE_CONVEX_URL, {
+  const convexQueryClient = new ConvexQueryClient(env.VITE_CONVEX_URL, {
     logger: false,
   });
 

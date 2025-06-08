@@ -1,4 +1,4 @@
-// TODO: add auth example
+import { env } from "~/env";
 
 export const Route = createFileRoute({
   component: Index,

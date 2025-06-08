@@ -2,8 +2,9 @@ import { betterAuth } from "better-auth";
 import { captcha } from "better-auth/plugins";
 import { convexAdapter } from "@better-auth-kit/convex";
 import { ConvexHttpClient } from "convex/browser";
+import { env } from "~/env";
 
-const convexClient = new ConvexHttpClient(process.env.VITE_CONVEX_URL as string, {
+const convexClient = new ConvexHttpClient(env.VITE_CONVEX_URL, {
   logger: false,
 });
  
@@ -11,14 +12,14 @@ export const auth = betterAuth({
   database: convexAdapter(convexClient),
   socialProviders: {
     google: { 
-      clientId: process.env.GOOGLE_CLIENT_ID as string, 
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string, 
+      clientId: env.GOOGLE_CLIENT_ID, 
+      clientSecret: env.GOOGLE_CLIENT_SECRET, 
     }, 
   },
   plugins: [
     captcha({
       provider: "cloudflare-turnstile",
-      secretKey: process.env.TURNSTILE_SECRET_KEY as string, 
+      secretKey: env.TURNSTILE_SECRET_KEY, 
     }),
   ],
 }) 
