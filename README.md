@@ -10,7 +10,7 @@ The best chat app. That is actually open.
   pnpm install
 ```
 
-2. Create a `apps/web/.env` file based on [`apps/web/.env.example`](./app/web/.env.example).
+2. Create a `apps/web/.env` file based on [`apps/web/.env.example`](./apps/web/.env.example).
 
 3. Run the development server:
 
