@@ -1,16 +1,15 @@
 import { Turnstile } from "@marsidev/react-turnstile";
-
-// TODO: use this component
+import { env } from "~/env";
 
 type CaptchaWidgetProps = {
   onSuccess: (token: string) => void;
   onError: (error: string) => void;
 }
 
-export default function CaptchaWidget({ onSuccess, onError }: CaptchaWidgetProps) {
+export function CaptchaWidget({ onSuccess, onError }: CaptchaWidgetProps) {
   return (
     <Turnstile 
-      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY as string} 
+      siteKey={env.VITE_TURNSTILE_SITE_KEY} 
       onSuccess={onSuccess} 
       onError={onError} 
     />
