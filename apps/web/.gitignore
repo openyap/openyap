@@ -1,0 +1,7 @@
+.env*
+!.env.example
+.nitro
+.output
+.tanstack-start
+.DS_Store
+node_modules
