@@ -21,6 +21,7 @@
     "@tanstack/react-router": "alpha",
     "@tanstack/react-router-with-query": "alpha",
     "@tanstack/react-start": "alpha",
+    "ai": "4.3.16",
     "better-auth": "1.2.8",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
