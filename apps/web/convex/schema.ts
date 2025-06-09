@@ -4,24 +4,28 @@ import { v } from "convex/values";
 export default defineSchema({
   // Chat sessions/conversations
   chat: defineTable({
-    // Title of the chat
+    // Metadata
     title: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+    description: v.optional(v.string()),
     // User who created/owns the chat
     ownerId: v.id("user"),
     // Whether the chat is shared/public
-    isShared: v.boolean(),
+    visibility: v.union(
+      v.literal("private"),    // only owner + invited members
+      v.literal("shared"),     // anyone with link
+      v.literal("public"),     // discoverable/searchable
+    ),
     // Token for sharing the chat
     shareToken: v.optional(v.string()),
     // Default LLM provider for the chat
     provider: v.optional(v.string()),
-    // Chat-specific settings (model, temperature, etc.)
-    settings: v.optional(v.object({})),
     // Last update timestamp
     updatedAt: v.string(),
   }),
 
   // Many-to-many relationship: users in a chat
-  chatMembers: defineTable({
+  chatMember: defineTable({
     // Chat this membership belongs to
     chatId: v.id("chat"),
     // User in the chat
@@ -56,16 +60,54 @@ export default defineSchema({
     model: v.optional(v.string()),
     // Plain text fallback or summary (search messages)
     content: v.string(),
-    // Message status ("complete", "streaming", "error", etc.)
+    // Status and metadata
     status: v.optional(v.string()),
-    // LLM token usage (if AI)
-    tokensUsed: v.optional(v.number()),
+    streaming: v.boolean(),
+    error: v.optional(v.string()),
+
+    usage: v.optional(
+      v.object({
+        promptTokens: v.number(),
+        completionTokens: v.number(),
+        totalTokens: v.number(),
+      }),
+    ),
+    toolCalls: v.optional(v.array(v.any())),
+    citations: v.optional(v.array(v.any())),
+
+    // A complete log of all generation attempts for this message.
+    history: v.optional(
+      v.array(
+        v.object({
+          attemptIndex: v.number(),
+          // The full content generated in this specific attempt
+          content: v.string(),
+          // The provider and model used for THIS attempt
+          provider: v.optional(v.string()),
+          model: v.optional(v.string()),
+          // The usage for THIS attempt
+          usage: v.object({
+            promptTokens: v.number(),
+            completionTokens: v.number(),
+            totalTokens: v.number(),
+          }),
+          // Status of the attempt ('success', 'error', 'filtered')
+          status: v.string(),
+          // Error details if this specific attempt failed
+          error: v.optional(v.string()),
+          // Other metadata for this attempt
+          toolCalls: v.optional(v.array(v.any())),
+          citations: v.optional(v.array(v.any())),
+          // When this attempt was created
+          createdAt: v.string(),
+        }),
+      ),
+    ),
+
     // Web search/RAG results (if any)
     webSearchResults: v.optional(v.any()),
     // Array of attachment IDs (message-level attachments)
     attachments: v.optional(v.array(v.id("attachment"))),
-    // True if message is being streamed/generated
-    streaming: v.boolean(),
     // Vector embedding for semantic search (e.g., 1536-dim OpenAI embedding) TODO: add vector index
     embedding: v.optional(v.array(v.number())),
     // Last update timestamp
@@ -81,12 +123,40 @@ export default defineSchema({
     messageId: v.id("message"),
     // Parent block for nesting (null for root blocks)
     parentBlockId: v.optional(v.id("block")),
+    // The "major version" this block belongs to (from the message)
+    attemptIndex: v.number(),
     // Block type ("paragraph", "heading", "code", etc.)
     type: v.string(),
     // Block content (rich text, code, image URL, etc.)
     content: v.any(),
     // Language for code blocks (if applicable)
     language: v.optional(v.string()),
+
+    // --- NEW: HISTORY ---
+    // A complete version history for THIS block.
+    history: v.array(
+      v.object({
+        // The content for this specific version of the block
+        content: v.any(),
+        // The type for this version (e.g., could change from 'paragraph' to 'code')
+        type: v.string(),
+        // The model/provider used for THIS specific block regeneration
+        model: v.optional(v.string()),
+        provider: v.optional(v.string()),
+        // The token usage for the API call that generated THIS version
+        usage: v.optional(
+          v.object({
+            promptTokens: v.number(),
+            completionTokens: v.number(),
+            totalTokens: v.number(),
+          }),
+        ),
+        // When this version was created
+        createdAt: v.string(),
+        // Optional reason for the change (e.g., "user_retry", "initial_generation")
+        reason: v.optional(v.string()),
+      }),
+    ),
     // Order/index among siblings
     order: v.number(),
     // Block-level metadata (formatting, AI info, etc.)
@@ -95,7 +165,8 @@ export default defineSchema({
     updatedAt: v.string(),
   })
     .index("by_messageId", ["messageId"])
-    .index("by_parentBlockId", ["parentBlockId"]),
+    .index("by_parentBlockId", ["parentBlockId"])
+    .index("by_messageAttemptIndex", ["messageId", "attemptIndex"]),
 
   // Attachments (files, images, PDFs, etc.)
   attachment: defineTable({
@@ -113,6 +184,8 @@ export default defineSchema({
     size: v.optional(v.number()),
     // MIME type
     mimeType: v.optional(v.string()),
+    // Extracted content (OCR, text extraction, etc.)
+    extractedText: v.optional(v.string()),
     // Attachment metadata (OCR, thumbnail, etc.)
     meta: v.optional(v.object({})),
   }),
@@ -124,6 +197,13 @@ export default defineSchema({
     emailVerified: v.boolean(),
     image: v.optional(v.string()),
     updatedAt: v.string(),
+    // User preferences
+    defaultProvider: v.optional(v.string()),
+    defaultModel: v.optional(v.string()),
+    theme: v.optional(v.string()),
+    language: v.optional(v.string()),
+    // Encrypted API keys for the user
+    apiKeys: v.optional(v.object({})),
   }).index("by_email", ["email"]),
 
   session: defineTable({
