@@ -12,9 +12,9 @@ export default defineSchema({
     ownerId: v.id("user"),
     // Whether the chat is shared/public
     visibility: v.union(
-      v.literal("private"),    // only owner + invited members
-      v.literal("shared"),     // anyone with link
-      v.literal("public"),     // discoverable/searchable
+      v.literal("private"), // only owner + invited members
+      v.literal("shared"), // anyone with link
+      v.literal("public") // discoverable/searchable
     ),
     // Token for sharing the chat
     shareToken: v.optional(v.string()),
@@ -22,7 +22,9 @@ export default defineSchema({
     provider: v.optional(v.string()),
     // Last update timestamp
     updatedAt: v.string(),
-  }),
+  })
+    .index("by_ownerId", ["ownerId"])
+    .index("by_visibility", ["visibility"]),
 
   // Many-to-many relationship: users in a chat
   chatMember: defineTable({
@@ -70,7 +72,7 @@ export default defineSchema({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      }),
+      })
     ),
     toolCalls: v.optional(v.array(v.any())),
     citations: v.optional(v.array(v.any())),
@@ -100,8 +102,8 @@ export default defineSchema({
           citations: v.optional(v.array(v.any())),
           // When this attempt was created
           createdAt: v.string(),
-        }),
-      ),
+        })
+      )
     ),
 
     // Web search/RAG results (if any)
@@ -149,13 +151,13 @@ export default defineSchema({
             promptTokens: v.number(),
             completionTokens: v.number(),
             totalTokens: v.number(),
-          }),
+          })
         ),
         // When this version was created
         createdAt: v.string(),
         // Optional reason for the change (e.g., "user_retry", "initial_generation")
         reason: v.optional(v.string()),
-      }),
+      })
     ),
     // Order/index among siblings
     order: v.number(),
