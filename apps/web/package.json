@@ -17,6 +17,7 @@
     "@convex-dev/react-query": "0.0.0-alpha.8",
     "@marsidev/react-turnstile": "1.1.0",
     "@openrouter/ai-sdk-provider": "^0.7.1",
+    "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "1.2.3",
     "@t3-oss/env-core": "0.13.6",
