@@ -5,6 +5,8 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from "@tanstack/react-router";
+import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
+import { AppSidebar } from "~/components/appSidebar";
 
 import appCss from "~/styles.css?url";
 
@@ -54,7 +56,11 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarTrigger />
+          {children}
+        </SidebarProvider>
         <Scripts />
       </body>
     </html>
