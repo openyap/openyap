@@ -6,7 +6,6 @@ import type { Id } from "../_generated/dataModel";
 export const generateUserMessage = mutation({
   args: { 
     content: v.string(), 
-    userId: v.id("user"), 
     chatId: v.id("chat"), 
     sessionToken: v.string(),
   },
@@ -19,9 +18,11 @@ export const generateUserMessage = mutation({
       return;
     }
 
+    const userId = session.userId as Id<"user">;
+
     await ctx.runMutation(internal.functions.message.createMessage, {
       chatId: args.chatId,
-      userId: args.userId,
+      userId,
       role: "user",
       content: args.content,
       status: "created",
@@ -213,5 +214,15 @@ export const updateMessage = internalMutation({
       history: newHistory,
       updatedAt: now,
     });
+  },
+});
+
+// TODO: delete message
+export const deleteMessage = internalMutation({
+  args: {
+    messageId: v.id("message"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.messageId);
   },
 });

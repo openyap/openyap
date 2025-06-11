@@ -27,6 +27,29 @@ export const getUserChats = query({
   },
 });
 
+export const getChatMessages = query({
+  args: {
+    chatId: v.id("chat"),
+    sessionToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken: args.sessionToken,
+    });
+
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    const messages = await ctx.db
+      .query("message")
+      .filter((q) => q.eq(q.field("chatId"), args.chatId))
+      .order("asc")
+      .collect();
+    return messages;
+  },
+});
+
 export const createChat = mutation({
   args: {
     title: v.optional(v.string()),
@@ -64,3 +87,42 @@ export const createChat = mutation({
     return chatId;
   },
 });
+
+export const deleteChat = mutation({
+  args: {
+    chatId: v.id("chat"),
+    sessionToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { sessionToken, chatId } = args;
+
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken,
+    });
+
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = session.userId as Id<"user">;
+
+    const chat = await ctx.db.get(chatId);
+
+    if (!chat) {
+      throw new Error("Chat not found");
+    }
+
+    if (chat.ownerId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    const messages = await ctx.db.query("message").filter((q) => q.eq(q.field("chatId"), chatId)).collect();
+    await Promise.all(
+      messages.map((m) =>
+        ctx.runMutation(internal.functions.message.deleteMessage, { messageId: m._id })
+      )
+    );
+
+    await ctx.db.delete(chatId);
+  },
+}); 
