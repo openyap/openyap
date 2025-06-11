@@ -5,7 +5,11 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from "@tanstack/react-router";
-import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarInset,
+} from "~/components/ui/sidebar";
 import { AppSidebar } from "~/components/app-sidebar";
 
 import appCss from "~/styles.css?url";
@@ -58,8 +62,13 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
       <body>
         <SidebarProvider>
           <AppSidebar />
-          <SidebarTrigger />
-          {children}
+          <SidebarInset>
+            <div className="flex items-center gap-2 p-4 border-b">
+              <SidebarTrigger />
+              <h1 className="text-lg font-semibold">OpenYap</h1>
+            </div>
+            {children}
+          </SidebarInset>
         </SidebarProvider>
         <Scripts />
       </body>
