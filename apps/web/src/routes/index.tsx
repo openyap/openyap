@@ -1,4 +1,3 @@
-import { ProfileCard } from "~/components/auth/profile-card";
 import { useChat } from "@ai-sdk/react";
 
 // TODO: fix this poop
@@ -47,16 +46,6 @@ function Index() {
   return (
     <div className="mx-auto h-full w-full overscroll-none md:w-1/2">
       <div className="mx-auto flex w-[94%] flex-col gap-y-4 pt-4 pb-36 items-center justify-center">
-        <div className="relative w-full max-w-md border-2 border-dotted border-gray-700 p-8 bg-white">
-          <span className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 select-none">
-            <PlusSVG />
-          </span>
-          <span className="absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2 select-none">
-            <PlusSVG />
-          </span>
-          <ProfileCard />
-        </div>
-
         <div className="w-full max-w-md space-y-4">
           {messages.map((message) => (
             <div

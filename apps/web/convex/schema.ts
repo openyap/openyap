@@ -64,7 +64,6 @@ export default defineSchema({
     content: v.string(),
     // Status and metadata
     status: v.optional(v.string()),
-    streaming: v.boolean(),
     error: v.optional(v.string()),
 
     usage: v.optional(
@@ -81,20 +80,21 @@ export default defineSchema({
     history: v.optional(
       v.array(
         v.object({
-          attemptIndex: v.number(),
+          version: v.number(),
           // The full content generated in this specific attempt
           content: v.string(),
           // The provider and model used for THIS attempt
           provider: v.optional(v.string()),
           model: v.optional(v.string()),
           // The usage for THIS attempt
-          usage: v.object({
+          usage: v.optional(v.object({
             promptTokens: v.number(),
-            completionTokens: v.number(),
-            totalTokens: v.number(),
-          }),
+              completionTokens: v.number(),
+              totalTokens: v.number(),
+            })
+          ),
           // Status of the attempt ('success', 'error', 'filtered')
-          status: v.string(),
+          status: v.optional(v.string()),
           // Error details if this specific attempt failed
           error: v.optional(v.string()),
           // Other metadata for this attempt
@@ -130,7 +130,7 @@ export default defineSchema({
     // Block type ("paragraph", "heading", "code", etc.)
     type: v.string(),
     // Block content (rich text, code, image URL, etc.)
-    content: v.any(),
+    content: v.string(),
     // Language for code blocks (if applicable)
     language: v.optional(v.string()),
 
@@ -138,8 +138,9 @@ export default defineSchema({
     // A complete version history for THIS block.
     history: v.array(
       v.object({
+        version: v.number(),
         // The content for this specific version of the block
-        content: v.any(),
+        content: v.string(),
         // The type for this version (e.g., could change from 'paragraph' to 'code')
         type: v.string(),
         // The model/provider used for THIS specific block regeneration
