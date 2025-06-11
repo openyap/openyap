@@ -14,6 +14,7 @@ import {
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
 import { authClient } from "~/lib/auth/client";
+import { ProfileCard } from "./auth/profile-card";
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
@@ -51,7 +52,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter />
+      <SidebarFooter>
+        <ProfileCard />
+      </SidebarFooter>
     </Sidebar>
   );
 }

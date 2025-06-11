@@ -6,7 +6,7 @@ import {
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
-import { AppSidebar } from "~/components/appSidebar";
+import { AppSidebar } from "~/components/app-sidebar";
 
 import appCss from "~/styles.css?url";
 

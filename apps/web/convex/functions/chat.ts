@@ -1,6 +1,6 @@
 import { internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
-import { query } from "../_generated/server";
+import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 
 export const getUserChats = query({
@@ -11,7 +11,8 @@ export const getUserChats = query({
     });
 
     if (!session) {
-      throw new Error("Unauthorized");
+      // TODO: handle this
+      return [];
     }
 
     const userId = session.userId as Id<"user">;
@@ -23,5 +24,29 @@ export const getUserChats = query({
       .collect();
 
     return chats;
+  },
+});
+
+export const createChat = mutation({
+  args: {
+    title: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+    description: v.optional(v.string()),
+    ownerId: v.id("user"),
+    visibility: v.union(
+      v.literal("private"),
+      v.literal("shared"),
+      v.literal("public")
+    ),
+    shareToken: v.optional(v.string()),
+    provider: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = new Date().toISOString();
+    const chatId = await ctx.db.insert("chat", {
+      ...args,
+      updatedAt: now,
+    });
+    return chatId;
   },
 });
