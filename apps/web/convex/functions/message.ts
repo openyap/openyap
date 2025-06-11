@@ -195,29 +195,31 @@ export const updateMessage = internalMutation({
     const now = new Date().toISOString();
     const historyEntry = args.historyEntry ? { ...args.historyEntry, createdAt: now } : undefined;
     const newHistory = historyEntry ? [...history, historyEntry] : history;
-    await ctx.db.patch(args.messageId, {
-      ...(args.parentId !== undefined && { parentId: args.parentId }),
-      ...(args.branchRootId !== undefined && { branchRootId: args.branchRootId }),
-      ...(args.userId !== undefined && { userId: args.userId }),
-      ...(args.role !== undefined && { role: args.role }),
-      ...(args.provider !== undefined && { provider: args.provider }),
-      ...(args.model !== undefined && { model: args.model }),
-      ...(args.content !== undefined && { content: args.content }),
-      ...(args.status !== undefined && { status: args.status }),
-      ...(args.error !== undefined && { error: args.error }),
-      ...(args.usage !== undefined && { usage: args.usage }),
-      ...(args.toolCalls !== undefined && { toolCalls: args.toolCalls }),
-      ...(args.citations !== undefined && { citations: args.citations }),
-      ...(args.webSearchResults !== undefined && { webSearchResults: args.webSearchResults }),
-      ...(args.attachments !== undefined && { attachments: args.attachments }),
-      ...(args.embedding !== undefined && { embedding: args.embedding }),
-      history: newHistory,
-      updatedAt: now,
-    });
+    const patch: Record<string, unknown> = { history: newHistory, updatedAt: now };
+    const keys = [
+      "parentId" as const,
+      "branchRootId" as const,
+      "userId" as const,
+      "role" as const,
+      "provider" as const,
+      "model" as const,
+      "content" as const,
+      "status" as const,
+      "error" as const,
+      "usage" as const,
+      "toolCalls" as const,
+      "citations" as const,
+      "webSearchResults" as const,
+      "attachments" as const,
+      "embedding" as const,
+    ];
+    for (const key of keys) {
+      if (args[key] !== undefined) patch[key] = args[key];
+    }
+    await ctx.db.patch(args.messageId, patch);
   },
 });
 
-// TODO: delete message
 export const deleteMessage = internalMutation({
   args: {
     messageId: v.id("message"),
