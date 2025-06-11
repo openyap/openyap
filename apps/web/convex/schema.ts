@@ -126,7 +126,7 @@ export default defineSchema({
     // Parent block for nesting (null for root blocks)
     parentBlockId: v.optional(v.id("block")),
     // The "major version" this block belongs to (from the message)
-    attemptIndex: v.number(),
+    version: v.number(),
     // Block type ("paragraph", "heading", "code", etc.)
     type: v.string(),
     // Block content (rich text, code, image URL, etc.)
@@ -169,7 +169,7 @@ export default defineSchema({
   })
     .index("by_messageId", ["messageId"])
     .index("by_parentBlockId", ["parentBlockId"])
-    .index("by_messageAttemptIndex", ["messageId", "attemptIndex"]),
+    .index("by_messageVersion", ["messageId", "version"]),
 
   // Attachments (files, images, PDFs, etc.)
   attachment: defineTable({

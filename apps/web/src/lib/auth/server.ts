@@ -1,15 +1,11 @@
 import { betterAuth } from "better-auth";
 import { captcha } from "better-auth/plugins";
 import { convexAdapter } from "@better-auth-kit/convex";
-import { ConvexHttpClient } from "convex/browser";
 import { env } from "~/env";
+import { convexServer } from "~/lib/db/server";
 
-const convexClient = new ConvexHttpClient(env.VITE_CONVEX_URL, {
-  logger: false,
-});
- 
 export const auth = betterAuth({
-  database: convexAdapter(convexClient),
+  database: convexAdapter(convexServer),
   socialProviders: {
     google: { 
       clientId: env.GOOGLE_CLIENT_ID, 

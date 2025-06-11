@@ -1,45 +1,91 @@
 import { mutation, internalQuery, internalMutation } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
 
 export const generateUserMessage = mutation({
   args: { 
     content: v.string(), 
     userId: v.id("user"), 
     chatId: v.id("chat"), 
-    parentMessageId: v.optional(v.id("message")),
+    sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken: args.sessionToken,
+    });
+
+    if (!session) {
+      return;
+    }
+
     await ctx.runMutation(internal.functions.message.createMessage, {
       chatId: args.chatId,
-      parentId: args.parentMessageId,
       userId: args.userId,
       role: "user",
       content: args.content,
+      status: "created",
       history: [{
         content: args.content,
         version: 0,
-        createdAt: new Date().toISOString(),
       }],
     });
   },
 });
 
-export const getMessage = internalQuery({
-  args: { messageId: v.id("message") },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.messageId);
+export const createAiMessage = mutation({
+  args: {
+    chatId: v.id("chat"),
+    provider: v.string(),
+    model: v.string(),
+    sessionToken: v.string(),
+  },
+  handler: async (ctx, args): Promise<Id<"message"> | null> => {
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken: args.sessionToken,
+    });
+
+    if (!session) {
+      return null;
+    }
+
+    const messageId = await ctx.runMutation(internal.functions.message.createMessage, {
+      chatId: args.chatId,
+      role: "assistant",
+      content: "",
+      status: "created",
+      usage: {
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+      },
+    });
+
+    return messageId;
   },
 });
 
-export const getRecentMessagesForChat = internalQuery({
-  args: { chatId: v.id("chat") },
+export const updateAiMessage = mutation({
+  args: {
+    messageId: v.id("message"),
+    content: v.optional(v.string()),
+    status: v.optional(v.string()),
+    sessionToken: v.string(),
+  },
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("message")
-      .withIndex("by_chatId", (q) => q.eq("chatId", args.chatId))
-      .order("asc")
-      .take(10);
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken: args.sessionToken,
+    });
+
+    if (!session) {
+      return;
+    }
+
+    await ctx.runMutation(internal.functions.message.updateMessage, {
+      messageId: args.messageId,
+      content: args.content,
+      status: args.status,
+    });
   },
 });
 
@@ -78,18 +124,28 @@ export const createMessage = internalMutation({
       error: v.optional(v.string()),
       toolCalls: v.optional(v.array(v.any())),
       citations: v.optional(v.array(v.any())),
-      createdAt: v.string(),
     }))),
     webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
     embedding: v.optional(v.array(v.number())),
   },
   handler: async (ctx, args) => {
-    const message = await ctx.db.insert("message", {
+    const now = new Date().toISOString();
+    const history = args.history ?? [];
+    const newHistory = history.map((h) => ({ ...h, createdAt: now }));
+    const messageId = await ctx.db.insert("message", {
       ...args,
-      updatedAt: new Date().toISOString(),
+      history: newHistory,
+      updatedAt: now,
     });
-    return message;
+    return messageId;
+  },
+});
+
+export const getMessage = internalQuery({
+  args: { messageId: v.id("message") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.messageId);
   },
 });
 
