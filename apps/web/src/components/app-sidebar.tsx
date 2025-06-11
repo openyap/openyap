@@ -43,7 +43,7 @@ export function AppSidebar() {
                       to="/chat/$chatId"
                       params={{ chatId: chat._id }}
                     >
-                      {chat.description}
+                      {chat.title}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

@@ -32,7 +32,6 @@ export const createChat = mutation({
     title: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
     description: v.optional(v.string()),
-    ownerId: v.id("user"),
     visibility: v.union(
       v.literal("private"),
       v.literal("shared"),
@@ -40,13 +39,28 @@ export const createChat = mutation({
     ),
     shareToken: v.optional(v.string()),
     provider: v.optional(v.string()),
+    sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const { sessionToken, ...chatData } = args;
+
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken,
+    });
+
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = session.userId as Id<"user">;
+
     const now = new Date().toISOString();
     const chatId = await ctx.db.insert("chat", {
-      ...args,
+      ...chatData,
       updatedAt: now,
+      ownerId: userId,
     });
+
     return chatId;
   },
 });
