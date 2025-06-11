@@ -13,10 +13,11 @@ export function ChatView() {
   const chatId = params?.chatId;
 
   const createChat = useMutation(api.functions.chat.createChat);
+  const updateChat = useMutation(api.functions.chat.updateChat);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
-    chatId
-      ? { chatId: chatId as Id<"chat">, sessionToken: session?.session.token ?? "skip" }
+    chatId && session
+      ? { chatId: chatId as Id<"chat">, sessionToken: session.session.token }
       : "skip"
   );
   const navigate = useNavigate();
@@ -46,10 +47,22 @@ export function ChatView() {
       if (chatId && firstMessage) {
         localStorage.removeItem("firstMessage");
         await append({ role: "user", content: firstMessage });
+
+        // Generate a title for the chat
+        const response = await fetch("/api/generateChatTitle", {
+          method: "POST",
+          body: JSON.stringify({ message: firstMessage }),
+        });
+        const { title } = await response.json();
+        await updateChat({
+          chatId: chatId as Id<"chat">,
+          title,
+          sessionToken: session?.session.token ?? "skip",
+        });
       }
     }
     sendFirstMessage();
-  }, [chatId, append]);
+  }, [chatId, append, session?.session.token, updateChat]);
 
   async function send() {
     const text = input.trim();
@@ -59,15 +72,9 @@ export function ChatView() {
       try {
         localStorage.setItem("firstMessage", text);
 
-        const response = await fetch("/api/generateChatTitle", {
-          method: "POST",
-          body: JSON.stringify({ message: text }),
-        });
-        const { title } = await response.json();
-
         const newChatId = await createChat({
           sessionToken: session?.session.token ?? "skip",
-          title,
+          title: "New Chat",
           visibility: "private",
         });
 
