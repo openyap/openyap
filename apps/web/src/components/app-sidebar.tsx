@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +14,7 @@ import {
 } from "~/components/ui/sidebar";
 import { authClient } from "~/lib/auth/client";
 import { ProfileCard } from "./auth/profile-card";
+import { api } from "~/lib/db/server";
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();

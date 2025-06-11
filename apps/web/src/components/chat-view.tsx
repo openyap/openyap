@@ -1,47 +1,43 @@
-import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { isRedirect } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { authClient } from "~/lib/auth/client";
-import { api } from "../../convex/_generated/api";
-import { useMessageStore } from "~/stores/message-store";
+import { api } from "~/lib/db/server";
 import { useEffect } from "react";
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
   const createChat = useMutation(api.functions.chat.createChat);
-  const {
-    firstMessage,
-    hasBeenSent,
-    setFirstMessage,
-    markAsSent,
-    clearFirstMessage,
-  } = useMessageStore();
   const navigate = useNavigate();
 
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
 
-  const { input, handleInputChange, append, messages, status, setInput } =
+  // TODO: set messages to get all chat messages query with initialMessages
+  const { 
+    input, 
+    messages, 
+    status, 
+    handleInputChange, 
+    append, 
+    setInput,
+  } =
     useChat({
       id: chatId ?? "skip",
       body: { chatId },
     });
 
   useEffect(() => {
-    if (chatId && firstMessage && !hasBeenSent) {
-      append({ role: "user", content: firstMessage });
-      clearFirstMessage();
-      markAsSent();
+    async function sendFirstMessage() {
+      const firstMessage = localStorage.getItem("firstMessage");
+      if (chatId && firstMessage) {
+        localStorage.removeItem("firstMessage");
+        await append({ role: "user", content: firstMessage });
+      }
     }
-  }, [
-    chatId,
-    firstMessage,
-    hasBeenSent,
-    append,
-    markAsSent,
-    clearFirstMessage,
-  ]);
+    sendFirstMessage();
+  }, [chatId, append]);
 
   async function send() {
     const text = input.trim();
@@ -49,8 +45,8 @@ export function ChatView() {
 
     if (!chatId) {
       try {
-        setFirstMessage(text);
-
+        // TODO: generate a title for the chat
+        localStorage.setItem("firstMessage", text);
         const newChatId = await createChat({
           sessionToken: session?.session.token ?? "skip",
           title: "New Chat",
@@ -59,7 +55,7 @@ export function ChatView() {
 
         console.log("[ChatView] New Chat ID: ", newChatId);
 
-        navigate({
+        await navigate({
           to: "/chat/$chatId",
           replace: true,
           params: { chatId: newChatId },

@@ -1,6 +1,7 @@
 import { createAuthClient } from "better-auth/react"
 import { createServerFn } from "@tanstack/react-start";
 import { getWebRequest } from "@tanstack/react-start/server";
+import { auth } from "~/lib/auth/server";
 
 export const authClient = createAuthClient();
 
@@ -17,3 +18,10 @@ export const getClientIP = createServerFn({ method: "GET" }).handler(async () =>
   
   return ip
 })
+
+export const getServerSession = createServerFn({ method: "GET" }).handler(async () => {
+  const session = await auth.api.getSession({
+    headers: getWebRequest()?.headers ?? new Headers(),
+  });
+  return session;
+});
