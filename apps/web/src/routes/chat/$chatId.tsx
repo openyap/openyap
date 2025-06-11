@@ -1,15 +1,5 @@
+import { ChatView } from "~/components/chatView";
+
 export const Route = createFileRoute({
-  loader: async ({ params }) => {
-    console.log(params.chatId);
-    return {
-      chatId: params.chatId,
-    };
-  },
-  component: Chat,
+  component: ChatView,
 });
-
-function Chat() {
-  const { chatId } = Route.useParams();
-
-  return <div>Chat {chatId}</div>;
-}
