@@ -1,20 +1,27 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { isRedirect } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { useEffect } from "react";
+import type { Id } from "convex/_generated/dataModel";
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
-  const createChat = useMutation(api.functions.chat.createChat);
-  const navigate = useNavigate();
-
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
 
-  // TODO: set messages to get all chat messages query with initialMessages
+  const createChat = useMutation(api.functions.chat.createChat);
+  const getChatMessages = useQuery(
+    api.functions.chat.getChatMessages,
+    chatId
+      ? { chatId: chatId as Id<"chat">, sessionToken: session?.session.token ?? "skip" }
+      : "skip"
+  );
+  const navigate = useNavigate();
+
+
   const { 
     input, 
     messages, 
@@ -26,6 +33,11 @@ export function ChatView() {
     useChat({
       id: chatId ?? "skip",
       body: { chatId },
+      initialMessages: (getChatMessages ?? []).map(m => ({ 
+        ...m, 
+        id: m._id, 
+        role: m.role as "user" | "data" | "system" | "assistant" 
+      })),
     });
 
   useEffect(() => {
@@ -45,11 +57,17 @@ export function ChatView() {
 
     if (!chatId) {
       try {
-        // TODO: generate a title for the chat
         localStorage.setItem("firstMessage", text);
+
+        const response = await fetch("/api/generateChatTitle", {
+          method: "POST",
+          body: JSON.stringify({ message: text }),
+        });
+        const { title } = await response.json();
+
         const newChatId = await createChat({
           sessionToken: session?.session.token ?? "skip",
-          title: "New Chat",
+          title,
           visibility: "private",
         });
 

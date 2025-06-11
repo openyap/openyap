@@ -61,7 +61,7 @@ const updateAiMessage = async ({
 
 export const ServerRoute = createServerFileRoute("/api/chat").methods({
   GET: ({ request }) => {
-    return new Response("Hello, World!");
+    return new Response("What do you think chat?");
   },
   POST: async ({ request }) => {
     const session = await auth.api.getSession({
@@ -80,7 +80,6 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       await convexServer.mutation(api.functions.message.generateUserMessage, {
         chatId,
         content: lastMessage.content,
-        userId: session.session.userId as Id<"user">,
         sessionToken,
       });
     }
