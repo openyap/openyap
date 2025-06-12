@@ -65,9 +65,7 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
             <SidebarTrigger />
           </div>
           <AppSidebar />
-          <SidebarInset>
-            {children}
-          </SidebarInset>
+          <SidebarInset>{children}</SidebarInset>
         </SidebarProvider>
         <Scripts />
       </body>

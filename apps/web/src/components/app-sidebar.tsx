@@ -33,10 +33,11 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <div className="p-4">
-        <h1 className="text-lg font-semibold text-center">OpenYap</h1>
-      </div>
-      <SidebarHeader />
+      <SidebarHeader>
+        <div className="pt-2">
+          <h1 className="text-lg font-semibold text-center">OpenYap</h1>
+        </div>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
