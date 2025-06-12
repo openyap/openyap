@@ -16,11 +16,11 @@ interface ChatInputProps {
   addUserMessage: (message: string) => void;
 }
 
-function ChatInput({ 
-  chatId, 
+function ChatInput({
+  chatId,
   sessionToken,
-  disabled, 
-  addUserMessage 
+  disabled,
+  addUserMessage,
 }: ChatInputProps) {
   const navigate = useNavigate();
   const createChat = useMutation(api.functions.chat.createChat);
@@ -79,9 +79,7 @@ function ChatInput({
         />
         <button
           type="button"
-          disabled={
-            disabled || !input.trim()
-          }
+          disabled={disabled || !input.trim()}
           onClick={send}
           className={`px-4 py-2 rounded-lg font-medium transition-colors border border-black text-black bg-white disabled:bg-white disabled:text-gray-500 disabled:border-gray-300 ${
             disabled || !input.trim()
@@ -113,20 +111,15 @@ export function ChatView() {
       : "skip"
   );
 
-  const { 
-    messages, 
-    status, 
-    append, 
-  } =
-    useChat({
-      id: chatId ?? "skip",
-      body: { chatId },
-      initialMessages: (getChatMessages ?? []).map(m => ({ 
-        ...m, 
-        id: m._id, 
-        role: m.role as "user" | "data" | "system" | "assistant" 
-      })),
-    });
+  const { messages, status, append } = useChat({
+    id: chatId ?? "skip",
+    body: { chatId },
+    initialMessages: (getChatMessages ?? []).map((m) => ({
+      ...m,
+      id: m._id,
+      role: m.role as "user" | "data" | "system" | "assistant",
+    })),
+  });
 
   useEffect(() => {
     async function sendFirstMessage() {
@@ -155,50 +148,54 @@ export function ChatView() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-black">
-            <p>Start a conversation...</p>
-          </div>
-        ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={`flex ${
-                m.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
+    <div className="flex flex-col h-full bg-background">
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="max-w-4xl mx-auto space-y-4">
+          {messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-foreground">
+              <p>Start a conversation...</p>
+            </div>
+          ) : (
+            messages.map((m) => (
               <div
-                className={`max-w-[70%] rounded-lg p-2 border ${
-                  m.role === "user"
-                    ? "bg-white text-black border-black ml-auto"
-                    : "bg-whtie text-black border-black mr-auto"
+                key={m.id}
+                className={`flex ${
+                  m.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                <Message content={m.content} />
+                {m.role === "user" ? (
+                  <div className="max-w-[70%] rounded-lg px-4 py-2 border bg-sidebar-accent text-sidebar-accent-foreground border-border ml-auto">
+                    <p className="whitespace-pre-wrap break-words">
+                      <Message content={m.content} />
+                    </p>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap break-words text-foreground max-w-[70%]">
+                    <Message content={m.content} />
+                  </p>
+                )}
+              </div>
+            ))
+          )}
+          {status === "streaming" && (
+            <div className="flex justify-start">
+              <div className="bg-card text-card-foreground rounded-lg px-4 py-2 max-w-[70%] border border-border">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-foreground rounded-full animate-bounce delay-100" />
+                  <div className="w-2 h-2 bg-foreground rounded-full animate-bounce delay-200" />
+                </div>
               </div>
             </div>
-          ))
-        )}
-        {status === "streaming" && (
-          <div className="flex justify-start">
-            <div className="bg-white text-black rounded-lg px-4 py-2 max-w-[70%] border border-black">
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-black rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-black rounded-full animate-bounce delay-100" />
-                <div className="w-2 h-2 bg-black rounded-full animate-bounce delay-200" />
-              </div>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <ChatInput 
+      <ChatInput
         chatId={chatId}
         sessionToken={session?.session.token ?? "skip"}
-        addUserMessage={addUserMessage} 
-        disabled={status === "submitted" || status === "streaming"} 
+        disabled={status === "streaming"}
+        addUserMessage={addUserMessage}
       />
     </div>
   );
