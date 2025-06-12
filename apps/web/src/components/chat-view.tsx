@@ -7,13 +7,104 @@ import { api } from "~/lib/db/server";
 import { useEffect, useState } from "react";
 import type { Id } from "convex/_generated/dataModel";
 import { ArrowUpIcon } from "lucide-react";
+import { Message } from "~/components/message";
+
+interface ChatInputProps {
+  chatId?: string;
+  sessionToken: string;
+  disabled: boolean;
+  addUserMessage: (message: string) => void;
+}
+
+function ChatInput({ 
+  chatId, 
+  sessionToken,
+  disabled, 
+  addUserMessage 
+}: ChatInputProps) {
+  const navigate = useNavigate();
+  const createChat = useMutation(api.functions.chat.createChat);
+  const [input, setInput] = useState("");
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setInput(e.target.value);
+  }
+
+  async function send() {
+    const text = input.trim();
+    if (!text) return;
+
+    if (!chatId) {
+      try {
+        localStorage.setItem("firstMessage", text);
+
+        const newChatId = await createChat({
+          sessionToken,
+          title: "New Chat",
+          visibility: "private",
+        });
+
+        console.log("[ChatView] New Chat ID: ", newChatId);
+
+        await navigate({
+          to: "/chat/$chatId",
+          replace: true,
+          params: { chatId: newChatId },
+        });
+      } catch (err) {
+        if (!isRedirect(err)) throw err;
+      }
+      return;
+    }
+
+    addUserMessage(text);
+    setInput("");
+  }
+
+  return (
+    <div className="border-t border-black p-4 bg-white">
+      <div className="flex items-center space-x-2 max-w-4xl mx-auto border border-black rounded-lg p-2">
+        <input
+          className="flex-1 p-2 bg-white text-black placeholder:text-gray-400 focus:outline-none disabled:bg-white disabled:text-gray-500 disabled:cursor-not-allowed"
+          placeholder="Type your message..."
+          value={input}
+          onChange={handleInputChange}
+          disabled={disabled}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
+        />
+        <button
+          type="button"
+          disabled={
+            disabled || !input.trim()
+          }
+          onClick={send}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors border border-black text-black bg-white disabled:bg-white disabled:text-gray-500 disabled:border-gray-300 ${
+            disabled || !input.trim()
+              ? "cursor-not-allowed"
+              : "hover:bg-black hover:text-white"
+          }`}
+        >
+          {disabled ? (
+            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <ArrowUpIcon className="w-4 h-4" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
 
-  const createChat = useMutation(api.functions.chat.createChat);
   const updateChat = useMutation(api.functions.chat.updateChat);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
@@ -21,8 +112,6 @@ export function ChatView() {
       ? { chatId: chatId as Id<"chat">, sessionToken: session.session.token }
       : "skip"
   );
-  const navigate = useNavigate();
-  const [input, setInput] = useState("");
 
   const { 
     messages, 
@@ -46,7 +135,6 @@ export function ChatView() {
         localStorage.removeItem("firstMessage");
         await append({ role: "user", content: firstMessage });
 
-        // Generate a title for the chat
         const response = await fetch("/api/generateChatTitle", {
           method: "POST",
           body: JSON.stringify({ message: firstMessage }),
@@ -62,39 +150,8 @@ export function ChatView() {
     sendFirstMessage();
   }, [chatId, append, session?.session.token, updateChat]);
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setInput(e.target.value);
-  }
-
-  async function send() {
-    const text = input.trim();
-    if (!text) return;
-
-    if (!chatId) {
-      try {
-        localStorage.setItem("firstMessage", text);
-
-        const newChatId = await createChat({
-          sessionToken: session?.session.token ?? "skip",
-          title: "New Chat",
-          visibility: "private",
-        });
-
-        console.log("[ChatView] New Chat ID: ", newChatId);
-
-        await navigate({
-          to: "/chat/$chatId",
-          replace: true,
-          params: { chatId: newChatId },
-        });
-      } catch (err) {
-        if (!isRedirect(err)) throw err;
-      }
-      return;
-    }
-
-    await append({ role: "user", content: text });
-    setInput("");
+  function addUserMessage(message: string) {
+    append({ role: "user", content: message });
   }
 
   return (
@@ -113,13 +170,13 @@ export function ChatView() {
               }`}
             >
               <div
-                className={`max-w-[70%] rounded-lg px-4 py-2 border ${
+                className={`max-w-[70%] rounded-lg p-2 border ${
                   m.role === "user"
                     ? "bg-white text-black border-black ml-auto"
-                    : "bg-black text-white border-black mr-auto"
+                    : "bg-whtie text-black border-black mr-auto"
                 }`}
               >
-                <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                <Message content={m.content} />
               </div>
             </div>
           ))
@@ -137,42 +194,12 @@ export function ChatView() {
         )}
       </div>
 
-      {/* Input Area */}
-      <div className="border-t border-black p-4 bg-white">
-        <div className="flex items-center space-x-2 max-w-4xl mx-auto border border-black rounded-lg p-2">
-          <input
-            className="flex-1 p-2 bg-white text-black placeholder:text-gray-400 focus:outline-none disabled:bg-white disabled:text-gray-500 disabled:cursor-not-allowed"
-            placeholder="Type your message..."
-            value={input}
-            onChange={handleInputChange}
-            disabled={status === "submitted" || status === "streaming"}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-          />
-          <button
-            type="button"
-            disabled={
-              status === "submitted" || status === "streaming" || !input.trim()
-            }
-            onClick={send}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors border border-black text-black bg-white disabled:bg-white disabled:text-gray-500 disabled:border-gray-300 ${
-              status === "submitted" || status === "streaming" || !input.trim()
-                ? "cursor-not-allowed"
-                : "hover:bg-black hover:text-white"
-            }`}
-          >
-            {status === "submitted" || status === "streaming" ? (
-              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <ArrowUpIcon className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-      </div>
+      <ChatInput 
+        chatId={chatId}
+        sessionToken={session?.session.token ?? "skip"}
+        addUserMessage={addUserMessage} 
+        disabled={status === "submitted" || status === "streaming"} 
+      />
     </div>
   );
 }
