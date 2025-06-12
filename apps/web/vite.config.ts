@@ -4,7 +4,7 @@ import path from "node:path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [tailwindcss(), tanstackStart()],
+  plugins: [tailwindcss(), tanstackStart({ target: "vercel" })],
   resolve: {
     alias: {
       "~": path.resolve(import.meta.dirname, "./src"),
