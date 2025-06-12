@@ -1,7 +1,7 @@
 import type { Token } from "marked";
 import { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { cn } from "~/lib/utils";
 
 function randomKey() {
@@ -92,8 +92,12 @@ export function TokenBlock({ token }: TokenBlockProps) {
     return <HeadingBlock key={randomKey()} text={token.text} />;
   }
 
+  if (token.type === "link") {
+    return <LinkBlock key={randomKey()} text={token.text} href={token.href} />;
+  }
+
   return (
-    <span key={randomKey()} className="text-gray-800 text-sm">
+    <span key={randomKey()} className="text-gray-800 text-base">
       {token.raw}
     </span>
   );
@@ -107,7 +111,7 @@ type StrongBlockProps = {
 function StrongBlock({ tokens, text }: StrongBlockProps) {
   if (!tokens) {
     return (
-      <strong key={randomKey()} className="text-gray-900 text-sm">
+      <strong key={randomKey()} className="text-gray-900 text-base">
         {text}
       </strong>
     );
@@ -130,7 +134,7 @@ type TextBlockProps = {
 function TextBlock({ tokens, text }: TextBlockProps) {
   if (!tokens) {
     return (
-      <span key={randomKey()} className="text-gray-800 text-sm">
+      <span key={randomKey()} className="text-gray-800 text-base">
         {text}
       </span>
     );
@@ -171,7 +175,7 @@ function CodeBlock({ lang, text }: CodeBlockProps) {
               className={`${langIcon(highlightedLang)} h-4 w-4 text-gray-400`}
             />
           )}
-          <span className="text-gray-500 text-xs">{highlightedLang}</span>
+          <span className="text-gray-500 text-sm">{highlightedLang}</span>
         </div>
         <button
           type="button"
@@ -183,13 +187,17 @@ function CodeBlock({ lang, text }: CodeBlockProps) {
               "iconify h-4 w-4",
               isChecked
                 ? "lucide--check text-green-500"
-                : "lucide--copy text-gray-400",
+                : "lucide--copy text-gray-400"
             )}
           />
         </button>
       </div>
       <pre className="*:!m-0 bg-white">
-        <SyntaxHighlighter language={highlightedLang} style={vscDarkPlus} customStyle={{ background: 'white', color: '#111827' }}>
+        <SyntaxHighlighter
+          language={highlightedLang}
+          style={oneLight}
+          customStyle={{ color: "#111827", fontSize: "14px" }}
+        >
           {text}
         </SyntaxHighlighter>
       </pre>
@@ -210,7 +218,7 @@ function CodeSpanBlock({ text }: CodeSpanBlockProps) {
     <code
       key={randomKey()}
       onMouseDown={copyText}
-      className="cursor-pointer rounded bg-gray-100 px-1 py-[0.5px] text-gray-800 text-sm"
+      className="cursor-pointer rounded bg-gray-100 px-1 py-[0.5px] text-gray-800 text-base"
     >
       {text}
     </code>
@@ -226,7 +234,7 @@ function ParagraphBlock({ tokens, text }: ParagraphBlockProps) {
   if (!tokens) {
     return (
       <p key={randomKey()}>
-        <span className="text-gray-800 text-sm">{text}</span>
+        <span className="text-gray-800 text-base">{text}</span>
       </p>
     );
   }
@@ -249,7 +257,7 @@ function ListItemBlock({ tokens, number }: ListItemBlockProps) {
   return (
     <li key={randomKey()}>
       {number && (
-        <span className="pr-1 text-gray-500 text-sm">{number}.</span>
+        <span className="pr-1 text-gray-500 text-base">{number}.</span>
       )}
       {tokens.map((token) => {
         return <TokenBlock key={randomKey()} token={token} />;
@@ -294,7 +302,7 @@ function ListBlock({ items, ordered, start }: ListBlockProps) {
   }
 
   return (
-    <ul key={randomKey()} className="list-disc pl-3 text-gray-500 text-sm">
+    <ul key={randomKey()} className="list-disc pl-3 text-gray-500 text-base">
       {items.map((item) => {
         return <ListItemBlock key={randomKey()} tokens={item.tokens} />;
       })}
@@ -314,5 +322,24 @@ function HeadingBlock({ text }: HeadingBlockProps) {
     >
       {text}
     </h3>
+  );
+}
+
+type LinkBlockProps = {
+  text: string;
+  href: string;
+};
+
+function LinkBlock({ text, href }: LinkBlockProps) {
+  return (
+    <a
+      key={randomKey()}
+      href={href}
+      className="text-blue-500 hover:underline after:content-['↗'] after:ml-1"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {text}
+    </a>
   );
 }
