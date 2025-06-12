@@ -47,6 +47,7 @@
   "devDependencies": {
     "@iconify-json/lucide": "1.2.47",
     "@iconify-json/vscode-icons": "1.2.22",
+    "@iconify/react": "6.0.0",
     "@iconify/tailwind4": "1.0.6",
     "@tailwindcss/vite": "4.1.8",
     "@types/node": "22.15.30",

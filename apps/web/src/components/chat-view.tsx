@@ -163,14 +163,12 @@ export function ChatView() {
               >
                 {m.role === "user" ? (
                   <div className="max-w-[70%] rounded-lg px-4 py-2 border bg-sidebar-accent text-sidebar-accent-foreground border-border ml-auto">
-                    <p className="whitespace-pre-wrap break-words">
-                      <Message content={m.content} />
-                    </p>
+                    <Message content={m.content} />
                   </div>
                 ) : (
-                  <p className="whitespace-pre-wrap break-words text-foreground max-w-[70%]">
+                  <div className="text-foreground max-w-[70%]">
                     <Message content={m.content} />
-                  </p>
+                  </div>
                 )}
               </div>
             ))
