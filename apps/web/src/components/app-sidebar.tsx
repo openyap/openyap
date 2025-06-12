@@ -6,7 +6,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -52,7 +51,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarSeparator />
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -75,25 +73,22 @@ export function AppSidebar() {
                   <SidebarMenuAction
                     showOnHover
                     asChild
-                    className="top-1/2 -translate-y-1/4"
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      tabIndex={-1}
-                      aria-label="Delete chat"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        await deleteChat({
-                          chatId: chat._id,
-                          sessionToken: session?.session.token ?? "",
-                        });
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      await deleteChat({
+                        chatId: chat._id,
+                        sessionToken: session?.session.token ?? "",
+                      });
+                      if (params.chatId === chat._id) {
                         navigate({ to: "/" });
-                      }}
-                    >
+                      }
+                    }}
+                    className="hover:cursor-pointerdd"
+                  >
+                    <div>
                       <X className="size-4" />
-                    </Button>
+                    </div>
                   </SidebarMenuAction>
                 </SidebarMenuItem>
               ))}

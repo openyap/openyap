@@ -65,10 +65,10 @@ function ChatInput({
 
   return (
     <div className="sticky bottom-0 pb-4 z-10 bg-background">
-      <div className="flex gap-2 max-w-5xl mx-auto w-full h-10">
+      <div className="flex gap-2 max-w-5xl mx-auto w-full h-10 px-4">
         <Input
           className="bg-background h-full"
-          placeholder="Yap, yap, yap..."
+          placeholder="Ask anything"
           value={input}
           onChange={handleInputChange}
           disabled={disabled}
