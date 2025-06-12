@@ -61,12 +61,11 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
       </head>
       <body>
         <SidebarProvider>
+          <div className="fixed top-0 left-0 z-50 p-4">
+            <SidebarTrigger />
+          </div>
           <AppSidebar />
           <SidebarInset>
-            <div className="flex items-center gap-2 p-4 border-b">
-              <SidebarTrigger />
-              <h1 className="text-lg font-semibold">OpenYap</h1>
-            </div>
             {children}
           </SidebarInset>
         </SidebarProvider>

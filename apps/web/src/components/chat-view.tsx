@@ -4,8 +4,9 @@ import { isRedirect } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Id } from "convex/_generated/dataModel";
+import { ArrowUpIcon } from "lucide-react";
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
@@ -21,15 +22,12 @@ export function ChatView() {
       : "skip"
   );
   const navigate = useNavigate();
-
+  const [input, setInput] = useState("");
 
   const { 
-    input, 
     messages, 
     status, 
-    handleInputChange, 
     append, 
-    setInput,
   } =
     useChat({
       id: chatId ?? "skip",
@@ -63,6 +61,10 @@ export function ChatView() {
     }
     sendFirstMessage();
   }, [chatId, append, session?.session.token, updateChat]);
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setInput(e.target.value);
+  }
 
   async function send() {
     const text = input.trim();
@@ -99,7 +101,7 @@ export function ChatView() {
     <div className="flex flex-col h-full bg-white">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
+          <div className="flex items-center justify-center h-full text-black">
             <p>Start a conversation...</p>
           </div>
         ) : (
@@ -111,10 +113,10 @@ export function ChatView() {
               }`}
             >
               <div
-                className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                className={`max-w-[70%] rounded-lg px-4 py-2 border ${
                   m.role === "user"
-                    ? "bg-blue-500 text-white ml-auto"
-                    : "bg-gray-100 text-gray-900 mr-auto"
+                    ? "bg-white text-black border-black ml-auto"
+                    : "bg-black text-white border-black mr-auto"
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{m.content}</p>
@@ -124,11 +126,11 @@ export function ChatView() {
         )}
         {status === "streaming" && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2 max-w-[70%]">
+            <div className="bg-white text-black rounded-lg px-4 py-2 max-w-[70%] border border-black">
               <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
+                <div className="w-2 h-2 bg-black rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-black rounded-full animate-bounce delay-100" />
+                <div className="w-2 h-2 bg-black rounded-full animate-bounce delay-200" />
               </div>
             </div>
           </div>
@@ -136,10 +138,10 @@ export function ChatView() {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 p-4 bg-white">
-        <div className="flex items-center space-x-2 max-w-4xl mx-auto">
+      <div className="border-t border-black p-4 bg-white">
+        <div className="flex items-center space-x-2 max-w-4xl mx-auto border border-black rounded-lg p-2">
           <input
-            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="flex-1 p-2 bg-white text-black placeholder:text-gray-400 focus:outline-none disabled:bg-white disabled:text-gray-500 disabled:cursor-not-allowed"
             placeholder="Type your message..."
             value={input}
             onChange={handleInputChange}
@@ -157,16 +159,16 @@ export function ChatView() {
               status === "submitted" || status === "streaming" || !input.trim()
             }
             onClick={send}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors border border-black text-black bg-white disabled:bg-white disabled:text-gray-500 disabled:border-gray-300 ${
               status === "submitted" || status === "streaming" || !input.trim()
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-blue-500 text-white hover:bg-blue-600"
+                ? "cursor-not-allowed"
+                : "hover:bg-black hover:text-white"
             }`}
           >
             {status === "submitted" || status === "streaming" ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
             ) : (
-              "Send"
+              <ArrowUpIcon className="w-4 h-4" />
             )}
           </button>
         </div>

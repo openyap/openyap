@@ -31,6 +31,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
+      <div className="p-4">
+        <h1 className="text-lg font-semibold text-center">OpenYap</h1>
+      </div>
       <SidebarHeader />
       <SidebarContent>
         <SidebarGroup>
@@ -48,8 +51,8 @@ export function AppSidebar() {
                       key={chat._id}
                       to="/chat/$chatId"
                       params={{ chatId: chat._id }}
-                  >
-                      {chat.title}
+                    >
+                      <span className="block truncate max-w-full">{chat.title}</span>
                     </Link>
                   </SidebarMenuButton>
                   <SidebarMenuAction
