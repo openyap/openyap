@@ -10,7 +10,7 @@ export function Message({ content }: MessageProps) {
   const tokens = useMemo(() => marked.lexer(content), [content]);
 
   return (
-    <div>
+    <div className="whitespace-pre-wrap break-words">
       {tokens.map((token) => {
         return <TokenBlock key={crypto.randomUUID()} token={token} />;
       })}

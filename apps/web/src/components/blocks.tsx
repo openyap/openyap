@@ -1,8 +1,10 @@
-import type { Token } from "marked";
+import type { Token, Tokens } from "marked";
 import { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { cn } from "~/lib/utils";
+import { Icon } from "@iconify/react";
+import React from "react";
 
 function randomKey() {
   return crypto.randomUUID();
@@ -20,24 +22,28 @@ async function copyToClipboard(text: string): Promise<boolean> {
 
 // TODO: Add more languages, or make a library for this
 function langIcon(lang: string) {
-  if (lang === "javascript") return "iconify vscode-icons--file-type-js";
+  if (lang === "javascript") return "vscode-icons:file-type-js";
   if (lang === "typescript")
-    return "iconify vscode-icons--file-type-typescript";
-  if (lang === "rust") return "iconify vscode-icons--file-type-rust";
-  if (lang === "python") return "iconify vscode-icons--file-type-python";
-  if (lang === "cpp") return "iconify vscode-icons--file-type-cpp";
-  if (lang === "c") return "iconify vscode-icons--file-type-c";
-  if (lang === "kotlin") return "iconify vscode-icons--file-type-kotlin";
-  if (lang === "haskell") return "iconify vscode-icons--file-type-haskell";
-  if (lang === "ruby") return "iconify vscode-icons--file-type-ruby";
-  if (lang === "swift") return "iconify vscode-icons--file-type-swift";
-  if (lang === "java") return "iconify vscode-icons--file-type-java";
-  if (lang === "go") return "iconify vscode-icons--file-type-go";
-  if (lang === "csharp") return "iconify vscode-icons--file-type-csharp";
+    return "vscode-icons:file-type-typescript";
+  if (lang === "rust") return "vscode-icons:file-type-rust";
+  if (lang === "python") return "vscode-icons:file-type-python";
+  if (lang === "cpp") return "vscode-icons:file-type-cpp";
+  if (lang === "c") return "vscode-icons:file-type-c";
+  if (lang === "kotlin") return "vscode-icons:file-type-kotlin";
+  if (lang === "haskell") return "vscode-icons:file-type-haskell";
+  if (lang === "ruby") return "vscode-icons:file-type-ruby";
+  if (lang === "swift") return "vscode-icons:file-type-swift";
+  if (lang === "java") return "vscode-icons:file-type-java";
+  if (lang === "go") return "vscode-icons:file-type-go";
+  if (lang === "csharp") return "vscode-icons:file-type-csharp";
   if (lang === "jsx" || lang === "tsx")
-    return "iconify vscode-icons--file-type-reactjs";
-  if (lang === "sql") return "iconify vscode-icons--file-type-sql";
-  if (lang === "bash") return "iconify vscode-icons--file-type-shell";
+    return "vscode-icons:file-type-reactjs";
+  if (lang === "sql") return "vscode-icons:file-type-sql";
+  if (lang === "bash") return "vscode-icons:file-type-shell";
+  if (lang === "html") return "vscode-icons:file-type-html";
+  if (lang === "css") return "vscode-icons:file-type-css2";
+  if (lang === "json") return "vscode-icons:file-type-json-official";
+  if (lang === "php") return "vscode-icons:file-type-php";
 
   return "";
 }
@@ -47,122 +53,89 @@ type TokenBlockProps = {
 };
 
 export function TokenBlock({ token }: TokenBlockProps) {
-  if (token.type === "text") {
-    return (
-      <TextBlock key={randomKey()} tokens={token.tokens} text={token.text} />
-    );
+  switch (token.type) {
+    case "blockquote":
+      return <BlockquoteBlock key={randomKey()} token={token as Tokens.Blockquote} />;
+    case "br":
+      return <BrBlock key={randomKey()} token={token as Tokens.Br} />;
+    case "code":
+      return <CodeBlock key={randomKey()} token={token as Tokens.Code} />;
+    case "codespan":
+      return <CodeSpanBlock key={randomKey()} token={token as Tokens.Codespan} />;
+    case "del":
+      return <DelBlock key={randomKey()} token={token as Tokens.Del} />;
+    case "em":
+      return <EmBlock key={randomKey()} token={token as Tokens.Em} />;
+    case "escape":
+      return <EscapeBlock key={randomKey()} token={token as Tokens.Escape} />;
+    case "heading":
+      return <HeadingBlock key={randomKey()} token={token as Tokens.Heading} />;
+    case "hr":
+      return <HrBlock key={randomKey()} token={token as Tokens.Hr} />;
+    case "image":
+      return <ImageBlock key={randomKey()} token={token as Tokens.Image} />;
+    case "link":
+      return <LinkBlock key={randomKey()} token={token as Tokens.Link} />;
+    case "list":
+      return <ListBlock key={randomKey()} token={token as Tokens.List} />;
+    case "paragraph":
+      return <ParagraphBlock key={randomKey()} token={token as Tokens.Paragraph} />;
+    case "strong":
+      return <StrongBlock key={randomKey()} token={token as Tokens.Strong} />;
+    case "table":
+      return <TableBlock key={randomKey()} token={token as Tokens.Table} />;
+    case "text":
+      return <TextBlock key={randomKey()} token={token as Tokens.Text} />;
+    default:
+      return (
+        <span key={randomKey()} className="text-gray-800 text-base">
+          {token.raw}
+        </span>
+      );
   }
-
-  if (token.type === "strong") {
-    return (
-      <StrongBlock key={randomKey()} tokens={token.tokens} text={token.text} />
-    );
-  }
-
-  if (token.type === "code") {
-    return <CodeBlock key={randomKey()} lang={token.lang} text={token.text} />;
-  }
-
-  if (token.type === "paragraph") {
-    return (
-      <ParagraphBlock
-        key={randomKey()}
-        tokens={token.tokens}
-        text={token.text}
-      />
-    );
-  }
-
-  if (token.type === "list") {
-    return (
-      <ListBlock
-        key={randomKey()}
-        items={token.items}
-        ordered={token.ordered}
-        start={token.start}
-      />
-    );
-  }
-
-  if (token.type === "codespan") {
-    return <CodeSpanBlock key={randomKey()} text={token.text} />;
-  }
-
-  if (token.type === "heading") {
-    return <HeadingBlock key={randomKey()} text={token.text} />;
-  }
-
-  if (token.type === "link") {
-    return <LinkBlock key={randomKey()} text={token.text} href={token.href} />;
-  }
-
-  return (
-    <span key={randomKey()} className="text-gray-800 text-base">
-      {token.raw}
-    </span>
-  );
 }
 
-type StrongBlockProps = {
-  tokens: Token[] | undefined;
-  text: string;
-};
-
-function StrongBlock({ tokens, text }: StrongBlockProps) {
-  if (!tokens) {
+function StrongBlock({ token }: { token: Tokens.Strong }) {
+  if (!token.tokens) {
     return (
       <strong key={randomKey()} className="text-gray-900 text-base">
-        {text}
+        {token.text}
       </strong>
     );
   }
-
   return (
     <strong key={randomKey()} className="text-gray-900">
-      {tokens.map((token) => {
-        return <TokenBlock key={randomKey()} token={token} />;
-      })}
+      {token.tokens.map((t, i) => (
+        <TokenBlock key={randomKey()} token={t} />
+      ))}
     </strong>
   );
 }
 
-type TextBlockProps = {
-  tokens: Token[] | undefined;
-  text: string;
-};
-
-function TextBlock({ tokens, text }: TextBlockProps) {
-  if (!tokens) {
+function TextBlock({ token }: { token: Tokens.Text }) {
+  if (!token.tokens) {
     return (
-      <span key={randomKey()} className="text-gray-800 text-base">
-        {text}
+      <span key={randomKey()} className="text-gray-800">
+        {token.text}
       </span>
     );
   }
-
   return (
     <span key={randomKey()} className="text-gray-800">
-      {tokens.map((token) => {
-        return <TokenBlock key={randomKey()} token={token} />;
-      })}
+      {token.tokens.map((t, i) => (
+        <TokenBlock key={randomKey()} token={t} />
+      ))}
     </span>
   );
 }
 
-type CodeBlockProps = {
-  lang: string | undefined;
-  text: string;
-};
-
-function CodeBlock({ lang, text }: CodeBlockProps) {
+function CodeBlock({ token }: { token: Tokens.Code }) {
   const [isChecked, setIsChecked] = useState<boolean>(false);
-  const highlightedLang = lang ?? "text";
-
+  const highlightedLang = token.lang ?? "text";
   async function copyText() {
-    setIsChecked(await copyToClipboard(text));
+    setIsChecked(await copyToClipboard(token.text));
     setTimeout(() => setIsChecked(false), 3000);
   }
-
   return (
     <div
       key={randomKey()}
@@ -170,9 +143,10 @@ function CodeBlock({ lang, text }: CodeBlockProps) {
     >
       <div className="flex justify-between border-b border-gray-200 px-2 py-2 bg-gray-50">
         <div className="flex gap-x-1 items-center">
-          {lang && (
-            <span
-              className={`${langIcon(highlightedLang)} h-4 w-4 text-gray-400`}
+          {token.lang && (
+            <Icon
+              icon={langIcon(highlightedLang)}
+              className="h-4 w-4 bg-transparent"
             />
           )}
           <span className="text-gray-500 text-sm">{highlightedLang}</span>
@@ -198,148 +172,215 @@ function CodeBlock({ lang, text }: CodeBlockProps) {
           style={oneLight}
           customStyle={{ color: "#111827", fontSize: "14px" }}
         >
-          {text}
+          {token.text}
         </SyntaxHighlighter>
       </pre>
     </div>
   );
 }
 
-type CodeSpanBlockProps = {
-  text: string;
-};
-
-function CodeSpanBlock({ text }: CodeSpanBlockProps) {
+function CodeSpanBlock({ token }: { token: Tokens.Codespan }) {
   async function copyText() {
-    await copyToClipboard(text);
+    await copyToClipboard(token.text);
   }
-
   return (
     <code
       key={randomKey()}
       onMouseDown={copyText}
       className="cursor-pointer rounded bg-gray-100 px-1 py-[0.5px] text-gray-800 text-base"
     >
-      {text}
+      {token.text}
     </code>
   );
 }
 
-type ParagraphBlockProps = {
-  tokens: Token[] | undefined;
-  text: string;
-};
-
-function ParagraphBlock({ tokens, text }: ParagraphBlockProps) {
-  if (!tokens) {
+function ParagraphBlock({ token }: { token: Tokens.Paragraph }) {
+  if (!token.tokens) {
     return (
       <p key={randomKey()}>
-        <span className="text-gray-800 text-base">{text}</span>
+        <span className="text-gray-800 text-base">{token.text}</span>
       </p>
     );
   }
-
   return (
     <p key={randomKey()}>
-      {tokens.map((token) => {
-        return <TokenBlock key={randomKey()} token={token} />;
-      })}
+      {token.tokens.map((t, i) => (
+        <TokenBlock key={randomKey()} token={t} />
+      ))}
     </p>
   );
 }
 
-type ListItemBlockProps = {
-  tokens: Token[];
-  number?: number;
-};
-
-function ListItemBlock({ tokens, number }: ListItemBlockProps) {
+function ListItemBlock({ token, number }: { token: Tokens.ListItem; number?: number }) {
   return (
     <li key={randomKey()}>
-      {number && (
-        <span className="pr-1 text-gray-500 text-base">{number}.</span>
-      )}
-      {tokens.map((token) => {
-        return <TokenBlock key={randomKey()} token={token} />;
-      })}
+      {number && <span className="pr-1 text-gray-500 text-base">{number}.</span>}
+      {(token.tokens ?? []).map((t, i) => (
+        <TokenBlock key={randomKey()} token={t} />
+      ))}
     </li>
   );
 }
 
-// Copied from marked.d.ts
-interface ListItem {
-  type: "list_item";
-  raw: string;
-  task: boolean;
-  checked?: boolean | undefined;
-  loose: boolean;
-  text: string;
-  tokens: Token[];
-}
-
-type ListBlockProps = {
-  items: ListItem[];
-  ordered: boolean;
-  start: number;
-};
-
-function ListBlock({ items, ordered, start }: ListBlockProps) {
-  if (ordered) {
+function ListBlock({ token }: { token: Tokens.List }) {
+  if (token.ordered) {
     return (
       <ol key={randomKey()}>
-        {items.map((item, position) => {
+        {token.items.map((item: Tokens.ListItem, position: number) => {
+          const start = typeof token.start === "number" && !Number.isNaN(token.start) ? token.start : 1;
           const number = position === 0 ? start : position + 1;
-          return (
-            <ListItemBlock
-              key={randomKey()}
-              tokens={item.tokens}
-              number={number}
-            />
-          );
+          return <ListItemBlock key={randomKey()} token={item} number={number} />;
         })}
       </ol>
     );
   }
-
   return (
     <ul key={randomKey()} className="list-disc pl-3 text-gray-500 text-base">
-      {items.map((item) => {
-        return <ListItemBlock key={randomKey()} tokens={item.tokens} />;
-      })}
+      {token.items.map((item: Tokens.ListItem) => (
+        <ListItemBlock key={randomKey()} token={item} />
+      ))}
     </ul>
   );
 }
 
-type HeadingBlockProps = {
-  text: string;
-};
-
-function HeadingBlock({ text }: HeadingBlockProps) {
-  return (
-    <h3
-      key={randomKey()}
-      className="rounded-t-lg border border-gray-200 bg-gray-50 px-3 py-1 text-gray-900 shadow"
-    >
-      {text}
-    </h3>
-  );
+function HeadingBlock({ token }: { token: Tokens.Heading }) {
+  const depth = Math.min(Math.max(token.depth, 1), 6);
+  if (!token.tokens) {
+    switch (depth) {
+      case 1:
+        return <h1 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-3xl font-bold">{token.text}</h1>;
+      case 2:
+        return <h2 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-2xl font-semibold">{token.text}</h2>;
+      case 3:
+        return <h3 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-xl font-semibold">{token.text}</h3>;
+      case 4:
+        return <h4 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-lg font-medium">{token.text}</h4>;
+      case 5:
+        return <h5 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-base font-medium">{token.text}</h5>;
+      case 6:
+        return <h6 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-sm font-medium">{token.text}</h6>;
+    }
+  }
+  switch (depth) {
+    case 1:
+      return <h1 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-3xl font-bold">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h1>;
+    case 2:
+      return <h2 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-2xl font-semibold">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h2>;
+    case 3:
+      return <h3 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-xl font-semibold">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h3>;
+    case 4:
+      return <h4 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-lg font-medium">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h4>;
+    case 5:
+      return <h5 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-base font-medium">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h5>;
+    case 6:
+      return <h6 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-sm font-medium">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h6>;
+  }
 }
 
-type LinkBlockProps = {
-  text: string;
-  href: string;
-};
-
-function LinkBlock({ text, href }: LinkBlockProps) {
+function LinkBlock({ token }: { token: Tokens.Link }) {
   return (
     <a
       key={randomKey()}
-      href={href}
+      href={token.href}
       className="text-blue-500 hover:underline after:content-['↗'] after:ml-1"
       target="_blank"
       rel="noopener noreferrer"
     >
-      {text}
+      {token.text}
     </a>
+  );
+}
+
+function ImageBlock({ token }: { token: Tokens.Image }) {
+  return <img key={randomKey()} src={token.href} alt={token.text} />;
+}
+
+function BlockquoteBlock({ token }: { token: Tokens.Blockquote }) {
+  return (
+    <blockquote key={randomKey()} className="border-l-4 border-gray-300 pl-4">
+      {token.text}
+    </blockquote>
+  );
+}
+
+function DelBlock({ token }: { token: Tokens.Del }) {
+  return (
+    <del key={randomKey()} className="text-gray-500 text-base">
+      {token.text}
+    </del>
+  );
+}
+
+function EmBlock({ token }: { token: Tokens.Em }) {
+  if (!token.tokens) {
+    return (
+      <em key={randomKey()} className="text-gray-500 text-base">
+        {token.text}
+      </em>
+    );
+  }
+  return (
+    <em key={randomKey()} className="text-gray-500">
+      {token.tokens.map((t, i) => (
+        <TokenBlock key={randomKey()} token={t} />
+      ))}
+    </em>
+  );
+}
+
+function EscapeBlock({ token }: { token: Tokens.Escape }) {
+  return (
+    <span key={randomKey()} className="text-gray-500 text-base">
+      {token.text}
+    </span>
+  );
+}
+
+function BrBlock({ token }: { token: Tokens.Br }) {
+  return <br key={randomKey()} />;
+}
+
+function HrBlock({ token }: { token: Tokens.Hr }) {
+  return <hr key={randomKey()} />;
+}
+
+function TableBlock({ token }: { token: Tokens.Table }) {
+  return (
+    <div className="overflow-x-auto my-4">
+      <table className="min-w-full border border-gray-200 bg-white text-sm text-left">
+        <thead className="bg-gray-50">
+          <tr>
+            {token.header.map((cell) => (
+              <th
+                key={randomKey()}
+                className={`px-4 py-2 border-b border-gray-200 font-semibold text-gray-900 ${cell.align ? ` text-${cell.align}` : ""}`}
+                align={cell.align ?? undefined}
+              >
+                {cell.tokens.map((t) => (
+                  <TokenBlock key={randomKey()} token={t} />
+                ))}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {token.rows.map((row) => (
+            <tr key={randomKey()} className="even:bg-gray-50">
+              {row.map((cell) => (
+                <td
+                  key={randomKey()}
+                  className={`px-4 py-2 border-b border-gray-200 text-gray-800${cell.align ? ` text-${cell.align}` : ""}`}
+                  align={cell.align ?? undefined}
+                >
+                  {cell.tokens.map((t) => (
+                    <TokenBlock key={randomKey()} token={t} />
+                  ))}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
