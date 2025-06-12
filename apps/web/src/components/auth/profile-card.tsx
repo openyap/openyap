@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { CaptchaWidget } from "~/components/auth/captcha-widget";
 import { DomainLogo } from "~/components/domains";
 import { Button } from "~/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { authClient, getClientIP } from "~/lib/auth/client";
 
 export function ProfileCard() {
@@ -41,20 +42,27 @@ export function ProfileCard() {
 
   if (session.isPending) {
     return (
-      <div className="h-12 animate-pulse bg-gray-200 flex items-center justify-center rounded">
-      </div>
+      <div className="h-12 animate-pulse bg-gray-200 flex items-center justify-center rounded" />
     );
   }
 
   if (session.data?.user) {
     return (
-        <div className="h-12 flex items-center justify-between border border-gray-200 rounded px-2">
+      <div className="h-12 flex items-center justify-between border border-gray-200 rounded px-2">
+        <div className="flex items-center gap-2">
+          <Avatar>
+            <AvatarImage src={session.data.user.image ?? ""} />
+            <AvatarFallback>
+              {session.data.user.name?.charAt(0).toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
           <p>{session.data.user.name}</p>
-          <Button onClick={() => authClient.signOut()} className="hover:bg-gray-200">
-            <LogOutIcon className="w-4 h-4" />
-          </Button>
         </div>
-      );
+        <Button onClick={() => authClient.signOut()}>
+          <LogOutIcon className="w-4 h-4" />
+        </Button>
+      </div>
+    );
   }
 
   return (
