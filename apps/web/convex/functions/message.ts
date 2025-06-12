@@ -72,6 +72,14 @@ export const updateAiMessage = mutation({
     content: v.optional(v.string()),
     status: v.optional(v.string()),
     sessionToken: v.string(),
+    model: v.optional(v.string()),
+    provider: v.optional(v.string()),
+    historyEntry: v.optional(v.object({
+      version: v.number(),
+      content: v.string(),
+      provider: v.optional(v.string()),
+      model: v.optional(v.string()),
+    })),
   },
   handler: async (ctx, args) => {
     const session = await ctx.runQuery(internal.betterAuth.getSession, {
@@ -86,6 +94,9 @@ export const updateAiMessage = mutation({
       messageId: args.messageId,
       content: args.content,
       status: args.status,
+      model: args.model,
+      provider: args.provider,
+      historyEntry: args.historyEntry,
     });
   },
 });

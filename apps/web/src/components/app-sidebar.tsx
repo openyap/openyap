@@ -11,7 +11,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuAction,
-  SidebarSeparator,
 } from "~/components/ui/sidebar";
 import { authClient } from "~/lib/auth/client";
 import { ProfileCard } from "./auth/profile-card";
@@ -55,10 +54,11 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {data?.map((chat) => (
-                <SidebarMenuItem key={chat._id}>
+                <SidebarMenuItem key={chat._id} className="group/item">
                   <SidebarMenuButton
                     asChild
                     isActive={"chatId" in params && params.chatId === chat._id}
+                    className="group-hover/item:bg-sidebar-accent"
                   >
                     <Link
                       key={chat._id}
@@ -72,7 +72,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                   <SidebarMenuAction
                     showOnHover
-                    asChild
                     onClick={async (e) => {
                       e.stopPropagation();
                       e.preventDefault();
@@ -84,11 +83,9 @@ export function AppSidebar() {
                         navigate({ to: "/" });
                       }
                     }}
-                    className="hover:cursor-pointerdd"
+                    className="hover:text-destructive hover:cursor-pointer"
                   >
-                    <div>
-                      <X className="size-4" />
-                    </div>
+                    <X className="size-4" />
                   </SidebarMenuAction>
                 </SidebarMenuItem>
               ))}

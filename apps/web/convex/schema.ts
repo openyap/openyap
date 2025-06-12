@@ -201,10 +201,14 @@ export default defineSchema({
     image: v.optional(v.string()),
     updatedAt: v.string(),
     // User preferences
-    defaultProvider: v.optional(v.string()),
-    defaultModel: v.optional(v.string()),
-    theme: v.optional(v.string()),
-    language: v.optional(v.string()),
+    preferences: v.optional(
+      v.object({
+        defaultProvider: v.optional(v.string()),
+        defaultModel: v.optional(v.string()),
+        theme: v.optional(v.string()),
+        language: v.optional(v.string()),
+      })
+    ),
     // Encrypted API keys for the user
     apiKeys: v.optional(v.object({})),
   }).index("by_email", ["email"]),

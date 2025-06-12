@@ -145,11 +145,13 @@ export function ChatView() {
     append({ role: "user", content: message });
   }
 
+  const isLoading = chatId && getChatMessages === undefined;
+
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="flex-1 overflow-y-auto p-4">
         <div className="max-w-4xl mx-auto space-y-4 h-full">
-          {messages.length === 0 ? (
+          {messages.length === 0 && !isLoading ? (
             <div className="flex items-center justify-center text-foreground h-full">
               <h1 className="text-2xl">Where should we begin?</h1>
             </div>

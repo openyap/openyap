@@ -44,18 +44,32 @@ const updateAiMessage = async ({
   messageId,
   content,
   status,
+  model,
+  provider,
+  historyEntry,
   sessionToken,
 }: {
   messageId: Id<"message">;
   content: string;
   status: string;
   sessionToken: string;
+  model?: string;
+  provider?: string;
+  historyEntry?: {
+    version: number;
+    content: string;
+    provider: string;
+    model: string;
+  };
 }) => {
   await convexServer.mutation(api.functions.message.updateAiMessage, {
     messageId,
     content,
     status,
+    model,
+    provider,
     sessionToken,
+    historyEntry,
   });
 };
 
@@ -127,6 +141,14 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           content: buffer,
           status: "finished",
           sessionToken,
+          model,
+          provider,
+          historyEntry: {
+            version: 1,
+            content: buffer,
+            provider,
+            model,
+          },
         });
       } catch (error) {
         console.error("Error updating AI message in background:", error);
