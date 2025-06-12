@@ -1,3 +1,4 @@
+import { LogOutIcon } from "lucide-react";
 import { useState } from "react";
 import { useTransition } from "react";
 import { CaptchaWidget } from "~/components/auth/captcha-widget";
@@ -39,24 +40,29 @@ export function ProfileCard() {
   };
 
   if (session.isPending) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-12 animate-pulse bg-gray-200 flex items-center justify-center rounded">
+      </div>
+    );
   }
 
   if (session.data?.user) {
     return (
-        <div>
+        <div className="h-12 flex items-center justify-between border border-gray-200 rounded px-2">
           <p>{session.data.user.name}</p>
-          <Button onClick={() => authClient.signOut()}>Sign out</Button>
+          <Button onClick={() => authClient.signOut()} className="hover:bg-gray-200">
+            <LogOutIcon className="w-4 h-4" />
+          </Button>
         </div>
       );
   }
 
   return (
-    <div>
+    <div className="h-12 flex items-center justify-center border border-gray-200 rounded">
       <Button
         type="button"
         onClick={handleGoogleLogin}
-        className="w-full bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
+        className="h-full w-full bg-white text-gray-900 hover:bg-gray-50"
         disabled={isPending}
       >
         <DomainLogo domain="google.com" />
