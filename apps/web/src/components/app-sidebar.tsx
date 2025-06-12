@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import {
   Sidebar,
@@ -12,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuAction,
+  SidebarSeparator,
 } from "~/components/ui/sidebar";
 import { authClient } from "~/lib/auth/client";
 import { ProfileCard } from "./auth/profile-card";
@@ -28,6 +29,7 @@ export function AppSidebar() {
   );
   const deleteChat = useMutation(api.functions.chat.deleteChat);
   const navigate = useNavigate();
+  const params = useParams({ strict: false });
 
   return (
     <Sidebar>
@@ -37,22 +39,36 @@ export function AppSidebar() {
       <SidebarHeader />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>
-            <SidebarMenuButton asChild>
-              <Link to="/">Chats</Link>
-            </SidebarMenuButton>
-          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <Button
+                onClick={() => {
+                  navigate({ to: "/" });
+                }}
+              >
+                New Chat
+              </Button>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarSeparator />
+        <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               {data?.map((chat) => (
-                <SidebarMenuItem key={chat._id} className="hover:bg-gray-200 rounded">
-                  <SidebarMenuButton asChild>
+                <SidebarMenuItem key={chat._id}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={"chatId" in params && params.chatId === chat._id}
+                  >
                     <Link
                       key={chat._id}
                       to="/chat/$chatId"
                       params={{ chatId: chat._id }}
                     >
-                      <span className="block truncate max-w-full">{chat.title}</span>
+                      <span className="block truncate max-w-full">
+                        {chat.title}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                   <SidebarMenuAction
@@ -90,4 +106,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
