@@ -40,6 +40,8 @@ export default defineSchema({
     pinnedAt: v.optional(v.string()),
     // When the user joined the chat
     joinedAt: v.string(),
+    // When the user was last updated
+    updatedAt: v.string(),
   })
     .index("by_chatId", ["chatId"])
     .index("by_userId", ["userId"]),
