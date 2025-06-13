@@ -104,9 +104,7 @@ export function ChatView() {
   const updateChat = useMutation(api.functions.chat.updateChat);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
-    chatId && session
-      ? { chatId: chatId as Id<"chat">, sessionToken: session.session.token }
-      : "skip"
+    chatId ? { chatId: chatId as Id<"chat">, sessionToken: session?.session.token } : "skip"
   );
 
   const { messages, status, append } = useChat({

@@ -3,5 +3,6 @@
 .nitro
 .output
 .tanstack-start
+.vercel
 .DS_Store
 node_modules

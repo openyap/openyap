@@ -22,23 +22,46 @@ export const getUserChats = query({
       .order("desc")
       .collect();
 
-    return chats;
+    const chatMembers = await ctx.db.query("chatMember").filter((q) => q.eq(q.field("userId"), userId)).collect();
+
+    return chats.map((chat) => ({
+      ...chat,
+      pinnedAt: chatMembers.find((m) => m.chatId === chat._id)?.pinnedAt,
+    }));
   },
 });
 
 export const getChatMessages = query({
   args: {
     chatId: v.id("chat"),
-    sessionToken: v.string(),
+    sessionToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const session = await ctx.runQuery(internal.betterAuth.getSession, {
-      sessionToken: args.sessionToken,
-    });
-
-    if (!session) {
+    const chat = await ctx.db.get(args.chatId);
+    if (!chat) {
       return [];
     }
+
+    if (chat.visibility === "private") {
+      const session = await ctx.runQuery(internal.betterAuth.getSession, {
+        sessionToken: args.sessionToken ?? "skip",
+      });
+      
+      if (!session) {
+        return [];
+      }
+
+      const userId = session.userId as Id<"user">;
+
+      const chatMember = await ctx.runQuery(internal.functions.chatMember.getChatMember, {
+        chatId: args.chatId,
+        userId,
+      });
+
+      if (!chatMember) {
+        return [];
+      }
+    } 
 
     const messages = await ctx.db
       .query("message")
@@ -46,6 +69,60 @@ export const getChatMessages = query({
       .order("asc")
       .collect();
     return messages;
+  },
+});
+
+export const pinChat = mutation({
+  args: {
+    chatId: v.id("chat"),
+    sessionToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { sessionToken, chatId } = args;
+
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken,
+    });
+
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = session.userId as Id<"user">;
+    
+    await ctx.runMutation(internal.functions.chatMember.updateChatMember, {
+      chatId,
+      userId,
+      pinnedAt: new Date().toISOString(),
+      sessionToken,
+    });
+  },
+});
+
+export const unpinChat = mutation({
+  args: {
+    chatId: v.id("chat"),
+    sessionToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { sessionToken, chatId } = args;
+
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken,
+    });
+
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = session.userId as Id<"user">;
+
+    await ctx.runMutation(internal.functions.chatMember.updateChatMember, {
+      sessionToken,
+      chatId,
+      userId,
+      pinnedAt: "unpin",
+    });
   },
 });
 
@@ -81,6 +158,12 @@ export const createChat = mutation({
       ...chatData,
       updatedAt: now,
       ownerId: userId,
+    });
+
+    await ctx.runMutation(internal.functions.chatMember.createChatMember, {
+      chatId,
+      userId,
+      role: "owner",
     });
 
     return chatId;
@@ -169,6 +252,13 @@ export const deleteChat = mutation({
     await Promise.all(
       messages.map((m) =>
         ctx.runMutation(internal.functions.message.deleteMessage, { messageId: m._id })
+      )
+    );
+
+    const chatMembers = await ctx.db.query("chatMember").filter((q) => q.eq(q.field("chatId"), chatId)).collect();
+    await Promise.all(
+      chatMembers.map((m) =>
+        ctx.runMutation(internal.functions.chatMember.deleteChatMember, { chatId, userId: m.userId })
       )
     );
 

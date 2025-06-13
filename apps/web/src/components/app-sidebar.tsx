@@ -15,7 +15,7 @@ import {
 import { authClient } from "~/lib/auth/client";
 import { ProfileCard } from "./auth/profile-card";
 import { api } from "~/lib/db/server";
-import { X } from "lucide-react";
+import { Pin, PinOff, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useMutation } from "convex/react";
 
@@ -26,8 +26,15 @@ export function AppSidebar() {
     session ? { sessionToken: session.session.token } : "skip"
   );
   const deleteChat = useMutation(api.functions.chat.deleteChat);
+  const pinChat = useMutation(api.functions.chat.pinChat);
+  const unpinChat = useMutation(api.functions.chat.unpinChat);
   const navigate = useNavigate();
   const params = useParams({ strict: false });
+
+  const pinned = (data ?? [])
+    .filter((chat) => !!chat.pinnedAt)
+    .sort((a, b) => (b.pinnedAt ?? "").localeCompare(a.pinnedAt ?? ""));
+  const unpinned = (data ?? []).filter((chat) => !chat.pinnedAt);
 
   return (
     <Sidebar>
@@ -50,11 +57,72 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {pinned.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <div className="p-1 text-xs font-medium text-muted-foreground">Pinned</div>
+              <SidebarMenu>
+                {pinned.map((chat) => (
+                  <SidebarMenuItem key={chat._id} className="group/item relative">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={"chatId" in params && params.chatId === chat._id}
+                      className="group-hover/item:bg-sidebar-accent"
+                    >
+                      <Link
+                        key={chat._id}
+                        to="/chat/$chatId"
+                        params={{ chatId: chat._id }}
+                      >
+                        <span className="block truncate max-w-full">
+                          {chat.title}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                    <div className="absolute right-1 top-1.5 z-10 flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
+                      <SidebarMenuAction
+                        showOnHover
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          await unpinChat({
+                            chatId: chat._id,
+                            sessionToken: session?.session.token ?? "",
+                          });
+                        }}
+                        className="static hover:text-blue-500 hover:cursor-pointer"
+                      >
+                        <PinOff className="size-4" />
+                      </SidebarMenuAction>
+                      <SidebarMenuAction
+                        showOnHover
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          await deleteChat({
+                            chatId: chat._id,
+                            sessionToken: session?.session.token ?? "",
+                          });
+                          if (params.chatId === chat._id) {
+                            navigate({ to: "/" });
+                          }
+                        }}
+                        className="static hover:text-destructive hover:cursor-pointer"
+                      >
+                        <X className="size-4" />
+                      </SidebarMenuAction>
+                    </div>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {data?.map((chat) => (
-                <SidebarMenuItem key={chat._id} className="group/item">
+              {unpinned.map((chat) => (
+                <SidebarMenuItem key={chat._id} className="group/item relative">
                   <SidebarMenuButton
                     asChild
                     isActive={"chatId" in params && params.chatId === chat._id}
@@ -70,23 +138,39 @@ export function AppSidebar() {
                       </span>
                     </Link>
                   </SidebarMenuButton>
-                  <SidebarMenuAction
-                    showOnHover
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      await deleteChat({
-                        chatId: chat._id,
-                        sessionToken: session?.session.token ?? "",
-                      });
-                      if (params.chatId === chat._id) {
-                        navigate({ to: "/" });
-                      }
-                    }}
-                    className="hover:text-destructive hover:cursor-pointer"
-                  >
-                    <X className="size-4" />
-                  </SidebarMenuAction>
+                  <div className="absolute right-1 top-1.5 z-10 flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
+                    <SidebarMenuAction
+                      showOnHover
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        await pinChat({
+                          chatId: chat._id,
+                          sessionToken: session?.session.token ?? "",
+                        });
+                      }}
+                      className="static hover:text-blue-500 hover:cursor-pointer"
+                    >
+                      <Pin className="size-4" />
+                    </SidebarMenuAction>
+                    <SidebarMenuAction
+                      showOnHover
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        await deleteChat({
+                          chatId: chat._id,
+                          sessionToken: session?.session.token ?? "",
+                        });
+                        if (params.chatId === chat._id) {
+                          navigate({ to: "/" });
+                        }
+                      }}
+                      className="static hover:text-destructive hover:cursor-pointer"
+                    >
+                      <X className="size-4" />
+                    </SidebarMenuAction>
+                  </div>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
