@@ -112,6 +112,13 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       return new Response("Failed to create AI message", { status: 500 });
     }
 
+    console.log(
+      "[Chat API] Streaming Chat ID: ",
+      chatId,
+      "Model ID: ",
+      modelId
+    );
+
     const result = streamText({
       model: openrouter.chat(modelId),
       system: getSystemPrompt(selectedModel, session.user.name),
