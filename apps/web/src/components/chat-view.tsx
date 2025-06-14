@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { models, getDefaultModel } from "~/lib/models";
+import { isConvexId } from "~/lib/db/utils";
 
 interface ChatInputProps {
   chatId?: string;
@@ -138,9 +139,7 @@ export function ChatView() {
   const updateChat = useMutation(api.functions.chat.updateChat);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
-    chatId
-      ? { chatId: chatId as Id<"chat">, sessionToken: session?.session.token }
-      : "skip"
+    isConvexId<"chat">(chatId) ? { chatId: chatId , sessionToken: session?.session.token } : "skip"
   );
 
   const { messages, status, append } = useChat({
