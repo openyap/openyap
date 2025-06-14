@@ -18,6 +18,7 @@ import { api } from "~/lib/db/server";
 import { Pin, PinOff, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useMutation } from "convex/react";
+import { Separator } from "~/components/ui/seperator";
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
@@ -57,6 +58,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        <Separator />
         {pinned.length > 0 && (
           <SidebarGroup>
             <SidebarGroupContent>
@@ -79,7 +81,7 @@ export function AppSidebar() {
                         </span>
                       </Link>
                     </SidebarMenuButton>
-                    <div className="absolute right-1 top-1.5 z-10 flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
+                    <div className="hidden absolute right-1 top-1.5 z-10 group-hover/item:flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
                       <SidebarMenuAction
                         showOnHover
                         onClick={async (e) => {
@@ -138,7 +140,7 @@ export function AppSidebar() {
                       </span>
                     </Link>
                   </SidebarMenuButton>
-                  <div className="absolute right-1 top-1.5 z-10 flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
+                  <div className="hidden absolute right-1 top-1.5 z-10 group-hover/item:flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
                     <SidebarMenuAction
                       showOnHover
                       onClick={async (e) => {
