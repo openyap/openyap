@@ -10,12 +10,22 @@ import { ArrowUpIcon } from "lucide-react";
 import { Message } from "~/components/message";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { models, getDefaultModel } from "~/lib/models";
 
 interface ChatInputProps {
   chatId?: string;
   sessionToken: string;
   disabled: boolean;
   addUserMessage: (message: string) => void;
+  selectedModelId: number;
+  onModelChange: (modelId: number) => void;
 }
 
 function ChatInput({
@@ -23,6 +33,8 @@ function ChatInput({
   sessionToken,
   disabled,
   addUserMessage,
+  selectedModelId,
+  onModelChange,
 }: ChatInputProps) {
   const navigate = useNavigate();
   const createChat = useMutation(api.functions.chat.createChat);
@@ -65,32 +77,51 @@ function ChatInput({
 
   return (
     <div className="sticky bottom-0 pb-4 z-10 bg-background">
-      <div className="flex gap-2 max-w-5xl mx-auto w-full h-10 px-4">
-        <Input
-          className="bg-background h-full"
-          placeholder="Ask anything"
-          value={input}
-          onChange={handleInputChange}
-          disabled={disabled}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-        />
-        <Button
-          type="button"
-          disabled={disabled || !input.trim()}
-          onClick={send}
-          className={`${disabled || (!input.trim() && "cursor-not-allowed")} h-full w-10`}
-        >
-          {disabled ? (
-            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <ArrowUpIcon className="w-4 h-4" />
-          )}
-        </Button>
+      <div className="flex flex-col gap-2 max-w-5xl mx-auto w-full px-4">
+        <div className="flex gap-2 h-12">
+          <Input
+            className="bg-background h-full"
+            placeholder="Ask anything"
+            value={input}
+            onChange={handleInputChange}
+            disabled={disabled}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+          />
+          <Button
+            type="button"
+            disabled={disabled || !input.trim()}
+            onClick={send}
+            className={`${disabled || (!input.trim() && "cursor-not-allowed")} h-full w-12`}
+          >
+            {disabled ? (
+              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <ArrowUpIcon className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+        <div className="flex justify-start">
+          <Select
+            value={selectedModelId.toString()}
+            onValueChange={(value) => onModelChange(Number.parseInt(value))}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select model" />
+            </SelectTrigger>
+            <SelectContent>
+              {models.map((model) => (
+                <SelectItem key={model.id} value={model.id.toString()}>
+                  {model.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );
@@ -100,16 +131,21 @@ export function ChatView() {
   const { data: session } = authClient.useSession();
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
+  const [selectedModelId, setSelectedModelId] = useState<number>(
+    getDefaultModel().id
+  );
 
   const updateChat = useMutation(api.functions.chat.updateChat);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
-    chatId ? { chatId: chatId as Id<"chat">, sessionToken: session?.session.token } : "skip"
+    chatId
+      ? { chatId: chatId as Id<"chat">, sessionToken: session?.session.token }
+      : "skip"
   );
 
   const { messages, status, append } = useChat({
     id: chatId ?? "skip",
-    body: { chatId },
+    body: { chatId, modelId: selectedModelId },
     initialMessages: (getChatMessages ?? []).map((m) => ({
       ...m,
       id: m._id,
@@ -192,6 +228,8 @@ export function ChatView() {
         sessionToken={session?.session.token ?? "skip"}
         disabled={status === "streaming"}
         addUserMessage={addUserMessage}
+        selectedModelId={selectedModelId}
+        onModelChange={setSelectedModelId}
       />
     </div>
   );
