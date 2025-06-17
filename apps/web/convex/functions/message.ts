@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 
-export const generateUserMessage = mutation({
+export const createUserMessage = mutation({
   args: { 
     content: v.string(), 
     chatId: v.id("chat"), 
@@ -30,6 +30,23 @@ export const generateUserMessage = mutation({
         content: args.content,
         version: 0,
       }],
+    });
+  },
+});
+
+export const updateUserMessage = mutation({
+  args: {
+    messageId: v.id("message"),
+    content: v.optional(v.string()),
+    status: v.optional(v.string()),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.runMutation(internal.functions.message.updateMessage, {
+      messageId: args.messageId,
+      content: args.content,
+      status: args.status,
+      error: args.error,
     });
   },
 });
