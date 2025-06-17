@@ -1,156 +1,99 @@
-import { useNavigate, useParams } from "@tanstack/react-router";
-import { useChat } from "@ai-sdk/react";
-import { isRedirect } from "@tanstack/react-router";
+import { useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
-import { useEffect, useState } from "react";
-import type { Id } from "convex/_generated/dataModel";
-import { ArrowUpIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import type { Doc, Id } from "convex/_generated/dataModel";
 import { Message } from "~/components/message";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import { models, getDefaultModel } from "~/lib/models";
+import { getDefaultModel } from "~/lib/models";
 import { isConvexId } from "~/lib/db/utils";
+import { ChatInput } from "~/components/chat/chat-input";
 
-interface ChatInputProps {
-  chatId?: string;
-  sessionToken: string;
-  disabled: boolean;
-  addUserMessage: (message: string) => void;
-  selectedModelId: number;
-  onModelChange: (modelId: number) => void;
-}
-
-function ChatInput({
-  chatId,
-  sessionToken,
-  disabled,
-  addUserMessage,
-  selectedModelId,
-  onModelChange,
-}: ChatInputProps) {
-  const navigate = useNavigate();
-  const createChat = useMutation(api.functions.chat.createChat);
-  const [input, setInput] = useState("");
-
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setInput(e.target.value);
-  }
-
-  async function send() {
-    const text = input.trim();
-    if (!text) return;
-
-    if (!chatId) {
-      try {
-        localStorage.setItem("firstMessage", text);
-
-        const newChatId = await createChat({
-          sessionToken,
-          title: "New Chat",
-          visibility: "private",
-        });
-
-        console.log("[ChatView] New Chat ID: ", newChatId);
-
-        await navigate({
-          to: "/chat/$chatId",
-          replace: true,
-          params: { chatId: newChatId },
-        });
-      } catch (err) {
-        if (!isRedirect(err)) throw err;
-      }
-      return;
-    }
-
-    addUserMessage(text);
-    setInput("");
-  }
-
-  return (
-    <div className="sticky bottom-0 pb-4 z-10 bg-background">
-      <div className="flex flex-col gap-2 max-w-5xl mx-auto w-full px-4">
-        <div className="flex gap-2 h-12">
-          <Input
-            className="bg-background h-full"
-            placeholder="Ask anything"
-            value={input}
-            onChange={handleInputChange}
-            disabled={disabled}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-          />
-          <Button
-            type="button"
-            disabled={disabled || !input.trim()}
-            onClick={send}
-            className={`${disabled || (!input.trim() && "cursor-not-allowed")} h-full w-12`}
-          >
-            {disabled ? (
-              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <ArrowUpIcon className="w-4 h-4" />
-            )}
-          </Button>
-        </div>
-        <div className="flex justify-start">
-          <Select
-            value={selectedModelId.toString()}
-            onValueChange={(value) => onModelChange(Number.parseInt(value))}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select model" />
-            </SelectTrigger>
-            <SelectContent>
-              {models.map((model) => (
-                <SelectItem key={model.id} value={model.id.toString()}>
-                  {model.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </div>
-  );
-}
+type ChatMessage = Doc<"message">;
+type StreamingMessage = Omit<ChatMessage, "_id" | "_creationTime" | "updatedAt">;
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
-  const [selectedModelId, setSelectedModelId] = useState<number>(
-    getDefaultModel().id
-  );
+
+  const [selectedModelId, setSelectedModelId] = useState<number>(getDefaultModel().id);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [streamingMessage, setStreamingMessage] = useState<StreamingMessage | null>(null);
+  const [status, setStatus] = useState<"streaming" | "idle">("idle");
 
   const updateChat = useMutation(api.functions.chat.updateChat);
+  const updateUserMessage = useMutation(api.functions.message.updateUserMessage);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
     isConvexId<"chat">(chatId) ? { chatId: chatId , sessionToken: session?.session.token } : "skip"
   );
 
-  const { messages, status, append } = useChat({
-    id: chatId ?? "skip",
-    body: { chatId, modelId: selectedModelId },
-    initialMessages: (getChatMessages ?? []).map((m) => ({
-      ...m,
-      id: m._id,
-      role: m.role as "user" | "data" | "system" | "assistant",
-    })),
-  });
+  useEffect(() => {
+    if (getChatMessages) {
+      setMessages(getChatMessages);
+    }
+  }, [getChatMessages]);
+
+  const append = useCallback(async ({ role, content }: { role: "user" | "data" | "system" | "assistant", content: string }) => {
+    if (!isConvexId<"chat">(chatId)) {
+      return;
+    }
+
+    setStatus("streaming");
+    setStreamingMessage({ 
+      chatId,
+      role, 
+      content, 
+      status: "streaming" 
+    });
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        body: JSON.stringify({ 
+          chatId, 
+          modelId: selectedModelId, 
+          messages: [...messages, { role, content }] 
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error("Failed to append message");
+      }
+
+      const reader = response.body.getReader();
+      let aiMessageContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = new TextDecoder().decode(value);
+        aiMessageContent += chunk;
+        setStreamingMessage({
+          chatId,
+          role: "assistant",
+          content: aiMessageContent,
+          status: "generating",
+        });
+      }
+
+      setStreamingMessage({
+        chatId,
+        role: "assistant",
+        content: aiMessageContent,
+        status: "finished",
+      });
+    } catch (error) {
+      console.error(error);
+      updateUserMessage({
+        messageId: messages[messages.length]._id,
+        error: "Failed to generate message",
+      });
+    } finally {
+      setStatus("idle");
+    }
+  }, [chatId, selectedModelId, messages, updateUserMessage]);
 
   useEffect(() => {
     async function sendFirstMessage() {
@@ -172,7 +115,7 @@ export function ChatView() {
       }
     }
     sendFirstMessage();
-  }, [chatId, append, session?.session.token, updateChat]);
+  }, [chatId, session?.session.token, updateChat, append]);
 
   function addUserMessage(message: string) {
     append({ role: "user", content: message });
@@ -189,24 +132,41 @@ export function ChatView() {
               <h1 className="text-2xl">Where should we begin?</h1>
             </div>
           ) : (
-            messages.map((m) => (
-              <div
-                key={m.id}
-                className={`flex ${
-                  m.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {m.role === "user" ? (
-                  <div className="max-w-[70%] rounded-lg px-4 py-2 border bg-sidebar-accent text-sidebar-accent-foreground border-border ml-auto">
-                    <Message content={m.content} />
-                  </div>
-                ) : (
-                  <div className="text-foreground max-w-[70%]">
-                    <Message content={m.content} />
-                  </div>
-                )}
+            messages.map((m) => { 
+              if (m.role === "assistant" && m.status === "generating") {
+                return null;
+              }
+
+              return (
+                <div
+                  key={m._id}
+                  className={`flex ${
+                    m.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {m.role === "user" ? (
+                    <div className="max-w-[70%] rounded-lg px-4 py-2 border bg-sidebar-accent text-sidebar-accent-foreground border-border ml-auto">
+                      <Message content={m.content} />
+                      {m.error && (
+                        <div className="text-red-500 text-xs">
+                          {m.error}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-foreground max-w-[70%]">
+                      <Message content={m.content} />
+                    </div>
+                  )}
+                </div>
+              );
+          }))}
+          {status === "streaming" && streamingMessage && (
+            <div className="flex justify-start">
+              <div className="text-foreground max-w-[70%]">
+                <Message content={streamingMessage.content} />
               </div>
-            ))
+            </div>
           )}
           {status === "streaming" && (
             <div className="flex justify-start">

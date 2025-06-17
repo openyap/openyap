@@ -85,7 +85,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
     const lastMessage = messages[messages.length - 1];
     if (lastMessage.role === "user") {
-      await convexServer.mutation(api.functions.message.generateUserMessage, {
+      await convexServer.mutation(api.functions.message.createUserMessage, {
         chatId,
         content: lastMessage.content,
         sessionToken,
@@ -101,17 +101,6 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
     const { provider, modelId } = selectedModel;
 
-    const messageId = await createAiMessage({
-      chatId,
-      sessionToken,
-      provider,
-      model: selectedModel.name,
-    });
-
-    if (!messageId) {
-      return new Response("Failed to create AI message", { status: 500 });
-    }
-
     console.log(
       "[Chat API] Streaming Chat ID: ",
       chatId,
@@ -119,49 +108,67 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       modelId
     );
 
-    const result = streamText({
-      model: openrouter.chat(modelId),
-      system: getSystemPrompt(selectedModel, session.user.name),
-      messages,
-    });
+    try {
+      const result = streamText({
+        model: openrouter.chat(modelId),
+        system: getSystemPrompt(selectedModel, session.user.name),
+        messages,
+      });
 
-    (async () => {
-      let buffer = "";
-      let lastUpdate = Date.now();
-      const UPDATE_INTERVAL_MS = 500;
+      const messageId = await createAiMessage({
+        chatId,
+        sessionToken,
+        provider,
+        model: selectedModel.name,
+      });
 
-      try {
-        for await (const chunk of result.textStream) {
-          buffer += chunk;
-          if (Date.now() - lastUpdate > UPDATE_INTERVAL_MS) {
-            await updateAiMessage({
-              messageId,
-              content: buffer,
-              status: "generating",
-              sessionToken,
-            });
-            lastUpdate = Date.now();
-          }
-        }
-        await updateAiMessage({
-          messageId,
-          content: buffer,
-          status: "finished",
-          sessionToken,
-          model: selectedModel.name,
-          provider,
-          historyEntry: {
-            version: 1,
-            content: buffer,
-            provider,
-            model: selectedModel.name,
-          },
-        });
-      } catch (error) {
-        console.error("Error updating AI message in background:", error);
+      if (!messageId) {
+        return new Response("Failed to create AI message", { status: 500 });
       }
-    })();
 
-    return result.toDataStreamResponse();
+      (async () => {
+        let buffer = "";
+        let lastUpdate = Date.now();
+        const UPDATE_INTERVAL_MS = 500;
+
+        try {
+          for await (const chunk of result.textStream) {
+            buffer += chunk;
+            if (Date.now() - lastUpdate > UPDATE_INTERVAL_MS) {
+              await updateAiMessage({
+                messageId,
+                content: buffer,
+                status: "generating",
+                sessionToken,
+              });
+              lastUpdate = Date.now();
+            }
+          }
+
+          // Add usage
+          await updateAiMessage({
+            messageId,
+            content: buffer,
+            status: "finished",
+            sessionToken,
+            model: selectedModel.name,
+            provider,
+            historyEntry: {
+              version: 1,
+              content: buffer,
+              provider,
+              model: selectedModel.name,
+            },
+          });
+        } catch (error) {
+          console.error("Error updating AI message in background:", error);
+        }
+      })();
+
+      return result.toTextStreamResponse();
+    } catch (error) {
+      console.error("Error streaming chat:", error);
+      return new Response("Error streaming chat", { status: 500 });
+    }
   },
 });
