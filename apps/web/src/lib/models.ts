@@ -60,20 +60,12 @@ export const isValidModelId = (id: number): boolean =>
 
 export const models: readonly Model[] = [
   {
-    id: 0,
-    name: "Gemini 2.5 Flash Lite",
-    modelId: "google/gemini-2.5-flash-lite-preview-06-17",
-    provider: "openrouter",
-    premium: false,
-    isDefault: true,
-  },
-  {
     id: 1,
     name: "Gemini 2.0 Flash Lite",
     modelId: "google/gemini-2.0-flash-lite-001",
     provider: "openrouter",
     premium: false,
-    isDefault: false,
+    isDefault: true,
   },
   {
     id: 2,
@@ -84,27 +76,35 @@ export const models: readonly Model[] = [
   },
   {
     id: 3,
+    name: "Gemini 2.5 Flash Lite",
+    modelId: "google/gemini-2.5-flash-lite-preview-06-17",
+    provider: "openrouter",
+    premium: false,
+    isDefault: false,
+  },
+  {
+    id: 4,
     name: "Gemini 2.5 Flash",
     modelId: "google/gemini-2.5-flash-preview-05-20",
     provider: "openrouter",
     premium: false,
   },
   {
-    id: 4,
+    id: 5,
     name: "Gemini 2.5 Pro",
     modelId: "google/gemini-2.5-pro-preview",
     provider: "openrouter",
     premium: false,
   },
   {
-    id: 5,
+    id: 6,
     name: "Claude Sonnet 4",
     modelId: "anthropic/claude-sonnet-4",
     provider: "openrouter",
     premium: true,
   },
   {
-    id: 6,
+    id: 7,
     name: "GPT-4.1",
     modelId: "openai/gpt-4.1",
     provider: "openrouter",
