@@ -60,12 +60,20 @@ export const isValidModelId = (id: number): boolean =>
 
 export const models: readonly Model[] = [
   {
+    id: 0,
+    name: "Gemini 2.5 Flash Lite",
+    modelId: "google/gemini-2.5-flash-lite-preview-06-17",
+    provider: "openrouter",
+    premium: false,
+    isDefault: true,
+  },
+  {
     id: 1,
     name: "Gemini 2.0 Flash Lite",
     modelId: "google/gemini-2.0-flash-lite-001",
     provider: "openrouter",
     premium: false,
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: 2,
