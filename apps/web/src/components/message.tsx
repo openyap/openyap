@@ -1,12 +1,12 @@
 import { marked } from "marked";
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { TokenBlock } from "~/components/blocks";
 
 interface MessageProps {
-  content: string;
+  readonly content: string;
 }
 
-export function Message({ content }: MessageProps) {
+const MessageComponent = ({ content }: MessageProps) => {
   const tokens = useMemo(() => marked.lexer(content), [content]);
 
   return (
@@ -16,4 +16,6 @@ export function Message({ content }: MessageProps) {
       })}
     </div>
   );
-}
+};
+
+export const Message = memo(MessageComponent);
