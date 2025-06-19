@@ -23,7 +23,13 @@ export function createRouter() {
       queries: {
         queryKeyHashFn: convexQueryClient.hashFn(),
         queryFn: convexQueryClient.queryFn(),
+        staleTime: 1000 * 60 * 60 * 24,
         gcTime: 1000 * 60 * 60 * 24,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: true,
+        retry: 3,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       },
     },
   });
@@ -49,8 +55,12 @@ export function createRouter() {
             persistOptions={{
               persister,
               dehydrateOptions: {
-                shouldDehydrateQuery: (q) => q.queryKey[0] === "chats:listMeta",
+                shouldDehydrateQuery: (q) => {
+                  const key = q.queryKey[0];
+                  return key === "persisted";
+                },
               },
+              buster: "v1",
             }}
           >
             <ConvexProvider client={convexQueryClient.convexClient}>
