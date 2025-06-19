@@ -1,13 +1,56 @@
 import { isRedirect, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 import { api } from "~/lib/db/server";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { ArrowUpIcon } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { models } from "~/lib/models";
 import { inputStore } from "~/components/chat/stores";
+
+interface ModelSelectorProps {
+  selectedModelId: number;
+  onModelChange: (modelId: number) => void;
+}
+
+const ModelSelector = memo(function ModelSelector({
+  selectedModelId,
+  onModelChange,
+}: ModelSelectorProps) {
+  const handleModelChange = useCallback(
+    (value: string) => {
+      onModelChange(Number.parseInt(value));
+    },
+    [onModelChange]
+  );
+
+  return (
+    <div className="flex justify-start">
+      <Select
+        value={selectedModelId.toString()}
+        onValueChange={handleModelChange}
+      >
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="Select model" />
+        </SelectTrigger>
+        <SelectContent>
+          {models.map((model) => (
+            <SelectItem key={model.id} value={model.id.toString()}>
+              {model.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+});
 
 interface ChatInputProps {
   chatId?: string;
@@ -18,7 +61,7 @@ interface ChatInputProps {
   addUserMessage: (message: string) => void;
 }
 
-export function ChatInput({
+const ChatInput = memo(function ChatInput({
   chatId,
   sessionToken,
   disabled,
@@ -30,44 +73,66 @@ export function ChatInput({
   const createChat = useMutation(api.functions.chat.createChat);
   const [input, setInput] = useState(inputStore.getState().input);
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setInput(e.target.value);
-    inputStore.getState().setInput(e.target.value);
-  }
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInput(e.target.value);
+      inputStore.getState().setInput(e.target.value);
+    },
+    []
+  );
 
-  async function send(input: string) {
-    const text = input.trim();
-    if (!text) return;
+  const send = useCallback(
+    async (input: string) => {
+      const text = input.trim();
+      if (!text) return;
 
-    if (!chatId) {
-      try {
-        localStorage.setItem("firstMessage", text);
+      if (!chatId) {
+        try {
+          localStorage.setItem("firstMessage", text);
 
-        const newChatId = await createChat({
-          sessionToken,
-          title: "New Chat",
-          visibility: "private",
-        });
+          const newChatId = await createChat({
+            sessionToken,
+            title: "New Chat",
+            visibility: "private",
+          });
 
-        console.log("[ChatView] New Chat ID: ", newChatId);
+          console.log("[ChatView] New Chat ID: ", newChatId);
 
-        await navigate({
-          to: "/chat/$chatId",
-          replace: true,
-          params: { chatId: newChatId },
-        });
-      } catch (err) {
-        if (!isRedirect(err)) throw err;
+          await navigate({
+            to: "/chat/$chatId",
+            replace: true,
+            params: { chatId: newChatId },
+          });
+        } catch (err) {
+          if (!isRedirect(err)) throw err;
+        }
+        return;
       }
-      return;
-    }
 
-    addUserMessage(text);
-  }
+      addUserMessage(text);
+    },
+    [chatId, sessionToken, createChat, navigate, addUserMessage]
+  );
 
-  function isDisabled() {
+  const isDisabled = useCallback(() => {
     return disabled || !inputStore.getState().input.trim();
-  }
+  }, [disabled]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        send(input);
+        setInput("");
+        inputStore.getState().setInput("");
+      }
+    },
+    [input, send]
+  );
+
+  const handleSendClick = useCallback(() => {
+    send(inputStore.getState().input);
+  }, [send]);
 
   return (
     <div className="sticky bottom-0 pb-4 z-10 bg-background">
@@ -79,19 +144,12 @@ export function ChatInput({
             value={input}
             onChange={handleInputChange}
             disabled={disabled}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send(input);
-                setInput("");
-                inputStore.getState().setInput("");
-              }
-            }}
+            onKeyDown={handleKeyDown}
           />
           <Button
             type="button"
             disabled={isDisabled()}
-            onClick={() => send(inputStore.getState().input)}
+            onClick={handleSendClick}
             className={`${isDisabled() && "cursor-not-allowed"} h-full w-12`}
           >
             {disabled ? (
@@ -101,24 +159,13 @@ export function ChatInput({
             )}
           </Button>
         </div>
-        <div className="flex justify-start">
-          <Select
-            value={selectedModelId.toString()}
-            onValueChange={(value) => onModelChange(Number.parseInt(value))}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select model" />
-            </SelectTrigger>
-            <SelectContent>
-              {models.map((model) => (
-                <SelectItem key={model.id} value={model.id.toString()}>
-                  {model.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ModelSelector
+          selectedModelId={selectedModelId}
+          onModelChange={onModelChange}
+        />
       </div>
     </div>
   );
-}
+});
+
+export { ChatInput };
