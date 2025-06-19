@@ -1,9 +1,10 @@
 import type { Token, Tokens } from "marked";
-import { useState, memo, useMemo } from "react";
+import { useState, memo, useMemo, useEffect, useTransition } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { cn } from "~/lib/utils";
 import { Icon } from "@iconify/react";
+import { debounce } from "lodash";
 
 function randomKey() {
   return crypto.randomUUID();
@@ -136,9 +137,38 @@ function TextBlock({ token }: { token: Tokens.Text }) {
 
 function CodeBlock({ token }: { token: Tokens.Code }) {
   const [isChecked, setIsChecked] = useState<boolean>(false);
+  const [shouldHighlight, setShouldHighlight] = useState<boolean>(false);
+  const [pendingHighlight, startTransition] = useTransition();
   const highlightedLang = token.lang ?? "text";
-  const codeElement = useMemo(
-    () => (
+
+  const triggerHighlight = useMemo(
+    () =>
+      debounce(() => {
+        startTransition(() => {
+          setShouldHighlight(true);
+        });
+      }, 1000),
+    []
+  );
+
+  // biome-ignore lint: exhaustive-deps — re-run only when the incoming text chunk changes
+  useEffect(() => {
+    setShouldHighlight(false);
+    triggerHighlight();
+    return () => {
+      triggerHighlight.cancel();
+    };
+  }, [token.text, triggerHighlight]);
+
+  const codeElement = useMemo(() => {
+    if (!shouldHighlight || pendingHighlight) {
+      return (
+        <code className="block whitespace-pre-wrap text-gray-800 bg-gray-100 rounded px-4 py-2 font-mono text-sm">
+          {token.text}
+        </code>
+      );
+    }
+    return (
       <SyntaxHighlighter
         language={highlightedLang}
         style={oneLight}
@@ -146,9 +176,8 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
       >
         {token.text}
       </SyntaxHighlighter>
-    ),
-    [highlightedLang, token.text]
-  );
+    );
+  }, [shouldHighlight, pendingHighlight, highlightedLang, token.text]);
 
   async function copyText() {
     setIsChecked(await copyToClipboard(token.text));
