@@ -1,5 +1,5 @@
 import type { Token, Tokens } from "marked";
-import { useState } from "react";
+import { useState, memo, useMemo } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { cn } from "~/lib/utils";
@@ -22,8 +22,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
 // TODO: Add more languages, or make a library for this
 function langIcon(lang: string) {
   if (lang === "javascript") return "vscode-icons:file-type-js";
-  if (lang === "typescript")
-    return "vscode-icons:file-type-typescript";
+  if (lang === "typescript") return "vscode-icons:file-type-typescript";
   if (lang === "rust") return "vscode-icons:file-type-rust";
   if (lang === "python") return "vscode-icons:file-type-python";
   if (lang === "cpp") return "vscode-icons:file-type-cpp";
@@ -35,8 +34,7 @@ function langIcon(lang: string) {
   if (lang === "java") return "vscode-icons:file-type-java";
   if (lang === "go") return "vscode-icons:file-type-go";
   if (lang === "csharp") return "vscode-icons:file-type-csharp";
-  if (lang === "jsx" || lang === "tsx")
-    return "vscode-icons:file-type-reactjs";
+  if (lang === "jsx" || lang === "tsx") return "vscode-icons:file-type-reactjs";
   if (lang === "sql") return "vscode-icons:file-type-sql";
   if (lang === "bash") return "vscode-icons:file-type-shell";
   if (lang === "html") return "vscode-icons:file-type-html";
@@ -54,13 +52,19 @@ type TokenBlockProps = {
 export function TokenBlock({ token }: TokenBlockProps) {
   switch (token.type) {
     case "blockquote":
-      return <BlockquoteBlock key={randomKey()} token={token as Tokens.Blockquote} />;
+      return (
+        <BlockquoteBlock key={randomKey()} token={token as Tokens.Blockquote} />
+      );
     case "br":
       return <BrBlock key={randomKey()} token={token as Tokens.Br} />;
     case "code":
-      return <CodeBlock key={randomKey()} token={token as Tokens.Code} />;
+      return (
+        <MemoizedCodeBlock key={randomKey()} token={token as Tokens.Code} />
+      );
     case "codespan":
-      return <CodeSpanBlock key={randomKey()} token={token as Tokens.Codespan} />;
+      return (
+        <CodeSpanBlock key={randomKey()} token={token as Tokens.Codespan} />
+      );
     case "del":
       return <DelBlock key={randomKey()} token={token as Tokens.Del} />;
     case "em":
@@ -78,7 +82,9 @@ export function TokenBlock({ token }: TokenBlockProps) {
     case "list":
       return <ListBlock key={randomKey()} token={token as Tokens.List} />;
     case "paragraph":
-      return <ParagraphBlock key={randomKey()} token={token as Tokens.Paragraph} />;
+      return (
+        <ParagraphBlock key={randomKey()} token={token as Tokens.Paragraph} />
+      );
     case "strong":
       return <StrongBlock key={randomKey()} token={token as Tokens.Strong} />;
     case "table":
@@ -131,10 +137,24 @@ function TextBlock({ token }: { token: Tokens.Text }) {
 function CodeBlock({ token }: { token: Tokens.Code }) {
   const [isChecked, setIsChecked] = useState<boolean>(false);
   const highlightedLang = token.lang ?? "text";
+  const codeElement = useMemo(
+    () => (
+      <SyntaxHighlighter
+        language={highlightedLang}
+        style={oneLight}
+        customStyle={{ color: "#111827", fontSize: "14px" }}
+      >
+        {token.text}
+      </SyntaxHighlighter>
+    ),
+    [highlightedLang, token.text]
+  );
+
   async function copyText() {
     setIsChecked(await copyToClipboard(token.text));
     setTimeout(() => setIsChecked(false), 3000);
   }
+
   return (
     <div
       key={randomKey()}
@@ -165,18 +185,12 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
           />
         </button>
       </div>
-      <pre className="*:!m-0 bg-white">
-        <SyntaxHighlighter
-          language={highlightedLang}
-          style={oneLight}
-          customStyle={{ color: "#111827", fontSize: "14px" }}
-        >
-          {token.text}
-        </SyntaxHighlighter>
-      </pre>
+      <pre className="*:!m-0 bg-white">{codeElement}</pre>
     </div>
   );
 }
+
+const MemoizedCodeBlock = memo(CodeBlock);
 
 function CodeSpanBlock({ token }: { token: Tokens.Codespan }) {
   async function copyText() {
@@ -210,10 +224,18 @@ function ParagraphBlock({ token }: { token: Tokens.Paragraph }) {
   );
 }
 
-function ListItemBlock({ token, number }: { token: Tokens.ListItem; number?: number }) {
+function ListItemBlock({
+  token,
+  number,
+}: {
+  token: Tokens.ListItem;
+  number?: number;
+}) {
   return (
     <li key={randomKey()}>
-      {number && <span className="pr-1 text-gray-500 text-base">{number}.</span>}
+      {number && (
+        <span className="pr-1 text-gray-500 text-base">{number}.</span>
+      )}
       {(token.tokens ?? []).map((t, i) => (
         <TokenBlock key={randomKey()} token={t} />
       ))}
@@ -226,9 +248,14 @@ function ListBlock({ token }: { token: Tokens.List }) {
     return (
       <ol key={randomKey()}>
         {token.items.map((item: Tokens.ListItem, position: number) => {
-          const start = typeof token.start === "number" && !Number.isNaN(token.start) ? token.start : 1;
+          const start =
+            typeof token.start === "number" && !Number.isNaN(token.start)
+              ? token.start
+              : 1;
           const number = position === 0 ? start : position + 1;
-          return <ListItemBlock key={randomKey()} token={item} number={number} />;
+          return (
+            <ListItemBlock key={randomKey()} token={item} number={number} />
+          );
         })}
       </ol>
     );
@@ -247,32 +274,128 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
   if (!token.tokens) {
     switch (depth) {
       case 1:
-        return <h1 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-3xl font-bold">{token.text}</h1>;
+        return (
+          <h1
+            key={randomKey()}
+            className="px-3 py-1 text-gray-900 shadow text-3xl font-bold"
+          >
+            {token.text}
+          </h1>
+        );
       case 2:
-        return <h2 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-2xl font-semibold">{token.text}</h2>;
+        return (
+          <h2
+            key={randomKey()}
+            className="px-3 py-1 text-gray-900 shadow text-2xl font-semibold"
+          >
+            {token.text}
+          </h2>
+        );
       case 3:
-        return <h3 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-xl font-semibold">{token.text}</h3>;
+        return (
+          <h3
+            key={randomKey()}
+            className="px-3 py-1 text-gray-900 shadow text-xl font-semibold"
+          >
+            {token.text}
+          </h3>
+        );
       case 4:
-        return <h4 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-lg font-medium">{token.text}</h4>;
+        return (
+          <h4
+            key={randomKey()}
+            className="px-3 py-1 text-gray-900 shadow text-lg font-medium"
+          >
+            {token.text}
+          </h4>
+        );
       case 5:
-        return <h5 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-base font-medium">{token.text}</h5>;
+        return (
+          <h5
+            key={randomKey()}
+            className="px-3 py-1 text-gray-900 shadow text-base font-medium"
+          >
+            {token.text}
+          </h5>
+        );
       case 6:
-        return <h6 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-sm font-medium">{token.text}</h6>;
+        return (
+          <h6
+            key={randomKey()}
+            className="px-3 py-1 text-gray-900 shadow text-sm font-medium"
+          >
+            {token.text}
+          </h6>
+        );
     }
   }
   switch (depth) {
     case 1:
-      return <h1 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-3xl font-bold">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h1>;
+      return (
+        <h1
+          key={randomKey()}
+          className="px-3 py-1 text-gray-900 shadow text-3xl font-bold"
+        >
+          {token.tokens.map((t, i) => (
+            <TokenBlock key={randomKey()} token={t} />
+          ))}
+        </h1>
+      );
     case 2:
-      return <h2 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-2xl font-semibold">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h2>;
+      return (
+        <h2
+          key={randomKey()}
+          className="px-3 py-1 text-gray-900 shadow text-2xl font-semibold"
+        >
+          {token.tokens.map((t, i) => (
+            <TokenBlock key={randomKey()} token={t} />
+          ))}
+        </h2>
+      );
     case 3:
-      return <h3 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-xl font-semibold">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h3>;
+      return (
+        <h3
+          key={randomKey()}
+          className="px-3 py-1 text-gray-900 shadow text-xl font-semibold"
+        >
+          {token.tokens.map((t, i) => (
+            <TokenBlock key={randomKey()} token={t} />
+          ))}
+        </h3>
+      );
     case 4:
-      return <h4 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-lg font-medium">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h4>;
+      return (
+        <h4
+          key={randomKey()}
+          className="px-3 py-1 text-gray-900 shadow text-lg font-medium"
+        >
+          {token.tokens.map((t, i) => (
+            <TokenBlock key={randomKey()} token={t} />
+          ))}
+        </h4>
+      );
     case 5:
-      return <h5 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-base font-medium">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h5>;
+      return (
+        <h5
+          key={randomKey()}
+          className="px-3 py-1 text-gray-900 shadow text-base font-medium"
+        >
+          {token.tokens.map((t, i) => (
+            <TokenBlock key={randomKey()} token={t} />
+          ))}
+        </h5>
+      );
     case 6:
-      return <h6 key={randomKey()} className="px-3 py-1 text-gray-900 shadow text-sm font-medium">{token.tokens.map((t, i) => (<TokenBlock key={randomKey()} token={t} />))}</h6>;
+      return (
+        <h6
+          key={randomKey()}
+          className="px-3 py-1 text-gray-900 shadow text-sm font-medium"
+        >
+          {token.tokens.map((t, i) => (
+            <TokenBlock key={randomKey()} token={t} />
+          ))}
+        </h6>
+      );
   }
 }
 
