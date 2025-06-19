@@ -19,13 +19,11 @@ import { Pin, PinOff, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useMutation } from "convex/react";
 import { Separator } from "~/components/ui/seperator";
+import { useChatsList } from "~/hooks/useChatsList";
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
-  const data = useQuery(
-    api.functions.chat.getUserChats,
-    session ? { sessionToken: session.session.token } : "skip"
-  );
+  const { data } = useChatsList();
   const deleteChat = useMutation(api.functions.chat.deleteChat);
   const pinChat = useMutation(api.functions.chat.pinChat);
   const unpinChat = useMutation(api.functions.chat.unpinChat);
@@ -62,13 +60,20 @@ export function AppSidebar() {
         {pinned.length > 0 && (
           <SidebarGroup>
             <SidebarGroupContent>
-              <div className="p-1 text-xs font-medium text-muted-foreground">Pinned</div>
+              <div className="p-1 text-xs font-medium text-muted-foreground">
+                Pinned
+              </div>
               <SidebarMenu>
                 {pinned.map((chat) => (
-                  <SidebarMenuItem key={chat._id} className="group/item relative">
+                  <SidebarMenuItem
+                    key={chat._id}
+                    className="group/item relative"
+                  >
                     <SidebarMenuButton
                       asChild
-                      isActive={"chatId" in params && params.chatId === chat._id}
+                      isActive={
+                        "chatId" in params && params.chatId === chat._id
+                      }
                       className="group-hover/item:bg-sidebar-accent"
                     >
                       <Link
