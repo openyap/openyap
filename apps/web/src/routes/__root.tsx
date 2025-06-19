@@ -5,6 +5,8 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from "@tanstack/react-router";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -68,6 +70,8 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
           <SidebarInset>{children}</SidebarInset>
         </SidebarProvider>
         <Scripts />
+        <ReactQueryDevtools initialIsOpen={false} />
+        <TanStackRouterDevtools initialIsOpen={false} />
       </body>
     </html>
   );
