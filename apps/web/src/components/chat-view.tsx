@@ -10,23 +10,33 @@ import { isConvexId } from "~/lib/db/utils";
 import { ChatInput } from "~/components/chat/chat-input";
 
 type ChatMessage = Doc<"message">;
-type StreamingMessage = Omit<ChatMessage, "_id" | "_creationTime" | "updatedAt">;
+type StreamingMessage = Omit<
+  ChatMessage,
+  "_id" | "_creationTime" | "updatedAt"
+>;
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
 
-  const [selectedModelId, setSelectedModelId] = useState<number>(getDefaultModel().id);
+  const [selectedModelId, setSelectedModelId] = useState<number>(
+    getDefaultModel().id
+  );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [streamingMessage, setStreamingMessage] = useState<StreamingMessage | null>(null);
+  const [streamingMessage, setStreamingMessage] =
+    useState<StreamingMessage | null>(null);
   const [status, setStatus] = useState<"streaming" | "idle">("idle");
 
   const updateChat = useMutation(api.functions.chat.updateChat);
-  const updateUserMessage = useMutation(api.functions.message.updateUserMessage);
+  const updateUserMessage = useMutation(
+    api.functions.message.updateUserMessage
+  );
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
-    isConvexId<"chat">(chatId) ? { chatId: chatId , sessionToken: session?.session.token } : "skip"
+    isConvexId<"chat">(chatId)
+      ? { chatId: chatId, sessionToken: session?.session.token }
+      : "skip"
   );
 
   useEffect(() => {
@@ -35,65 +45,74 @@ export function ChatView() {
     }
   }, [getChatMessages]);
 
-  const append = useCallback(async ({ role, content }: { role: "user" | "data" | "system" | "assistant", content: string }) => {
-    if (!isConvexId<"chat">(chatId)) {
-      return;
-    }
-
-    setStatus("streaming");
-    setStreamingMessage({ 
-      chatId,
-      role, 
-      content, 
-      status: "streaming" 
-    });
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        body: JSON.stringify({ 
-          chatId, 
-          modelId: selectedModelId, 
-          messages: [...messages, { role, content }] 
-        }),
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error("Failed to append message");
+  const append = useCallback(
+    async ({
+      role,
+      content,
+    }: {
+      role: "user" | "data" | "system" | "assistant";
+      content: string;
+    }) => {
+      if (!isConvexId<"chat">(chatId)) {
+        return;
       }
 
-      const reader = response.body.getReader();
-      let aiMessageContent = "";
+      setStatus("streaming");
+      setStreamingMessage({
+        chatId,
+        role,
+        content,
+        status: "streaming",
+      });
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = new TextDecoder().decode(value);
-        aiMessageContent += chunk;
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          body: JSON.stringify({
+            chatId,
+            modelId: selectedModelId,
+            messages: [...messages, { role, content }],
+          }),
+        });
+
+        if (!response.ok || !response.body) {
+          throw new Error("Failed to append message");
+        }
+
+        const reader = response.body.getReader();
+        let aiMessageContent = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = new TextDecoder().decode(value);
+          aiMessageContent += chunk;
+          setStreamingMessage({
+            chatId,
+            role: "assistant",
+            content: aiMessageContent,
+            status: "generating",
+          });
+        }
+
         setStreamingMessage({
           chatId,
           role: "assistant",
           content: aiMessageContent,
-          status: "generating",
+          status: "finished",
         });
+      } catch (error) {
+        console.error(error);
+        updateUserMessage({
+          messageId: messages[messages.length]._id,
+          error: "Failed to generate message",
+        });
+      } finally {
+        setStatus("idle");
       }
-
-      setStreamingMessage({
-        chatId,
-        role: "assistant",
-        content: aiMessageContent,
-        status: "finished",
-      });
-    } catch (error) {
-      console.error(error);
-      updateUserMessage({
-        messageId: messages[messages.length]._id,
-        error: "Failed to generate message",
-      });
-    } finally {
-      setStatus("idle");
-    }
-  }, [chatId, selectedModelId, messages, updateUserMessage]);
+    },
+    [chatId, selectedModelId, messages, updateUserMessage]
+  );
 
   useEffect(() => {
     async function sendFirstMessage() {
@@ -117,9 +136,12 @@ export function ChatView() {
     sendFirstMessage();
   }, [chatId, session?.session.token, updateChat, append]);
 
-  function addUserMessage(message: string) {
-    append({ role: "user", content: message });
-  }
+  const addUserMessage = useCallback(
+    (message: string) => {
+      append({ role: "user", content: message });
+    },
+    [append]
+  );
 
   const isLoading = chatId && getChatMessages === undefined;
 
@@ -132,7 +154,7 @@ export function ChatView() {
               <h1 className="text-2xl">Where should we begin?</h1>
             </div>
           ) : (
-            messages.map((m) => { 
+            messages.map((m) => {
               if (m.role === "assistant" && m.status === "generating") {
                 return null;
               }
@@ -148,9 +170,7 @@ export function ChatView() {
                     <div className="max-w-[70%] rounded-lg px-4 py-2 border bg-sidebar-accent text-sidebar-accent-foreground border-border ml-auto">
                       <Message content={m.content} />
                       {m.error && (
-                        <div className="text-red-500 text-xs">
-                          {m.error}
-                        </div>
+                        <div className="text-red-500 text-xs">{m.error}</div>
                       )}
                     </div>
                   ) : (
@@ -160,7 +180,8 @@ export function ChatView() {
                   )}
                 </div>
               );
-          }))}
+            })
+          )}
           {status === "streaming" && streamingMessage && (
             <div className="flex justify-start">
               <div className="text-foreground max-w-[70%]">
