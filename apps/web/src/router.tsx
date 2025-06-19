@@ -3,6 +3,11 @@ import { ConvexProvider } from "convex/react";
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { routerWithQueryClient } from "@tanstack/react-router-with-query";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import {
+  persistQueryClient,
+  PersistQueryClientProvider,
+} from "@tanstack/react-query-persist-client";
 
 import { routeTree } from "./routeTree.gen";
 import { env } from "~/env";
@@ -18,10 +23,15 @@ export function createRouter() {
       queries: {
         queryKeyHashFn: convexQueryClient.hashFn(),
         queryFn: convexQueryClient.queryFn(),
+        gcTime: 1000 * 60 * 60 * 24,
       },
     },
   });
   convexQueryClient.connect(queryClient);
+
+  const persister = createSyncStoragePersister({
+    storage: typeof window !== "undefined" ? window.localStorage : undefined,
+  });
 
   return routerWithQueryClient(
     createTanStackRouter({
@@ -34,13 +44,23 @@ export function createRouter() {
       scrollRestoration: true,
       Wrap: (props) => {
         return (
-          <ConvexProvider client={convexQueryClient.convexClient}>
-            {props.children}
-          </ConvexProvider>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{
+              persister,
+              dehydrateOptions: {
+                shouldDehydrateQuery: (q) => q.queryKey[0] === "chats:listMeta",
+              },
+            }}
+          >
+            <ConvexProvider client={convexQueryClient.convexClient}>
+              {props.children}
+            </ConvexProvider>
+          </PersistQueryClientProvider>
         );
       },
     }),
-    queryClient,
+    queryClient
   );
 }
 
