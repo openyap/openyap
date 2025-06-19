@@ -54,6 +54,7 @@ export function createRouter() {
             client={queryClient}
             persistOptions={{
               persister,
+              maxAge: 1000 * 60 * 60 * 24,
               dehydrateOptions: {
                 shouldDehydrateQuery: (q) => {
                   const key = q.queryKey[0];
