@@ -132,6 +132,8 @@ const ChatInput = memo(function ChatInput({
 
   const handleSendClick = useCallback(() => {
     send(inputStore.getState().input);
+    setInput("");
+    inputStore.getState().setInput("");
   }, [send]);
 
   return (
