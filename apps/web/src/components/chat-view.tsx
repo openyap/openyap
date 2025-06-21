@@ -13,7 +13,11 @@ import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { getDefaultModel } from "~/lib/models";
 import { isConvexId } from "~/lib/db/utils";
 import { ChatInput } from "~/components/chat/chat-input";
-import type { ChatMessage, MessageReasoning, StreamingMessage } from "~/components/chat/types";
+import type {
+  ChatMessage,
+  MessageReasoning,
+  StreamingMessage,
+} from "~/components/chat/types";
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
@@ -116,8 +120,8 @@ export function ChatView() {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = new TextDecoder().decode(value)
-          const lines = chunk.split("\n").filter(line => line.length > 0);
+          const chunk = new TextDecoder().decode(value);
+          const lines = chunk.split("\n").filter((line) => line.length > 0);
           let isReasoning = false;
 
           for (const line of lines) {
@@ -145,9 +149,12 @@ export function ChatView() {
             }
           }
 
-          const completedReasoning = reasoningBuffer.steps.length > 0 ? {
-            steps: reasoningBuffer.steps,
-          } : undefined;
+          const completedReasoning =
+            reasoningBuffer.steps.length > 0
+              ? {
+                  steps: reasoningBuffer.steps,
+                }
+              : undefined;
           setStreamingMessage({
             chatId,
             role: "assistant",
@@ -157,9 +164,12 @@ export function ChatView() {
           });
         }
 
-        const completedReasoning = reasoningBuffer.steps.length > 0 ? {
-          steps: reasoningBuffer.steps,
-        } : undefined;
+        const completedReasoning =
+          reasoningBuffer.steps.length > 0
+            ? {
+                steps: reasoningBuffer.steps,
+              }
+            : undefined;
         setStreamingMessage({
           chatId,
           role: "assistant",
@@ -218,6 +228,15 @@ export function ChatView() {
 
   const isLoading = chatId && getChatMessages === undefined;
 
+  const showOptimisticMessage =
+    streamingMessage?.role === "assistant" &&
+    !messages.some(
+      (m) =>
+        m.role === "assistant" &&
+        m.content === streamingMessage.content &&
+        m.status === "finished"
+    );
+
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="flex-1 overflow-y-auto p-4 mb-16">
@@ -228,7 +247,10 @@ export function ChatView() {
             </div>
           ) : (
             messages.map((m) => {
-              if (m.role === "assistant" && (m.status === "generating" || m.status === "reasoning")) {
+              if (
+                m.role === "assistant" &&
+                (m.status === "generating" || m.status === "reasoning")
+              ) {
                 return null;
               }
 
@@ -255,7 +277,7 @@ export function ChatView() {
               );
             })
           )}
-          {status === "streaming" && streamingMessage && streamingMessage.role === "assistant" && (
+          {showOptimisticMessage && (
             <div className="flex justify-start">
               <div className="text-foreground max-w-[70%]">
                 <Message data={streamingMessage} />
