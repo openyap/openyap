@@ -22,7 +22,10 @@ export const getUserChats = query({
       .order("desc")
       .collect();
 
-    const chatMembers = await ctx.db.query("chatMember").filter((q) => q.eq(q.field("userId"), userId)).collect();
+    const chatMembers = await ctx.db
+      .query("chatMember")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
 
     return chats.map((chat) => ({
       ...chat,
@@ -46,22 +49,25 @@ export const getChatMessages = query({
       const session = await ctx.runQuery(internal.betterAuth.getSession, {
         sessionToken: args.sessionToken ?? "skip",
       });
-      
+
       if (!session) {
         return [];
       }
 
       const userId = session.userId as Id<"user">;
 
-      const chatMember = await ctx.runQuery(internal.functions.chatMember.getChatMember, {
-        chatId: args.chatId,
-        userId,
-      });
+      const chatMember = await ctx.runQuery(
+        internal.functions.chatMember.getChatMember,
+        {
+          chatId: args.chatId,
+          userId,
+        }
+      );
 
       if (!chatMember) {
         return [];
       }
-    } 
+    }
 
     const messages = await ctx.db
       .query("message")
@@ -89,7 +95,7 @@ export const pinChat = mutation({
     }
 
     const userId = session.userId as Id<"user">;
-    
+
     await ctx.runMutation(internal.functions.chatMember.updateChatMember, {
       chatId,
       userId,
@@ -138,6 +144,7 @@ export const createChat = mutation({
     ),
     shareToken: v.optional(v.string()),
     provider: v.optional(v.string()),
+    model: v.optional(v.string()),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
@@ -158,6 +165,7 @@ export const createChat = mutation({
       ...chatData,
       updatedAt: now,
       ownerId: userId,
+      model: chatData.model,
     });
 
     await ctx.runMutation(internal.functions.chatMember.createChatMember, {
@@ -177,14 +185,11 @@ export const updateChat = mutation({
     tags: v.optional(v.array(v.string())),
     description: v.optional(v.string()),
     visibility: v.optional(
-      v.union(
-        v.literal("private"),
-        v.literal("shared"),
-        v.literal("public")
-      )
+      v.union(v.literal("private"), v.literal("shared"), v.literal("public"))
     ),
     shareToken: v.optional(v.string()),
     provider: v.optional(v.string()),
+    model: v.optional(v.string()),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
@@ -202,7 +207,9 @@ export const updateChat = mutation({
     if (!chat) throw new Error("Chat not found");
     if (chat.ownerId !== userId) throw new Error("Unauthorized");
 
-    const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    const patch: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
+    };
     const keys = [
       "title" as const,
       "tags" as const,
@@ -210,6 +217,7 @@ export const updateChat = mutation({
       "visibility" as const,
       "shareToken" as const,
       "provider" as const,
+      "model" as const,
     ];
     for (const key of keys) {
       if (fields[key] !== undefined) patch[key] = fields[key];
@@ -248,20 +256,31 @@ export const deleteChat = mutation({
       return;
     }
 
-    const messages = await ctx.db.query("message").filter((q) => q.eq(q.field("chatId"), chatId)).collect();
+    const messages = await ctx.db
+      .query("message")
+      .filter((q) => q.eq(q.field("chatId"), chatId))
+      .collect();
     await Promise.all(
       messages.map((m) =>
-        ctx.runMutation(internal.functions.message.deleteMessage, { messageId: m._id })
+        ctx.runMutation(internal.functions.message.deleteMessage, {
+          messageId: m._id,
+        })
       )
     );
 
-    const chatMembers = await ctx.db.query("chatMember").filter((q) => q.eq(q.field("chatId"), chatId)).collect();
+    const chatMembers = await ctx.db
+      .query("chatMember")
+      .filter((q) => q.eq(q.field("chatId"), chatId))
+      .collect();
     await Promise.all(
       chatMembers.map((m) =>
-        ctx.runMutation(internal.functions.chatMember.deleteChatMember, { chatId, userId: m.userId })
+        ctx.runMutation(internal.functions.chatMember.deleteChatMember, {
+          chatId,
+          userId: m.userId,
+        })
       )
     );
 
     await ctx.db.delete(chatId);
   },
-}); 
+});

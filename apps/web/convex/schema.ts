@@ -20,6 +20,8 @@ export default defineSchema({
     shareToken: v.optional(v.string()),
     // Default LLM provider for the chat
     provider: v.optional(v.string()),
+    // Last Used LLM Model for the chat
+    model: v.optional(v.string()),
     // Last update timestamp
     updatedAt: v.string(),
   })
@@ -89,8 +91,9 @@ export default defineSchema({
           provider: v.optional(v.string()),
           model: v.optional(v.string()),
           // The usage for THIS attempt
-          usage: v.optional(v.object({
-            promptTokens: v.number(),
+          usage: v.optional(
+            v.object({
+              promptTokens: v.number(),
               completionTokens: v.number(),
               totalTokens: v.number(),
             })
