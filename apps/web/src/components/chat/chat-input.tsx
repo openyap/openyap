@@ -2,6 +2,9 @@ import { isRedirect, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { useState, memo, useCallback } from "react";
 import { api } from "~/lib/db/server";
+import { usePersisted } from "~/hooks/usePersisted";
+import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
+import { getModelById, getDefaultModel } from "~/lib/models";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { ArrowUpIcon } from "lucide-react";
@@ -23,6 +26,10 @@ const ChatInput = memo(function ChatInput({
 }: ChatInputProps) {
   const navigate = useNavigate();
   const createChat = useMutation(api.functions.chat.createChat);
+  const { value: selectedModelId } = usePersisted<number>(
+    MODEL_PERSIST_KEY,
+    getDefaultModel().id
+  );
   const [input, setInput] = useState(inputStore.getState().input);
 
   const handleInputChange = useCallback(
@@ -42,10 +49,14 @@ const ChatInput = memo(function ChatInput({
         try {
           localStorage.setItem("firstMessage", text);
 
+          const model = getModelById(selectedModelId);
+
           const newChatId = await createChat({
             sessionToken,
             title: "New Chat",
             visibility: "private",
+            provider: model?.provider,
+            model: model?.modelId,
           });
 
           console.log("[ChatView] New Chat ID: ", newChatId);
@@ -63,7 +74,14 @@ const ChatInput = memo(function ChatInput({
 
       addUserMessage(text);
     },
-    [chatId, sessionToken, createChat, navigate, addUserMessage]
+    [
+      chatId,
+      sessionToken,
+      createChat,
+      navigate,
+      addUserMessage,
+      selectedModelId,
+    ]
   );
 
   const isDisabled = useCallback(() => {

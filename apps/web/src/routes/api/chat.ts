@@ -134,6 +134,19 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       }
 
       (async () => {
+        try {
+          await convexServer.mutation(api.functions.chat.updateChat, {
+            chatId,
+            model: selectedModel.modelId,
+            provider,
+            sessionToken,
+          });
+        } catch (err) {
+          console.warn("[Chat API] Failed to update chat model:", err);
+        }
+      })();
+
+      (async () => {
         let buffer = "";
         let lastUpdate = Date.now();
         const UPDATE_INTERVAL_MS = 500;

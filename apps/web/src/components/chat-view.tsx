@@ -2,8 +2,10 @@ import { useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
+import { useChatsList } from "~/hooks/useChatsList";
 import { useCallback, useEffect, useState } from "react";
 import { usePersisted } from "~/hooks/usePersisted";
+import { models } from "~/lib/models";
 import type { ToggleState } from "~/components/chat/chat-toggles";
 import type { Doc, Id } from "convex/_generated/dataModel";
 import { Message } from "~/components/message";
@@ -23,10 +25,8 @@ export function ChatView() {
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
 
-  const { value: selectedModelId } = usePersisted<number>(
-    MODEL_PERSIST_KEY,
-    getDefaultModel().id
-  );
+  const { value: selectedModelId, set: setSelectedModelId } =
+    usePersisted<number>(MODEL_PERSIST_KEY, getDefaultModel().id);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamingMessage, setStreamingMessage] =
     useState<StreamingMessage | null>(null);
@@ -49,6 +49,23 @@ export function ChatView() {
       ? { chatId: chatId, sessionToken: session?.session.token }
       : "skip"
   );
+
+  const chatsList = useChatsList();
+
+  useEffect(() => {
+    if (!chatId || !chatsList.data) return;
+
+    const chat = (
+      chatsList.data as Array<{ _id: string; model?: string }>
+    ).find((c) => c._id === chatId);
+
+    if (chat?.model) {
+      const model = models.find((m) => m.modelId === chat.model);
+      if (model) {
+        setSelectedModelId((prev) => (prev === model.id ? prev : model.id));
+      }
+    }
+  }, [chatId, chatsList.data, setSelectedModelId]);
 
   useEffect(() => {
     if (getChatMessages) {
