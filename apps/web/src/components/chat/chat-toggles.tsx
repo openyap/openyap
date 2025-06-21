@@ -2,6 +2,7 @@ import { memo, useCallback } from "react";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Icon } from "@iconify/react";
 import { usePersisted } from "~/hooks/usePersisted";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export interface ToggleState {
   search: boolean;
@@ -29,9 +30,16 @@ const ChatToggles = memo(function ChatToggles() {
       value={groupValue}
       onValueChange={handleChange}
     >
-      <ToggleGroupItem value="search" size="default">
-        <Icon icon="lucide:globe" className="bg-transparent" />
-      </ToggleGroupItem>
+      <Tooltip>
+        <TooltipTrigger>
+          <ToggleGroupItem value="search" size="default">
+            <Icon icon="lucide:globe" className="bg-transparent" />
+          </ToggleGroupItem>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Search</p>
+        </TooltipContent>
+      </Tooltip>
     </ToggleGroup>
   );
 });
