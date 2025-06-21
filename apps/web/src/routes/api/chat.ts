@@ -81,6 +81,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       messages,
       chatId,
       modelId: requestedModelId,
+      search = false,
     } = await request.json();
 
     const lastMessage = messages[messages.length - 1];
@@ -105,12 +106,18 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       "[Chat API] Streaming Chat ID: ",
       chatId,
       "Model ID: ",
-      modelId
+      modelId,
+      "Search: ",
+      search
     );
+
+    const appendedModelId = search ? `${modelId}:online` : modelId;
+
+    console.log("[Chat API] Appended Model ID: ", appendedModelId);
 
     try {
       const result = streamText({
-        model: openrouter.chat(modelId),
+        model: openrouter.chat(appendedModelId),
         system: getSystemPrompt(selectedModel, session.user.name),
         messages,
       });
