@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useTransition } from "react";
 import { CaptchaWidget } from "~/components/auth/captcha-widget";
 import { DomainLogo } from "~/components/domains";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { authClient, getClientIP } from "~/lib/auth/client";
 
 export function ProfileCard() {
@@ -42,13 +42,13 @@ export function ProfileCard() {
 
   if (session.isPending) {
     return (
-      <div className="h-12 animate-pulse bg-gray-200 flex items-center justify-center rounded" />
+      <div className="flex h-12 animate-pulse items-center justify-center rounded bg-gray-200" />
     );
   }
 
   if (session.data?.user) {
     return (
-      <div className="h-12 flex items-center justify-between border border-gray-200 rounded px-2">
+      <div className="flex h-12 items-center justify-between rounded border border-gray-200 px-2">
         <div className="flex items-center gap-2">
           <Avatar>
             <AvatarImage src={session.data.user.image ?? ""} />
@@ -59,14 +59,14 @@ export function ProfileCard() {
           <p>{session.data.user.name}</p>
         </div>
         <Button onClick={() => authClient.signOut()}>
-          <LogOutIcon className="w-4 h-4" />
+          <LogOutIcon className="h-4 w-4" />
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="h-12 flex items-center justify-center border border-gray-200 rounded">
+    <div className="flex h-12 items-center justify-center rounded border border-gray-200">
       <Button
         type="button"
         onClick={handleGoogleLogin}

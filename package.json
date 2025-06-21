@@ -1,17 +1,17 @@
 {
-  "name": "openyap",
-  "private": true,
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev:vite dev:convex",
-    "check": "turbo run check"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "turbo": "2.5.3"
-  },
-  "packageManager": "pnpm@9.0.0",
-  "engines": {
-    "node": ">=20"
-  }
+	"name": "openyap",
+	"private": true,
+	"scripts": {
+		"build": "turbo run build",
+		"dev": "turbo run dev:vite dev:convex",
+		"check": "turbo run check"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"turbo": "2.5.3"
+	},
+	"packageManager": "pnpm@9.0.0",
+	"engines": {
+		"node": ">=20"
+	}
 }

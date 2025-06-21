@@ -1,7 +1,7 @@
+import { v } from "convex/values";
 import { internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 import { mutation, query } from "../_generated/server";
-import { v } from "convex/values";
 
 export const getUserChats = query({
   args: { sessionToken: v.string() },
@@ -61,7 +61,7 @@ export const getChatMessages = query({
         {
           chatId: args.chatId,
           userId,
-        }
+        },
       );
 
       if (!chatMember) {
@@ -140,7 +140,7 @@ export const createChat = mutation({
     visibility: v.union(
       v.literal("private"),
       v.literal("shared"),
-      v.literal("public")
+      v.literal("public"),
     ),
     shareToken: v.optional(v.string()),
     provider: v.optional(v.string()),
@@ -185,7 +185,7 @@ export const updateChat = mutation({
     tags: v.optional(v.array(v.string())),
     description: v.optional(v.string()),
     visibility: v.optional(
-      v.union(v.literal("private"), v.literal("shared"), v.literal("public"))
+      v.union(v.literal("private"), v.literal("shared"), v.literal("public")),
     ),
     shareToken: v.optional(v.string()),
     provider: v.optional(v.string()),
@@ -264,8 +264,8 @@ export const deleteChat = mutation({
       messages.map((m) =>
         ctx.runMutation(internal.functions.message.deleteMessage, {
           messageId: m._id,
-        })
-      )
+        }),
+      ),
     );
 
     const chatMembers = await ctx.db
@@ -277,8 +277,8 @@ export const deleteChat = mutation({
         ctx.runMutation(internal.functions.chatMember.deleteChatMember, {
           chatId,
           userId: m.userId,
-        })
-      )
+        }),
+      ),
     );
 
     await ctx.db.delete(chatId);

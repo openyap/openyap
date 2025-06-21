@@ -1,17 +1,17 @@
 import { ConvexQueryClient } from "@convex-dev/react-query";
-import { ConvexProvider } from "convex/react";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { QueryClient } from "@tanstack/react-query";
+import {
+  PersistQueryClientProvider,
+  persistQueryClient,
+} from "@tanstack/react-query-persist-client";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { routerWithQueryClient } from "@tanstack/react-router-with-query";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import {
-  persistQueryClient,
-  PersistQueryClientProvider,
-} from "@tanstack/react-query-persist-client";
+import { ConvexProvider } from "convex/react";
 
-import { routeTree } from "./routeTree.gen";
 import { env } from "~/env";
 import { NotFound } from "./components/not-found";
+import { routeTree } from "./routeTree.gen";
 
 export function createRouter() {
   const convexQueryClient = new ConvexQueryClient(env.VITE_CONVEX_URL, {
@@ -71,7 +71,7 @@ export function createRouter() {
         );
       },
     }),
-    queryClient
+    queryClient,
   );
 }
 

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 type Updater<T> = T | ((prev: T) => T);
 
@@ -31,8 +31,8 @@ function createStore<T>(key: string, defaultValue: T): PersistedStore<T> {
       {
         name: `local:${key}`,
         storage: createJSONStorage(() => localStorage),
-      }
-    )
+      },
+    ),
   ) as unknown as PersistedStore<T>;
 }
 

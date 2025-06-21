@@ -1,9 +1,18 @@
-import { marked } from "marked";
-import { useMemo, memo, useState } from "react";
-import { TokenBlock } from "~/components/blocks";
-import type { ChatMessage, MessageReasoning, MessageStatus, StreamingMessage } from "~/components/chat/types";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Icon } from "@iconify/react";
+import { marked } from "marked";
+import { memo, useMemo, useState } from "react";
+import { TokenBlock } from "~/components/blocks";
+import type {
+  ChatMessage,
+  MessageReasoning,
+  MessageStatus,
+  StreamingMessage,
+} from "~/components/chat/types";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "~/components/ui/collapsible";
 import { AnimatedShinyText } from "./ui/animated-shiny-text";
 
 interface ReasoningCollapsibleProps {
@@ -16,7 +25,10 @@ function formatSeconds(duration: number) {
   return seconds.toFixed(0);
 }
 
-const ReasoningCollapsible = ({ reasoning, status }: ReasoningCollapsibleProps) => {
+const ReasoningCollapsible = ({
+  reasoning,
+  status,
+}: ReasoningCollapsibleProps) => {
   if (!reasoning) return null;
 
   const [reasoningOpen, setReasoningOpen] = useState(false);
@@ -26,7 +38,7 @@ const ReasoningCollapsible = ({ reasoning, status }: ReasoningCollapsibleProps) 
   const reasoningTitle = `Thought ${reasoning.duration ? `for ${formatSeconds(reasoning.duration)} seconds` : ""}`;
 
   return (
-    <Collapsible 
+    <Collapsible
       open={reasoningOpen}
       onOpenChange={setReasoningOpen}
       hidden={reasoningHidden}
@@ -34,7 +46,7 @@ const ReasoningCollapsible = ({ reasoning, status }: ReasoningCollapsibleProps) 
     >
       <CollapsibleTrigger>
         {!isReasoning && (
-          <div className="text-gray-500 cursor-pointer flex items-center gap-x-0.5">
+          <div className="flex cursor-pointer items-center gap-x-0.5 text-gray-500">
             {reasoningTitle}
             {reasoningOpen ? (
               <Icon
@@ -50,21 +62,21 @@ const ReasoningCollapsible = ({ reasoning, status }: ReasoningCollapsibleProps) 
           </div>
         )}
         {isReasoning && (
-          <div className="cursor-pointer flex items-center gap-x-2">
+          <div className="flex cursor-pointer items-center gap-x-2">
             <AnimatedShinyText>Thinking</AnimatedShinyText>
           </div>
         )}
       </CollapsibleTrigger>
-      <CollapsibleContent className="text-xs space-y-2">
+      <CollapsibleContent className="space-y-2 text-xs">
         {reasoning.steps.map((step) => {
           const tokens = marked.lexer(step.text);
           return (
             <div key={crypto.randomUUID()} className="flex gap-x-2">
-              <div className="flex flex-col w-4 shrink-0 items-center">
-                <div className="flex items-center justify-center h-5">
-                  <div className="h-[6px] w-[6px] bg-gray-300 rounded-full" />
+              <div className="flex w-4 shrink-0 flex-col items-center">
+                <div className="flex h-5 items-center justify-center">
+                  <div className="h-[6px] w-[6px] rounded-full bg-gray-300" />
                 </div>
-                <div className="w-[1px] bg-gray-300 flex-grow" />
+                <div className="w-[1px] flex-grow bg-gray-300" />
               </div>
               <div className="flex-grow">
                 {tokens.map((token) => {
@@ -76,7 +88,7 @@ const ReasoningCollapsible = ({ reasoning, status }: ReasoningCollapsibleProps) 
         })}
         {!isReasoning && (
           <div className="flex items-center gap-x-2 text-gray-500">
-            <div className="w-4 shrink-0 flex justify-center">
+            <div className="flex w-4 shrink-0 justify-center">
               <Icon
                 icon="lucide:circle-check"
                 className="h-4 w-4 bg-transparent text-gray-500"
@@ -95,7 +107,10 @@ interface MessageProps {
 }
 
 const MessageComponent = ({ data }: MessageProps) => {
-  const contentTokens = useMemo(() => marked.lexer(data.content), [data.content]);
+  const contentTokens = useMemo(
+    () => marked.lexer(data.content),
+    [data.content],
+  );
 
   return (
     <div className="space-y-2">

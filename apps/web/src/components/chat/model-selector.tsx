@@ -6,8 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { models, getDefaultModel } from "~/lib/models";
 import { usePersisted } from "~/hooks/usePersisted";
+import { getDefaultModel, models } from "~/lib/models";
 
 export const MODEL_PERSIST_KEY = "selected-model";
 
@@ -19,7 +19,7 @@ const ModelSelector = memo(function ModelSelector() {
     (value: string) => {
       setSelectedModelId(Number.parseInt(value));
     },
-    [setSelectedModelId]
+    [setSelectedModelId],
   );
 
   return (

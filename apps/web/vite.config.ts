@@ -1,6 +1,6 @@
+import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import path from "node:path";
 import { defineConfig } from "vite";
 
 export default defineConfig({

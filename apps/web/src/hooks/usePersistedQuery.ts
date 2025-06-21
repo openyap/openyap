@@ -43,7 +43,7 @@ export function usePersistedQuery<T>({
   // biome-ignore lint/correctness/useExhaustiveDependencies: We intentionally use queryKeyString to stabilize the array reference
   const stableQueryKey = useMemo(
     () => ["persisted", ...queryKey],
-    [queryKeyString]
+    [queryKeyString],
   );
 
   useEffect(() => {
