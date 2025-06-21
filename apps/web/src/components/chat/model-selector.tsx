@@ -6,22 +6,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { models } from "~/lib/models";
+import { models, getDefaultModel } from "~/lib/models";
+import { usePersisted } from "~/hooks/usePersisted";
 
-interface ModelSelectorProps {
-  selectedModelId: number;
-  onModelChange: (modelId: number) => void;
-}
+export const MODEL_PERSIST_KEY = "selected-model";
 
-const ModelSelector = memo(function ModelSelector({
-  selectedModelId,
-  onModelChange,
-}: ModelSelectorProps) {
+const ModelSelector = memo(function ModelSelector() {
+  const { value: selectedModelId, set: setSelectedModelId } =
+    usePersisted<number>(MODEL_PERSIST_KEY, getDefaultModel().id);
+
   const handleModelChange = useCallback(
     (value: string) => {
-      onModelChange(Number.parseInt(value));
+      setSelectedModelId(Number.parseInt(value));
     },
-    [onModelChange]
+    [setSelectedModelId]
   );
 
   return (
@@ -45,4 +43,4 @@ const ModelSelector = memo(function ModelSelector({
   );
 });
 
-export { ModelSelector, type ModelSelectorProps };
+export { ModelSelector };

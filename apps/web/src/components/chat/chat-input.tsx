@@ -12,8 +12,6 @@ interface ChatInputProps {
   chatId?: string;
   sessionToken: string;
   disabled: boolean;
-  selectedModelId: number;
-  onModelChange: (modelId: number) => void;
   addUserMessage: (message: string) => void;
 }
 
@@ -21,8 +19,6 @@ const ChatInput = memo(function ChatInput({
   chatId,
   sessionToken,
   disabled,
-  selectedModelId,
-  onModelChange,
   addUserMessage,
 }: ChatInputProps) {
   const navigate = useNavigate();
@@ -117,10 +113,7 @@ const ChatInput = memo(function ChatInput({
             )}
           </Button>
         </div>
-        <ChatOptions
-          selectedModelId={selectedModelId}
-          onModelChange={onModelChange}
-        />
+        <ChatOptions />
       </div>
     </div>
   );

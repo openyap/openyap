@@ -7,6 +7,7 @@ import { usePersisted } from "~/hooks/usePersisted";
 import type { ToggleState } from "~/components/chat/chat-toggles";
 import type { Doc, Id } from "convex/_generated/dataModel";
 import { Message } from "~/components/message";
+import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { getDefaultModel } from "~/lib/models";
 import { isConvexId } from "~/lib/db/utils";
 import { ChatInput } from "~/components/chat/chat-input";
@@ -22,7 +23,8 @@ export function ChatView() {
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
 
-  const [selectedModelId, setSelectedModelId] = useState<number>(
+  const { value: selectedModelId } = usePersisted<number>(
+    MODEL_PERSIST_KEY,
     getDefaultModel().id
   );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -226,8 +228,6 @@ export function ChatView() {
         sessionToken={session?.session.token ?? "skip"}
         disabled={status === "streaming"}
         addUserMessage={addUserMessage}
-        selectedModelId={selectedModelId}
-        onModelChange={setSelectedModelId}
       />
     </div>
   );
