@@ -29,6 +29,7 @@ export const createUserMessage = mutation({
       history: [{
         content: args.content,
         version: 0,
+        status: "created",
       }],
     });
   },
@@ -87,15 +88,40 @@ export const updateAiMessage = mutation({
   args: {
     messageId: v.id("message"),
     content: v.optional(v.string()),
+    reasoning: v.optional(v.object({
+      steps: v.array(v.object({
+        text: v.string(),
+        duration: v.optional(v.number()),
+      })),
+      duration: v.optional(v.number()),
+    })),
     status: v.optional(v.string()),
     sessionToken: v.string(),
     model: v.optional(v.string()),
     provider: v.optional(v.string()),
+    usage: v.optional(v.object({
+      promptTokens: v.number(),
+      completionTokens: v.number(),
+      totalTokens: v.number(),
+    })),
     historyEntry: v.optional(v.object({
       version: v.number(),
       content: v.string(),
+      status: v.string(),
+      reasoning: v.optional(v.object({
+        steps: v.array(v.object({
+          text: v.string(),
+          duration: v.optional(v.number()),
+        })),
+        duration: v.optional(v.number()),
+      })),
       provider: v.optional(v.string()),
       model: v.optional(v.string()),
+      usage: v.optional(v.object({
+        promptTokens: v.number(),
+        completionTokens: v.number(),
+        totalTokens: v.number(),
+      })),
     })),
   },
   handler: async (ctx, args) => {
@@ -110,9 +136,11 @@ export const updateAiMessage = mutation({
     await ctx.runMutation(internal.functions.message.updateMessage, {
       messageId: args.messageId,
       content: args.content,
+      reasoning: args.reasoning,
       status: args.status,
       model: args.model,
       provider: args.provider,
+      usage: args.usage,
       historyEntry: args.historyEntry,
     });
   },
@@ -130,18 +158,32 @@ export const createMessage = internalMutation({
     provider: v.optional(v.string()),
     model: v.optional(v.string()),
     content: v.string(),
-    status: v.optional(v.string()),
+    reasoning: v.optional(v.object({
+      steps: v.array(v.object({
+        text: v.string(),
+        duration: v.optional(v.number()),
+      })),
+      duration: v.optional(v.number()),
+    })),
+    status: v.string(),
     error: v.optional(v.string()),
     usage: v.optional(v.object({
       promptTokens: v.number(),
       completionTokens: v.number(),
       totalTokens: v.number(),
     })),
-    toolCalls: v.optional(v.array(v.any())),
-    citations: v.optional(v.array(v.any())),
+    tools: v.optional(v.array(v.any())),
+    sources: v.optional(v.array(v.any())),
     history: v.optional(v.array(v.object({
       version: v.number(),
       content: v.string(),
+      reasoning: v.optional(v.object({
+        steps: v.array(v.object({
+          text: v.string(),
+          duration: v.optional(v.number()),
+        })),
+        duration: v.optional(v.number()),
+      })),
       provider: v.optional(v.string()),
       model: v.optional(v.string()),
       usage: v.optional(v.object({
@@ -149,10 +191,10 @@ export const createMessage = internalMutation({
         completionTokens: v.number(),
         totalTokens: v.number(),
       })),
-      status: v.optional(v.string()),
+      status: v.string(),
       error: v.optional(v.string()),
-      toolCalls: v.optional(v.array(v.any())),
-      citations: v.optional(v.array(v.any())),
+      tools: v.optional(v.array(v.any())),
+      sources: v.optional(v.array(v.any())),
     }))),
     webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
@@ -188,6 +230,13 @@ export const updateMessage = internalMutation({
     provider: v.optional(v.string()),
     model: v.optional(v.string()),
     content: v.optional(v.string()),
+    reasoning: v.optional(v.object({
+      steps: v.array(v.object({
+        text: v.string(),
+        duration: v.optional(v.number()),
+      })),
+      duration: v.optional(v.number()),
+    })),
     status: v.optional(v.string()),
     error: v.optional(v.string()),
     usage: v.optional(v.object({
@@ -195,11 +244,18 @@ export const updateMessage = internalMutation({
       completionTokens: v.number(),
       totalTokens: v.number(),
     })),
-    toolCalls: v.optional(v.array(v.any())),
-    citations: v.optional(v.array(v.any())),
+    tools: v.optional(v.array(v.any())),
+    sources: v.optional(v.array(v.any())),
     historyEntry: v.optional(v.object({
       version: v.number(),
       content: v.string(),
+      reasoning: v.optional(v.object({
+        steps: v.array(v.object({
+          text: v.string(),
+          duration: v.optional(v.number()),
+        })),
+        duration: v.optional(v.number()),
+      })),
       provider: v.optional(v.string()),
       model: v.optional(v.string()),
       usage: v.optional(v.object({
@@ -209,8 +265,8 @@ export const updateMessage = internalMutation({
       })),
       status: v.optional(v.string()),
       error: v.optional(v.string()),
-      toolCalls: v.optional(v.array(v.any())),
-      citations: v.optional(v.array(v.any())),
+      tools: v.optional(v.array(v.any())),
+      sources: v.optional(v.array(v.any())),
     })),
     webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
@@ -232,11 +288,12 @@ export const updateMessage = internalMutation({
       "provider" as const,
       "model" as const,
       "content" as const,
+      "reasoning" as const,
       "status" as const,
       "error" as const,
       "usage" as const,
-      "toolCalls" as const,
-      "citations" as const,
+      "tools" as const,
+      "sources" as const,
       "webSearchResults" as const,
       "attachments" as const,
       "embedding" as const,
