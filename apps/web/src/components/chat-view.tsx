@@ -7,18 +7,13 @@ import { useCallback, useEffect, useState } from "react";
 import { usePersisted } from "~/hooks/usePersisted";
 import { models } from "~/lib/models";
 import type { ToggleState } from "~/components/chat/chat-toggles";
-import type { Doc, Id } from "convex/_generated/dataModel";
+import type { Id } from "convex/_generated/dataModel";
 import { Message } from "~/components/message";
 import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { getDefaultModel } from "~/lib/models";
 import { isConvexId } from "~/lib/db/utils";
 import { ChatInput } from "~/components/chat/chat-input";
-
-type ChatMessage = Doc<"message">;
-type StreamingMessage = Omit<
-  ChatMessage,
-  "_id" | "_creationTime" | "updatedAt"
->;
+import type { ChatMessage, MessageReasoning, StreamingMessage } from "~/components/chat/types";
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
@@ -81,6 +76,7 @@ export function ChatView() {
       role: "user" | "data" | "system" | "assistant";
       content: string;
     }) => {
+      // TODO: check if chat exists
       if (!isConvexId<"chat">(chatId)) {
         return;
       }
@@ -108,27 +104,67 @@ export function ChatView() {
           throw new Error("Failed to append message");
         }
 
-        const reader = response.body.getReader();
-        let aiMessageContent = "";
         resetToggles();
+
+        const reader = response.body.getReader();
+        let contentBuffer = "";
+        const reasoningBuffer: MessageReasoning = {
+          steps: [],
+        };
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = new TextDecoder().decode(value);
-          aiMessageContent += chunk;
+
+          const chunk = new TextDecoder().decode(value)
+          const lines = chunk.split("\n").filter(line => line.length > 0);
+          let isReasoning = false;
+
+          for (const line of lines) {
+            const prefix = line.slice(0, 1);
+            const content = line.slice(2);
+
+            switch (prefix) {
+              case "f":
+                break;
+              case "g":
+                isReasoning = true;
+                reasoningBuffer.steps.push({
+                  text: JSON.parse(content),
+                });
+                break;
+              case "0":
+                contentBuffer += JSON.parse(content);
+                break;
+              case "e":
+                break;
+              case "d":
+                break;
+              default:
+                break;
+            }
+          }
+
+          const completedReasoning = reasoningBuffer.steps.length > 0 ? {
+            steps: reasoningBuffer.steps,
+          } : undefined;
           setStreamingMessage({
             chatId,
             role: "assistant",
-            content: aiMessageContent,
-            status: "generating",
+            content: contentBuffer,
+            reasoning: completedReasoning,
+            status: isReasoning ? "reasoning" : "generating",
           });
         }
 
+        const completedReasoning = reasoningBuffer.steps.length > 0 ? {
+          steps: reasoningBuffer.steps,
+        } : undefined;
         setStreamingMessage({
           chatId,
           role: "assistant",
-          content: aiMessageContent,
+          content: contentBuffer,
+          reasoning: completedReasoning,
           status: "finished",
         });
       } catch (error) {
@@ -184,7 +220,7 @@ export function ChatView() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 mb-16">
         <div className="max-w-4xl mx-auto space-y-4 h-full">
           {messages.length === 0 && !isLoading ? (
             <div className="flex items-center justify-center text-foreground h-full">
@@ -192,7 +228,7 @@ export function ChatView() {
             </div>
           ) : (
             messages.map((m) => {
-              if (m.role === "assistant" && m.status === "generating") {
+              if (m.role === "assistant" && (m.status === "generating" || m.status === "reasoning")) {
                 return null;
               }
 
@@ -205,35 +241,24 @@ export function ChatView() {
                 >
                   {m.role === "user" ? (
                     <div className="max-w-[70%] rounded-lg px-4 py-2 border bg-sidebar-accent text-sidebar-accent-foreground border-border ml-auto">
-                      <Message content={m.content} />
+                      <Message data={m} />
                       {m.error && (
                         <div className="text-red-500 text-xs">{m.error}</div>
                       )}
                     </div>
                   ) : (
                     <div className="text-foreground max-w-[70%]">
-                      <Message content={m.content} />
+                      <Message data={m} />
                     </div>
                   )}
                 </div>
               );
             })
           )}
-          {status === "streaming" && streamingMessage && (
+          {status === "streaming" && streamingMessage && streamingMessage.role === "assistant" && (
             <div className="flex justify-start">
               <div className="text-foreground max-w-[70%]">
-                <Message content={streamingMessage.content} />
-              </div>
-            </div>
-          )}
-          {status === "streaming" && (
-            <div className="flex justify-start">
-              <div className="bg-card text-card-foreground rounded-lg px-4 py-2 max-w-[70%] border border-border">
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-foreground rounded-full animate-bounce delay-100" />
-                  <div className="w-2 h-2 bg-foreground rounded-full animate-bounce delay-200" />
-                </div>
+                <Message data={streamingMessage} />
               </div>
             </div>
           )}

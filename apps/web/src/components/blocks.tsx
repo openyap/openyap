@@ -4,7 +4,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { cn } from "~/lib/utils";
 import { Icon } from "@iconify/react";
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 
 function randomKey() {
   return crypto.randomUUID();
@@ -306,7 +306,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
         return (
           <h1
             key={randomKey()}
-            className="px-3 py-1 text-gray-900 shadow text-3xl font-bold"
+            className="px-3 py-1 text-3xl font-bold"
           >
             {token.text}
           </h1>
@@ -315,7 +315,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
         return (
           <h2
             key={randomKey()}
-            className="px-3 py-1 text-gray-900 shadow text-2xl font-semibold"
+            className="px-3 py-1 text-2xl font-semibold"
           >
             {token.text}
           </h2>
@@ -324,7 +324,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
         return (
           <h3
             key={randomKey()}
-            className="px-3 py-1 text-gray-900 shadow text-xl font-semibold"
+            className="px-3 py-1 text-xl font-semibold"
           >
             {token.text}
           </h3>
@@ -333,7 +333,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
         return (
           <h4
             key={randomKey()}
-            className="px-3 py-1 text-gray-900 shadow text-lg font-medium"
+            className="px-3 py-1 text-lg font-medium"
           >
             {token.text}
           </h4>
@@ -342,7 +342,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
         return (
           <h5
             key={randomKey()}
-            className="px-3 py-1 text-gray-900 shadow text-base font-medium"
+            className="px-3 py-1 text-base font-medium"
           >
             {token.text}
           </h5>
@@ -351,7 +351,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
         return (
           <h6
             key={randomKey()}
-            className="px-3 py-1 text-gray-900 shadow text-sm font-medium"
+            className="px-3 py-1 text-sm font-medium"
           >
             {token.text}
           </h6>
@@ -363,7 +363,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       return (
         <h1
           key={randomKey()}
-          className="px-3 py-1 text-gray-900 shadow text-3xl font-bold"
+          className="px-3 py-1 text-3xl font-bold"
         >
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
@@ -374,7 +374,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       return (
         <h2
           key={randomKey()}
-          className="px-3 py-1 text-gray-900 shadow text-2xl font-semibold"
+          className="px-3 py-1 text-2xl font-semibold"
         >
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
@@ -385,7 +385,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       return (
         <h3
           key={randomKey()}
-          className="px-3 py-1 text-gray-900 shadow text-xl font-semibold"
+          className="px-3 py-1 text-xl font-semibold"
         >
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
@@ -396,9 +396,9 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       return (
         <h4
           key={randomKey()}
-          className="px-3 py-1 text-gray-900 shadow text-lg font-medium"
+          className="px-3 py-1 text-lg font-medium"
         >
-          {token.tokens.map((t, i) => (
+          -900 shadow {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
           ))}
         </h4>
@@ -407,7 +407,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       return (
         <h5
           key={randomKey()}
-          className="px-3 py-1 text-gray-900 shadow text-base font-medium"
+          className="px-3 py-1 text-base font-medium"
         >
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
@@ -418,7 +418,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       return (
         <h6
           key={randomKey()}
-          className="px-3 py-1 text-gray-900 shadow text-sm font-medium"
+          className="px-3 py-1 text-sm font-medium"
         >
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />

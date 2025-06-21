@@ -66,8 +66,16 @@ export default defineSchema({
     model: v.optional(v.string()),
     // Plain text fallback or summary (search messages)
     content: v.string(),
-    // Status and metadata
-    status: v.optional(v.string()),
+    // Reasoning for the message (if AI)
+    reasoning: v.optional(v.object({
+      steps: v.array(v.object({
+        text: v.string(),
+        duration: v.optional(v.number()),
+      })),
+      duration: v.optional(v.number()),
+    })),
+    // Metadata 
+    status: v.string(),
     error: v.optional(v.string()),
 
     usage: v.optional(
@@ -77,8 +85,8 @@ export default defineSchema({
         totalTokens: v.number(),
       })
     ),
-    toolCalls: v.optional(v.array(v.any())),
-    citations: v.optional(v.array(v.any())),
+    tools: v.optional(v.array(v.any())),
+    sources: v.optional(v.array(v.any())),
 
     // A complete log of all generation attempts for this message.
     history: v.optional(
@@ -87,6 +95,14 @@ export default defineSchema({
           version: v.number(),
           // The full content generated in this specific attempt
           content: v.string(),
+          // The reasoning for the message (if AI)
+          reasoning: v.optional(v.object({
+            steps: v.array(v.object({
+              text: v.string(),
+              duration: v.optional(v.number()),
+            })),
+            duration: v.optional(v.number()),
+          })),
           // The provider and model used for THIS attempt
           provider: v.optional(v.string()),
           model: v.optional(v.string()),
@@ -98,14 +114,11 @@ export default defineSchema({
               totalTokens: v.number(),
             })
           ),
-          // Status of the attempt ('success', 'error', 'filtered')
-          status: v.optional(v.string()),
-          // Error details if this specific attempt failed
+          // Metadata 
+          status: v.string(),
           error: v.optional(v.string()),
-          // Other metadata for this attempt
-          toolCalls: v.optional(v.array(v.any())),
-          citations: v.optional(v.array(v.any())),
-          // When this attempt was created
+          tools: v.optional(v.array(v.any())),
+          sources: v.optional(v.array(v.any())),
           createdAt: v.string(),
         })
       )
