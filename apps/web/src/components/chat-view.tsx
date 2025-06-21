@@ -3,6 +3,8 @@ import { useMutation, useQuery } from "convex/react";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { useCallback, useEffect, useState } from "react";
+import { usePersisted } from "~/hooks/usePersisted";
+import type { ToggleState } from "~/components/chat/chat-toggles";
 import type { Doc, Id } from "convex/_generated/dataModel";
 import { Message } from "~/components/message";
 import { getDefaultModel } from "~/lib/models";
@@ -27,6 +29,13 @@ export function ChatView() {
   const [streamingMessage, setStreamingMessage] =
     useState<StreamingMessage | null>(null);
   const [status, setStatus] = useState<"streaming" | "idle">("idle");
+
+  const { value: toggles, reset: resetToggles } = usePersisted<ToggleState>(
+    "chat-toggle-options",
+    {
+      search: false,
+    }
+  );
 
   const updateChat = useMutation(api.functions.chat.updateChat);
   const updateUserMessage = useMutation(
@@ -72,6 +81,7 @@ export function ChatView() {
             chatId,
             modelId: selectedModelId,
             messages: [...messages, { role, content }],
+            search: toggles.search,
           }),
         });
 
@@ -81,6 +91,7 @@ export function ChatView() {
 
         const reader = response.body.getReader();
         let aiMessageContent = "";
+        resetToggles();
 
         while (true) {
           const { done, value } = await reader.read();
@@ -111,7 +122,14 @@ export function ChatView() {
         setStatus("idle");
       }
     },
-    [chatId, selectedModelId, messages, updateUserMessage]
+    [
+      chatId,
+      selectedModelId,
+      messages,
+      toggles.search,
+      updateUserMessage,
+      resetToggles,
+    ]
   );
 
   useEffect(() => {
