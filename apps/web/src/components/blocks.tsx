@@ -231,12 +231,13 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
     >
       <div className="flex justify-between border-b border-gray-200 px-2 py-2 bg-gray-50">
         <div className="flex gap-x-1 items-center">
-          {token.lang && (
+          {/* TODO: Move icon state to prevent flickering from re-rendering */}
+          {/* {token.lang && (
             <Icon
               icon={langIcon(highlightedLang)}
               className="h-4 w-4 bg-transparent"
             />
-          )}
+          )} */}
           <span className="text-gray-500 text-sm">{highlightedLang}</span>
         </div>
         <button
