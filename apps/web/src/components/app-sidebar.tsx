@@ -87,7 +87,7 @@ export function AppSidebar() {
                         params={{ chatId: chat._id }}
                       >
                         <Tooltip>
-                          <TooltipTrigger className="truncate">
+                          <TooltipTrigger className="truncate" asChild>
                             <span className="block truncate max-w-full">
                               {chat.title}
                             </span>
@@ -100,7 +100,7 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                     <div className="hidden absolute right-1 top-1.5 z-10 group-hover/item:flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
                       <Tooltip>
-                        <TooltipTrigger>
+                        <TooltipTrigger asChild>
                           <SidebarMenuAction
                             showOnHover
                             onClick={async (e) => {
@@ -121,7 +121,7 @@ export function AppSidebar() {
                         </TooltipContent>
                       </Tooltip>
                       <Tooltip>
-                        <TooltipTrigger>
+                        <TooltipTrigger asChild>
                           <SidebarMenuAction
                             showOnHover
                             onClick={async (e) => {
@@ -167,7 +167,7 @@ export function AppSidebar() {
                       params={{ chatId: chat._id }}
                     >
                       <Tooltip>
-                        <TooltipTrigger className="truncate">
+                        <TooltipTrigger className="truncate" asChild>
                           <span className="block truncate max-w-full">
                             {chat.title}
                           </span>
@@ -180,7 +180,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                   <div className="hidden absolute right-1 top-1.5 z-10 group-hover/item:flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
                     <Tooltip>
-                      <TooltipTrigger>
+                      <TooltipTrigger asChild>
                         <SidebarMenuAction
                           showOnHover
                           onClick={async (e) => {
@@ -201,7 +201,7 @@ export function AppSidebar() {
                       </TooltipContent>
                     </Tooltip>
                     <Tooltip>
-                      <TooltipTrigger>
+                      <TooltipTrigger asChild>
                         <SidebarMenuAction
                           showOnHover
                           onClick={async (e) => {
