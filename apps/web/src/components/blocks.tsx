@@ -147,7 +147,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
         startTransition(() => {
           setShouldHighlight(true);
         });
-      }, 1000),
+      }, 750),
     []
   );
 
@@ -161,18 +161,58 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
   }, [token.text, triggerHighlight]);
 
   const codeElement = useMemo(() => {
+    const commonFont =
+      '"Fira Code", "Fira Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace';
+
     if (!shouldHighlight || pendingHighlight) {
       return (
-        <code className="block whitespace-pre-wrap text-gray-800 bg-gray-100 rounded px-4 py-2 font-mono text-sm">
-          {token.text}
-        </code>
+        <pre
+          className="language-none text-gray-400"
+          style={{
+            background: "#fafafa",
+            fontFamily: commonFont,
+            whiteSpace: "pre",
+            direction: "ltr",
+            textAlign: "left",
+            wordSpacing: "normal",
+            wordBreak: "normal",
+            lineHeight: 1.5,
+            tabSize: 2,
+            hyphens: "none",
+            padding: "1em",
+            margin: "0.5em 0",
+            overflow: "auto",
+            borderRadius: "0.3em",
+            fontSize: "14px",
+          }}
+        >
+          <code
+            style={{
+              background: "inherit",
+              fontFamily: commonFont,
+              whiteSpace: "pre",
+              direction: "ltr",
+              textAlign: "left",
+              wordSpacing: "normal",
+              wordBreak: "normal",
+              lineHeight: 1.5,
+              tabSize: 2,
+              hyphens: "none",
+            }}
+          >
+            {token.text}
+          </code>
+        </pre>
       );
     }
     return (
       <SyntaxHighlighter
         language={highlightedLang}
         style={oneLight}
-        customStyle={{ color: "#111827", fontSize: "14px" }}
+        customStyle={{
+          fontSize: "14px",
+          fontFamily: commonFont,
+        }}
       >
         {token.text}
       </SyntaxHighlighter>
@@ -214,7 +254,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
           />
         </button>
       </div>
-      <pre className="*:!m-0 bg-white">{codeElement}</pre>
+      <pre className="*:!m-0 bg-gray-50 overflow-auto">{codeElement}</pre>
     </div>
   );
 }
@@ -304,55 +344,37 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
     switch (depth) {
       case 1:
         return (
-          <h1
-            key={randomKey()}
-            className="px-3 py-1 text-3xl font-bold"
-          >
+          <h1 key={randomKey()} className="px-3 py-1 text-3xl font-bold">
             {token.text}
           </h1>
         );
       case 2:
         return (
-          <h2
-            key={randomKey()}
-            className="px-3 py-1 text-2xl font-semibold"
-          >
+          <h2 key={randomKey()} className="px-3 py-1 text-2xl font-semibold">
             {token.text}
           </h2>
         );
       case 3:
         return (
-          <h3
-            key={randomKey()}
-            className="px-3 py-1 text-xl font-semibold"
-          >
+          <h3 key={randomKey()} className="px-3 py-1 text-xl font-semibold">
             {token.text}
           </h3>
         );
       case 4:
         return (
-          <h4
-            key={randomKey()}
-            className="px-3 py-1 text-lg font-medium"
-          >
+          <h4 key={randomKey()} className="px-3 py-1 text-lg font-medium">
             {token.text}
           </h4>
         );
       case 5:
         return (
-          <h5
-            key={randomKey()}
-            className="px-3 py-1 text-base font-medium"
-          >
+          <h5 key={randomKey()} className="px-3 py-1 text-base font-medium">
             {token.text}
           </h5>
         );
       case 6:
         return (
-          <h6
-            key={randomKey()}
-            className="px-3 py-1 text-sm font-medium"
-          >
+          <h6 key={randomKey()} className="px-3 py-1 text-sm font-medium">
             {token.text}
           </h6>
         );
@@ -361,10 +383,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
   switch (depth) {
     case 1:
       return (
-        <h1
-          key={randomKey()}
-          className="px-3 py-1 text-3xl font-bold"
-        >
+        <h1 key={randomKey()} className="px-3 py-1 text-3xl font-bold">
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
           ))}
@@ -372,10 +391,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       );
     case 2:
       return (
-        <h2
-          key={randomKey()}
-          className="px-3 py-1 text-2xl font-semibold"
-        >
+        <h2 key={randomKey()} className="px-3 py-1 text-2xl font-semibold">
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
           ))}
@@ -383,10 +399,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       );
     case 3:
       return (
-        <h3
-          key={randomKey()}
-          className="px-3 py-1 text-xl font-semibold"
-        >
+        <h3 key={randomKey()} className="px-3 py-1 text-xl font-semibold">
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
           ))}
@@ -394,21 +407,16 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       );
     case 4:
       return (
-        <h4
-          key={randomKey()}
-          className="px-3 py-1 text-lg font-medium"
-        >
-          -900 shadow {token.tokens.map((t, i) => (
+        <h4 key={randomKey()} className="px-3 py-1 text-lg font-medium">
+          -900 shadow{" "}
+          {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
           ))}
         </h4>
       );
     case 5:
       return (
-        <h5
-          key={randomKey()}
-          className="px-3 py-1 text-base font-medium"
-        >
+        <h5 key={randomKey()} className="px-3 py-1 text-base font-medium">
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
           ))}
@@ -416,10 +424,7 @@ function HeadingBlock({ token }: { token: Tokens.Heading }) {
       );
     case 6:
       return (
-        <h6
-          key={randomKey()}
-          className="px-3 py-1 text-sm font-medium"
-        >
+        <h6 key={randomKey()} className="px-3 py-1 text-sm font-medium">
           {token.tokens.map((t, i) => (
             <TokenBlock key={randomKey()} token={t} />
           ))}
