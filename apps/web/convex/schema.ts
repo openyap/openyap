@@ -14,7 +14,7 @@ export default defineSchema({
     visibility: v.union(
       v.literal("private"), // only owner + invited members
       v.literal("shared"), // anyone with link
-      v.literal("public") // discoverable/searchable
+      v.literal("public"), // discoverable/searchable
     ),
     // Token for sharing the chat
     shareToken: v.optional(v.string()),
@@ -67,14 +67,18 @@ export default defineSchema({
     // Plain text fallback or summary (search messages)
     content: v.string(),
     // Reasoning for the message (if AI)
-    reasoning: v.optional(v.object({
-      steps: v.array(v.object({
-        text: v.string(),
+    reasoning: v.optional(
+      v.object({
+        steps: v.array(
+          v.object({
+            text: v.string(),
+            duration: v.optional(v.number()),
+          }),
+        ),
         duration: v.optional(v.number()),
-      })),
-      duration: v.optional(v.number()),
-    })),
-    // Metadata 
+      }),
+    ),
+    // Metadata
     status: v.string(),
     error: v.optional(v.string()),
 
@@ -83,7 +87,7 @@ export default defineSchema({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      })
+      }),
     ),
     tools: v.optional(v.array(v.any())),
     sources: v.optional(v.array(v.any())),
@@ -96,13 +100,17 @@ export default defineSchema({
           // The full content generated in this specific attempt
           content: v.string(),
           // The reasoning for the message (if AI)
-          reasoning: v.optional(v.object({
-            steps: v.array(v.object({
-              text: v.string(),
+          reasoning: v.optional(
+            v.object({
+              steps: v.array(
+                v.object({
+                  text: v.string(),
+                  duration: v.optional(v.number()),
+                }),
+              ),
               duration: v.optional(v.number()),
-            })),
-            duration: v.optional(v.number()),
-          })),
+            }),
+          ),
           // The provider and model used for THIS attempt
           provider: v.optional(v.string()),
           model: v.optional(v.string()),
@@ -112,16 +120,16 @@ export default defineSchema({
               promptTokens: v.number(),
               completionTokens: v.number(),
               totalTokens: v.number(),
-            })
+            }),
           ),
-          // Metadata 
+          // Metadata
           status: v.string(),
           error: v.optional(v.string()),
           tools: v.optional(v.array(v.any())),
           sources: v.optional(v.array(v.any())),
           createdAt: v.string(),
-        })
-      )
+        }),
+      ),
     ),
 
     // Web search/RAG results (if any)
@@ -170,13 +178,13 @@ export default defineSchema({
             promptTokens: v.number(),
             completionTokens: v.number(),
             totalTokens: v.number(),
-          })
+          }),
         ),
         // When this version was created
         createdAt: v.string(),
         // Optional reason for the change (e.g., "user_retry", "initial_generation")
         reason: v.optional(v.string()),
-      })
+      }),
     ),
     // Order/index among siblings
     order: v.number(),
@@ -225,7 +233,7 @@ export default defineSchema({
         defaultModel: v.optional(v.string()),
         theme: v.optional(v.string()),
         language: v.optional(v.string()),
-      })
+      }),
     ),
     // Encrypted API keys for the user
     apiKeys: v.optional(v.object({})),

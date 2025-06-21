@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { internalMutation, internalQuery } from "../_generated/server";
 import { internal } from "../_generated/api";
+import { internalMutation, internalQuery } from "../_generated/server";
 
 export const createChatMember = internalMutation({
   args: {
@@ -34,10 +34,14 @@ export const getChatMember = internalQuery({
   handler: async (ctx, args) => {
     const { chatId, userId } = args;
 
-    const chatMember = await ctx.db.query("chatMember").filter((q) => q.eq(q.field("chatId"), chatId)).filter((q) => q.eq(q.field("userId"), userId)).first();
+    const chatMember = await ctx.db
+      .query("chatMember")
+      .filter((q) => q.eq(q.field("chatId"), chatId))
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .first();
     return chatMember;
   },
-}); 
+});
 
 export const updateChatMember = internalMutation({
   args: {
@@ -59,20 +63,21 @@ export const updateChatMember = internalMutation({
       throw new Error("Unauthorized");
     }
 
-    const chatMember = await ctx.runQuery(internal.functions.chatMember.getChatMember, {
-      chatId,
-      userId,
-    });
+    const chatMember = await ctx.runQuery(
+      internal.functions.chatMember.getChatMember,
+      {
+        chatId,
+        userId,
+      },
+    );
     if (!chatMember) {
       return;
     }
 
-    const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
-    const keys = [
-      "role" as const,
-      "invitedBy" as const,
-      "pinnedAt" as const,
-    ];
+    const patch: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
+    };
+    const keys = ["role" as const, "invitedBy" as const, "pinnedAt" as const];
 
     for (const key of keys) {
       if (fields[key] !== undefined) patch[key] = fields[key];
@@ -91,10 +96,13 @@ export const deleteChatMember = internalMutation({
   handler: async (ctx, args) => {
     const { chatId, userId } = args;
 
-    const chatMember = await ctx.runQuery(internal.functions.chatMember.getChatMember, {
-      chatId,
-      userId,
-    });
+    const chatMember = await ctx.runQuery(
+      internal.functions.chatMember.getChatMember,
+      {
+        chatId,
+        userId,
+      },
+    );
     if (!chatMember) {
       return;
     }

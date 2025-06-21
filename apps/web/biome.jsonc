@@ -37,7 +37,7 @@
         "noChildrenProp": "off",
         "noUnusedVariables": "warn",
         "noUnusedImports": "off",
-        "useExhaustiveDependencies": "off"
+        "useExhaustiveDependencies": "warn"
       },
       "nursery": {
         "useSortedClasses": {

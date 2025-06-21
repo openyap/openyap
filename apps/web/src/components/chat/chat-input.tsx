@@ -1,15 +1,15 @@
 import { isRedirect, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { useState, memo, useCallback } from "react";
-import { api } from "~/lib/db/server";
-import { usePersisted } from "~/hooks/usePersisted";
-import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
-import { getModelById, getDefaultModel } from "~/lib/models";
-import { Input } from "~/components/ui/input";
-import { Button } from "~/components/ui/button";
 import { ArrowUpIcon } from "lucide-react";
-import { inputStore } from "~/components/chat/stores";
+import { memo, useCallback, useState } from "react";
 import { ChatOptions } from "~/components/chat/chat-options";
+import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
+import { inputStore } from "~/components/chat/stores";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { usePersisted } from "~/hooks/usePersisted";
+import { api } from "~/lib/db/server";
+import { getDefaultModel, getModelById } from "~/lib/models";
 
 interface ChatInputProps {
   chatId?: string;
@@ -30,7 +30,7 @@ const ChatInput = memo(function ChatInput({
   const createChat = useMutation(api.functions.chat.createChat);
   const { value: selectedModelId } = usePersisted<number>(
     MODEL_PERSIST_KEY,
-    getDefaultModel().id
+    getDefaultModel().id,
   );
   const [input, setInput] = useState(inputStore.getState().input);
 
@@ -39,7 +39,7 @@ const ChatInput = memo(function ChatInput({
       setInput(e.target.value);
       inputStore.getState().setInput(e.target.value);
     },
-    []
+    [],
   );
 
   const send = useCallback(
@@ -83,7 +83,7 @@ const ChatInput = memo(function ChatInput({
       navigate,
       addUserMessage,
       selectedModelId,
-    ]
+    ],
   );
 
   const isDisabled = useCallback(() => {
@@ -99,7 +99,7 @@ const ChatInput = memo(function ChatInput({
         inputStore.getState().setInput("");
       }
     },
-    [input, send]
+    [input, send],
   );
 
   const handleSendClick = useCallback(() => {
@@ -109,11 +109,11 @@ const ChatInput = memo(function ChatInput({
   }, [send]);
 
   return (
-    <div className="sticky bottom-0 pb-4 z-10 bg-background">
-      <div className="flex flex-col gap-2 max-w-5xl mx-auto w-full px-4">
-        <div className="flex gap-2 h-12">
+    <div className="sticky bottom-0 z-10 bg-background pb-4">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4">
+        <div className="flex h-12 gap-2">
           <Input
-            className="bg-background h-full"
+            className="h-full bg-background"
             placeholder="Ask anything"
             value={input}
             onChange={handleInputChange}
@@ -125,9 +125,9 @@ const ChatInput = memo(function ChatInput({
               type="button"
               variant="destructive"
               onClick={onStop}
-              className="h-full w-12 flex items-center justify-center"
+              className="flex h-full w-12 items-center justify-center"
             >
-              <div className="w-4 h-4 bg-foreground" />
+              <div className="h-4 w-4 bg-foreground" />
             </Button>
           ) : (
             <Button
@@ -136,7 +136,7 @@ const ChatInput = memo(function ChatInput({
               onClick={handleSendClick}
               className={`${isDisabled() && "cursor-not-allowed"} h-full w-12`}
             >
-              <ArrowUpIcon className="w-4 h-4" />
+              <ArrowUpIcon className="h-4 w-4" />
             </Button>
           )}
         </div>

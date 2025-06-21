@@ -2,13 +2,13 @@ import {
   createServerFileRoute,
   getWebRequest,
 } from "@tanstack/react-start/server";
-import { openrouter } from "~/lib/openrouter";
 import { streamText } from "ai";
-import { auth } from "~/lib/auth/server";
-import { api, convexServer } from "~/lib/db/server";
-import { getModelById, getDefaultModel, getSystemPrompt } from "~/lib/models";
 import type { Id } from "convex/_generated/dataModel";
 import type { MessageReasoning, MessageUsage } from "~/components/chat/types";
+import { auth } from "~/lib/auth/server";
+import { api, convexServer } from "~/lib/db/server";
+import { getDefaultModel, getModelById, getSystemPrompt } from "~/lib/models";
+import { openrouter } from "~/lib/openrouter";
 
 // TODO: update messages with as much fields as possible
 
@@ -99,7 +99,7 @@ const getMessageStatus = async ({
 };
 
 export const ServerRoute = createServerFileRoute("/api/chat").methods({
-  GET: ({ request }) => {
+  GET: ({ request: _ }) => {
     return new Response("What do you think chat?");
   },
   POST: async ({ request }) => {
@@ -143,7 +143,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       "Model ID: ",
       modelId,
       "Search: ",
-      search
+      search,
     );
 
     const appendedModelId = search ? `${modelId}:online` : modelId;
@@ -219,10 +219,16 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               usage = part.usage;
             }
 
-            const completedReasoning = reasoningBuffer.steps.length > 0 ? {
-              steps: reasoningBuffer.steps,
-              duration: reasoningBuffer.steps.reduce((acc, step) => acc + (step.duration ?? 0), 0),
-            } : undefined;
+            const completedReasoning =
+              reasoningBuffer.steps.length > 0
+                ? {
+                    steps: reasoningBuffer.steps,
+                    duration: reasoningBuffer.steps.reduce(
+                      (acc, step) => acc + (step.duration ?? 0),
+                      0,
+                    ),
+                  }
+                : undefined;
             void updateAiMessage({
               messageId,
               content: contentBuffer,
@@ -233,11 +239,19 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           }
 
           if (isAborted) {
-            console.log("[Chat API] Stream finished, but client aborted. Marking as aborted.");
-            const completedReasoning = reasoningBuffer.steps.length > 0 ? {
-              steps: reasoningBuffer.steps,
-              duration: reasoningBuffer.steps.reduce((acc, step) => acc + (step.duration ?? 0), 0),
-            } : undefined;
+            console.log(
+              "[Chat API] Stream finished, but client aborted. Marking as aborted.",
+            );
+            const completedReasoning =
+              reasoningBuffer.steps.length > 0
+                ? {
+                    steps: reasoningBuffer.steps,
+                    duration: reasoningBuffer.steps.reduce(
+                      (acc, step) => acc + (step.duration ?? 0),
+                      0,
+                    ),
+                  }
+                : undefined;
             void updateAiMessage({
               messageId,
               content: contentBuffer,
@@ -261,10 +275,16 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           }
 
           // TODO: Add usage
-          const completedReasoning = reasoningBuffer.steps.length > 0 ? {
-            steps: reasoningBuffer.steps,
-            duration: reasoningBuffer.steps.reduce((acc, step) => acc + (step.duration ?? 0), 0),
-          } : undefined;
+          const completedReasoning =
+            reasoningBuffer.steps.length > 0
+              ? {
+                  steps: reasoningBuffer.steps,
+                  duration: reasoningBuffer.steps.reduce(
+                    (acc, step) => acc + (step.duration ?? 0),
+                    0,
+                  ),
+                }
+              : undefined;
           void updateAiMessage({
             messageId,
             content: contentBuffer,
@@ -286,10 +306,16 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           });
         } catch (error) {
           if ((error as Error).name === "AbortError") {
-            const completedReasoning = reasoningBuffer.steps.length > 0 ? {
-              steps: reasoningBuffer.steps,
-              duration: reasoningBuffer.steps.reduce((acc, step) => acc + (step.duration ?? 0), 0),
-            } : undefined;
+            const completedReasoning =
+              reasoningBuffer.steps.length > 0
+                ? {
+                    steps: reasoningBuffer.steps,
+                    duration: reasoningBuffer.steps.reduce(
+                      (acc, step) => acc + (step.duration ?? 0),
+                      0,
+                    ),
+                  }
+                : undefined;
             void updateAiMessage({
               messageId,
               content: contentBuffer,

@@ -1,12 +1,17 @@
-import { mutation, internalQuery, internalMutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
+import {
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "../_generated/server";
 
 export const createUserMessage = mutation({
-  args: { 
-    content: v.string(), 
-    chatId: v.id("chat"), 
+  args: {
+    content: v.string(),
+    chatId: v.id("chat"),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
@@ -26,11 +31,13 @@ export const createUserMessage = mutation({
       role: "user",
       content: args.content,
       status: "created",
-      history: [{
-        content: args.content,
-        version: 0,
-        status: "created",
-      }],
+      history: [
+        {
+          content: args.content,
+          version: 0,
+          status: "created",
+        },
+      ],
     });
   },
 });
@@ -77,17 +84,20 @@ export const createAiMessage = mutation({
       return null;
     }
 
-    const messageId = await ctx.runMutation(internal.functions.message.createMessage, {
-      chatId: args.chatId,
-      role: "assistant",
-      content: "",
-      status: "created",
-      usage: {
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
+    const messageId = await ctx.runMutation(
+      internal.functions.message.createMessage,
+      {
+        chatId: args.chatId,
+        role: "assistant",
+        content: "",
+        status: "created",
+        usage: {
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+        },
       },
-    });
+    );
 
     return messageId;
   },
@@ -97,41 +107,55 @@ export const updateAiMessage = mutation({
   args: {
     messageId: v.id("message"),
     content: v.optional(v.string()),
-    reasoning: v.optional(v.object({
-      steps: v.array(v.object({
-        text: v.string(),
+    reasoning: v.optional(
+      v.object({
+        steps: v.array(
+          v.object({
+            text: v.string(),
+            duration: v.optional(v.number()),
+          }),
+        ),
         duration: v.optional(v.number()),
-      })),
-      duration: v.optional(v.number()),
-    })),
+      }),
+    ),
     status: v.optional(v.string()),
     sessionToken: v.string(),
     model: v.optional(v.string()),
     provider: v.optional(v.string()),
-    usage: v.optional(v.object({
-      promptTokens: v.number(),
-      completionTokens: v.number(),
-      totalTokens: v.number(),
-    })),
-    historyEntry: v.optional(v.object({
-      version: v.number(),
-      content: v.string(),
-      status: v.string(),
-      reasoning: v.optional(v.object({
-        steps: v.array(v.object({
-          text: v.string(),
-          duration: v.optional(v.number()),
-        })),
-        duration: v.optional(v.number()),
-      })),
-      provider: v.optional(v.string()),
-      model: v.optional(v.string()),
-      usage: v.optional(v.object({
+    usage: v.optional(
+      v.object({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      })),
-    })),
+      }),
+    ),
+    historyEntry: v.optional(
+      v.object({
+        version: v.number(),
+        content: v.string(),
+        status: v.string(),
+        reasoning: v.optional(
+          v.object({
+            steps: v.array(
+              v.object({
+                text: v.string(),
+                duration: v.optional(v.number()),
+              }),
+            ),
+            duration: v.optional(v.number()),
+          }),
+        ),
+        provider: v.optional(v.string()),
+        model: v.optional(v.string()),
+        usage: v.optional(
+          v.object({
+            promptTokens: v.number(),
+            completionTokens: v.number(),
+            totalTokens: v.number(),
+          }),
+        ),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     const session = await ctx.runQuery(internal.betterAuth.getSession, {
@@ -183,44 +207,60 @@ export const createMessage = internalMutation({
     provider: v.optional(v.string()),
     model: v.optional(v.string()),
     content: v.string(),
-    reasoning: v.optional(v.object({
-      steps: v.array(v.object({
-        text: v.string(),
+    reasoning: v.optional(
+      v.object({
+        steps: v.array(
+          v.object({
+            text: v.string(),
+            duration: v.optional(v.number()),
+          }),
+        ),
         duration: v.optional(v.number()),
-      })),
-      duration: v.optional(v.number()),
-    })),
+      }),
+    ),
     status: v.string(),
     error: v.optional(v.string()),
-    usage: v.optional(v.object({
-      promptTokens: v.number(),
-      completionTokens: v.number(),
-      totalTokens: v.number(),
-    })),
-    tools: v.optional(v.array(v.any())),
-    sources: v.optional(v.array(v.any())),
-    history: v.optional(v.array(v.object({
-      version: v.number(),
-      content: v.string(),
-      reasoning: v.optional(v.object({
-        steps: v.array(v.object({
-          text: v.string(),
-          duration: v.optional(v.number()),
-        })),
-        duration: v.optional(v.number()),
-      })),
-      provider: v.optional(v.string()),
-      model: v.optional(v.string()),
-      usage: v.optional(v.object({
+    usage: v.optional(
+      v.object({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      })),
-      status: v.string(),
-      error: v.optional(v.string()),
-      tools: v.optional(v.array(v.any())),
-      sources: v.optional(v.array(v.any())),
-    }))),
+      }),
+    ),
+    tools: v.optional(v.array(v.any())),
+    sources: v.optional(v.array(v.any())),
+    history: v.optional(
+      v.array(
+        v.object({
+          version: v.number(),
+          content: v.string(),
+          reasoning: v.optional(
+            v.object({
+              steps: v.array(
+                v.object({
+                  text: v.string(),
+                  duration: v.optional(v.number()),
+                }),
+              ),
+              duration: v.optional(v.number()),
+            }),
+          ),
+          provider: v.optional(v.string()),
+          model: v.optional(v.string()),
+          usage: v.optional(
+            v.object({
+              promptTokens: v.number(),
+              completionTokens: v.number(),
+              totalTokens: v.number(),
+            }),
+          ),
+          status: v.string(),
+          error: v.optional(v.string()),
+          tools: v.optional(v.array(v.any())),
+          sources: v.optional(v.array(v.any())),
+        }),
+      ),
+    ),
     webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
     embedding: v.optional(v.array(v.number())),
@@ -255,44 +295,58 @@ export const updateMessage = internalMutation({
     provider: v.optional(v.string()),
     model: v.optional(v.string()),
     content: v.optional(v.string()),
-    reasoning: v.optional(v.object({
-      steps: v.array(v.object({
-        text: v.string(),
+    reasoning: v.optional(
+      v.object({
+        steps: v.array(
+          v.object({
+            text: v.string(),
+            duration: v.optional(v.number()),
+          }),
+        ),
         duration: v.optional(v.number()),
-      })),
-      duration: v.optional(v.number()),
-    })),
+      }),
+    ),
     status: v.optional(v.string()),
     error: v.optional(v.string()),
-    usage: v.optional(v.object({
-      promptTokens: v.number(),
-      completionTokens: v.number(),
-      totalTokens: v.number(),
-    })),
-    tools: v.optional(v.array(v.any())),
-    sources: v.optional(v.array(v.any())),
-    historyEntry: v.optional(v.object({
-      version: v.number(),
-      content: v.string(),
-      reasoning: v.optional(v.object({
-        steps: v.array(v.object({
-          text: v.string(),
-          duration: v.optional(v.number()),
-        })),
-        duration: v.optional(v.number()),
-      })),
-      provider: v.optional(v.string()),
-      model: v.optional(v.string()),
-      usage: v.optional(v.object({
+    usage: v.optional(
+      v.object({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      })),
-      status: v.optional(v.string()),
-      error: v.optional(v.string()),
-      tools: v.optional(v.array(v.any())),
-      sources: v.optional(v.array(v.any())),
-    })),
+      }),
+    ),
+    tools: v.optional(v.array(v.any())),
+    sources: v.optional(v.array(v.any())),
+    historyEntry: v.optional(
+      v.object({
+        version: v.number(),
+        content: v.string(),
+        reasoning: v.optional(
+          v.object({
+            steps: v.array(
+              v.object({
+                text: v.string(),
+                duration: v.optional(v.number()),
+              }),
+            ),
+            duration: v.optional(v.number()),
+          }),
+        ),
+        provider: v.optional(v.string()),
+        model: v.optional(v.string()),
+        usage: v.optional(
+          v.object({
+            promptTokens: v.number(),
+            completionTokens: v.number(),
+            totalTokens: v.number(),
+          }),
+        ),
+        status: v.optional(v.string()),
+        error: v.optional(v.string()),
+        tools: v.optional(v.array(v.any())),
+        sources: v.optional(v.array(v.any())),
+      }),
+    ),
     webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
     embedding: v.optional(v.array(v.number())),
@@ -302,9 +356,14 @@ export const updateMessage = internalMutation({
     if (!message) throw new Error("Message not found");
     const history = message.history ?? [];
     const now = new Date().toISOString();
-    const historyEntry = args.historyEntry ? { ...args.historyEntry, createdAt: now } : undefined;
+    const historyEntry = args.historyEntry
+      ? { ...args.historyEntry, createdAt: now }
+      : undefined;
     const newHistory = historyEntry ? [...history, historyEntry] : history;
-    const patch: Record<string, unknown> = { history: newHistory, updatedAt: now };
+    const patch: Record<string, unknown> = {
+      history: newHistory,
+      updatedAt: now,
+    };
     const keys = [
       "parentId" as const,
       "branchRootId" as const,

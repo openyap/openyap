@@ -9,14 +9,9 @@ type LogoConfig = {
 
 export function getDomainLogoUrl(
   domain: string,
-  config: LogoConfig = {}
+  config: LogoConfig = {},
 ): string {
-  const {
-    type = "icon",
-    theme,
-    width = 400,
-    height = 400,
-  } = config;
+  const { type = "icon", theme, width = 400, height = 400 } = config;
   const brandfetchUrl = "https://cdn.brandfetch.io";
   const size = `w/${width}/h/${height}`;
   const typePath = type !== "icon" ? `/${type}` : "";
@@ -34,15 +29,20 @@ type DomainLogoProps = {
   className?: string;
 };
 
-export function DomainLogo({ domain, config, alt, className }: DomainLogoProps) {
+export function DomainLogo({
+  domain,
+  config,
+  alt,
+  className,
+}: DomainLogoProps) {
   const url = getDomainLogoUrl(domain, config);
   return (
-    <img 
-      src={url} 
-      alt={alt ?? `${domain} logo`} 
-      width={config?.width ?? 20} 
-      height={config?.height ?? 20} 
-      className={className} 
+    <img
+      src={url}
+      alt={alt ?? `${domain} logo`}
+      width={config?.width ?? 20}
+      height={config?.height ?? 20}
+      className={className}
     />
   );
 }

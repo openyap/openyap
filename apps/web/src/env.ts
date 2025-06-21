@@ -1,5 +1,5 @@
-import { Schema } from "effect"
 import { createEnv } from "@t3-oss/env-core";
+import { Schema } from "effect";
 
 export const env = createEnv({
   server: {

@@ -2,7 +2,9 @@ import { createServerFileRoute } from "@tanstack/react-start/server";
 import { generateText } from "ai";
 import { openrouter } from "~/lib/openrouter";
 
-export const ServerRoute = createServerFileRoute("/api/generateChatTitle").methods({
+export const ServerRoute = createServerFileRoute(
+  "/api/generateChatTitle",
+).methods({
   POST: async ({ request }) => {
     const { message } = await request.json();
 
@@ -15,4 +17,4 @@ export const ServerRoute = createServerFileRoute("/api/generateChatTitle").metho
     const title = result.text.trim() || "New Chat";
     return new Response(JSON.stringify({ title }), { status: 200 });
   },
-}); 
+});

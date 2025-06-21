@@ -1,5 +1,5 @@
-import { createStore } from 'zustand/vanilla'
-import { persist }     from 'zustand/middleware'
+import { persist } from "zustand/middleware";
+import { createStore } from "zustand/vanilla";
 
 // TODO: move modelId to chat metadata
 
@@ -12,13 +12,12 @@ type InputStore = {
 
 export const inputStore = createStore(
   persist<InputStore>(
-    (set, get) => ({
+    (set, _get) => ({
       input: "",
       disabled: false,
       setInput: (input: string) => set({ input }),
       setDisabled: (disabled: boolean) => set({ disabled }),
     }),
-    { name: 'input-store' }
-  )
+    { name: "input-store" },
+  ),
 );
-

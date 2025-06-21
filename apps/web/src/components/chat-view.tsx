@@ -1,23 +1,23 @@
 import { useParams } from "@tanstack/react-router";
-import { useMutation, useQuery } from "convex/react";
-import { authClient } from "~/lib/auth/client";
-import { api } from "~/lib/db/server";
-import { useChatsList } from "~/hooks/useChatsList";
-import { useCallback, useEffect, useState } from "react";
-import { usePersisted } from "~/hooks/usePersisted";
-import { models } from "~/lib/models";
-import type { ToggleState } from "~/components/chat/chat-toggles";
 import type { Id } from "convex/_generated/dataModel";
-import { Message } from "~/components/message";
-import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
-import { getDefaultModel } from "~/lib/models";
-import { isConvexId } from "~/lib/db/utils";
+import { useMutation, useQuery } from "convex/react";
+import { useCallback, useEffect, useState } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
+import type { ToggleState } from "~/components/chat/chat-toggles";
+import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import type {
   ChatMessage,
   MessageReasoning,
   StreamingMessage,
 } from "~/components/chat/types";
+import { Message } from "~/components/message";
+import { useChatsList } from "~/hooks/useChatsList";
+import { usePersisted } from "~/hooks/usePersisted";
+import { authClient } from "~/lib/auth/client";
+import { api } from "~/lib/db/server";
+import { isConvexId } from "~/lib/db/utils";
+import { models } from "~/lib/models";
+import { getDefaultModel } from "~/lib/models";
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
@@ -30,27 +30,26 @@ export function ChatView() {
   const [streamingMessage, setStreamingMessage] =
     useState<StreamingMessage | null>(null);
   const [status, setStatus] = useState<"streaming" | "idle">("idle");
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null);
 
   const { value: toggles, reset: resetToggles } = usePersisted<ToggleState>(
     "chat-toggle-options",
     {
       search: false,
-    }
+    },
   );
 
   const updateChat = useMutation(api.functions.chat.updateChat);
   const updateUserMessage = useMutation(
-    api.functions.message.updateUserMessage
+    api.functions.message.updateUserMessage,
   );
-  const updateAiMessage = useMutation(
-    api.functions.message.updateAiMessage
-  );
+  const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
     isConvexId<"chat">(chatId)
       ? { chatId: chatId, sessionToken: session?.session.token }
-      : "skip"
+      : "skip",
   );
 
   const chatsList = useChatsList();
@@ -193,7 +192,7 @@ export function ChatView() {
                   ...prev,
                   status: "aborted",
                 }
-              : null
+              : null,
           );
         } else {
           console.error(error);
@@ -216,7 +215,7 @@ export function ChatView() {
       updateUserMessage,
       resetToggles,
       session?.session.token,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -245,7 +244,7 @@ export function ChatView() {
     (message: string) => {
       append({ role: "user", content: message });
     },
-    [append]
+    [append],
   );
 
   const handleStop = useCallback(() => {
@@ -267,15 +266,15 @@ export function ChatView() {
       (m) =>
         m.role === "assistant" &&
         m.content === streamingMessage.content &&
-        m.status === "finished"
+        m.status === "finished",
     );
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      <div className="flex-1 overflow-y-auto p-4 mb-16">
-        <div className="max-w-4xl mx-auto space-y-4 h-full">
+    <div className="flex h-full flex-col bg-background">
+      <div className="mb-16 flex-1 overflow-y-auto p-4">
+        <div className="mx-auto h-full max-w-4xl space-y-4">
           {messages.length === 0 && !isLoading ? (
-            <div className="flex items-center justify-center text-foreground h-full">
+            <div className="flex h-full items-center justify-center text-foreground">
               <h1 className="text-2xl">Where should we begin?</h1>
             </div>
           ) : (
@@ -295,14 +294,14 @@ export function ChatView() {
                   }`}
                 >
                   {m.role === "user" ? (
-                    <div className="max-w-[70%] rounded-lg px-4 py-2 border bg-sidebar-accent text-sidebar-accent-foreground border-border ml-auto">
+                    <div className="ml-auto max-w-[70%] rounded-lg border border-border bg-sidebar-accent px-4 py-2 text-sidebar-accent-foreground">
                       <Message data={m} />
                       {m.error && (
                         <div className="text-red-500 text-xs">{m.error}</div>
                       )}
                     </div>
                   ) : (
-                    <div className="text-foreground max-w-[70%]">
+                    <div className="max-w-[70%] text-foreground">
                       <Message data={m} />
                     </div>
                   )}
@@ -312,7 +311,7 @@ export function ChatView() {
           )}
           {showOptimisticMessage && (
             <div className="flex justify-start">
-              <div className="text-foreground max-w-[70%]">
+              <div className="max-w-[70%] text-foreground">
                 <Message data={streamingMessage} />
               </div>
             </div>

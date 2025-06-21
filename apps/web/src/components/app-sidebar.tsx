@@ -1,5 +1,9 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
+import { useMutation } from "convex/react";
+import { Pin, PinOff, X } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Separator } from "~/components/ui/seperator";
 import {
   Sidebar,
   SidebarContent,
@@ -8,23 +12,19 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuAction,
 } from "~/components/ui/sidebar";
-import { authClient } from "~/lib/auth/client";
-import { ProfileCard } from "./auth/profile-card";
-import { api } from "~/lib/db/server";
-import { Pin, PinOff, X } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import { useMutation } from "convex/react";
-import { Separator } from "~/components/ui/seperator";
-import { useChatsList } from "~/hooks/useChatsList";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
+import { useChatsList } from "~/hooks/useChatsList";
+import { authClient } from "~/lib/auth/client";
+import { api } from "~/lib/db/server";
+import { ProfileCard } from "./auth/profile-card";
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
@@ -44,7 +44,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="pt-2">
-          <h1 className="text-lg font-semibold text-center">OpenYap</h1>
+          <h1 className="text-center font-semibold text-lg">OpenYap</h1>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -65,7 +65,7 @@ export function AppSidebar() {
         {pinned.length > 0 && (
           <SidebarGroup>
             <SidebarGroupContent>
-              <div className="p-1 text-xs font-medium text-muted-foreground">
+              <div className="p-1 font-medium text-muted-foreground text-xs">
                 Pinned
               </div>
               <SidebarMenu>
@@ -88,7 +88,7 @@ export function AppSidebar() {
                       >
                         <Tooltip>
                           <TooltipTrigger className="truncate" asChild>
-                            <span className="block truncate max-w-full">
+                            <span className="block max-w-full truncate">
                               {chat.title}
                             </span>
                           </TooltipTrigger>
@@ -98,7 +98,7 @@ export function AppSidebar() {
                         </Tooltip>
                       </Link>
                     </SidebarMenuButton>
-                    <div className="hidden absolute right-1 top-1.5 z-10 group-hover/item:flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
+                    <div className="absolute top-1.5 right-1 z-10 hidden flex-row items-center gap-1 group-hover/item:flex group-hover/item:bg-sidebar-accent">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <SidebarMenuAction
@@ -111,7 +111,7 @@ export function AppSidebar() {
                                 sessionToken: session?.session.token ?? "",
                               });
                             }}
-                            className="static hover:text-blue-500 hover:cursor-pointer"
+                            className="static hover:cursor-pointer hover:text-blue-500"
                           >
                             <PinOff className="size-4" />
                           </SidebarMenuAction>
@@ -135,7 +135,7 @@ export function AppSidebar() {
                                 navigate({ to: "/" });
                               }
                             }}
-                            className="static hover:text-destructive hover:cursor-pointer"
+                            className="static hover:cursor-pointer hover:text-destructive"
                           >
                             <X className="size-4" />
                           </SidebarMenuAction>
@@ -168,7 +168,7 @@ export function AppSidebar() {
                     >
                       <Tooltip>
                         <TooltipTrigger className="truncate" asChild>
-                          <span className="block truncate max-w-full">
+                          <span className="block max-w-full truncate">
                             {chat.title}
                           </span>
                         </TooltipTrigger>
@@ -178,7 +178,7 @@ export function AppSidebar() {
                       </Tooltip>
                     </Link>
                   </SidebarMenuButton>
-                  <div className="hidden absolute right-1 top-1.5 z-10 group-hover/item:flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
+                  <div className="absolute top-1.5 right-1 z-10 hidden flex-row items-center gap-1 group-hover/item:flex group-hover/item:bg-sidebar-accent">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <SidebarMenuAction
@@ -191,7 +191,7 @@ export function AppSidebar() {
                               sessionToken: session?.session.token ?? "",
                             });
                           }}
-                          className="static hover:text-blue-500 hover:cursor-pointer"
+                          className="static hover:cursor-pointer hover:text-blue-500"
                         >
                           <Pin className="size-4" />
                         </SidebarMenuAction>
@@ -215,7 +215,7 @@ export function AppSidebar() {
                               navigate({ to: "/" });
                             }
                           }}
-                          className="static hover:text-destructive hover:cursor-pointer"
+                          className="static hover:cursor-pointer hover:text-destructive"
                         >
                           <X className="size-4" />
                         </SidebarMenuAction>
