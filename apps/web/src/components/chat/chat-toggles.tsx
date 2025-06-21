@@ -31,7 +31,7 @@ const ChatToggles = memo(function ChatToggles() {
       onValueChange={handleChange}
     >
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <ToggleGroupItem value="search" size="default">
             <Icon icon="lucide:globe" className="bg-transparent" />
           </ToggleGroupItem>
