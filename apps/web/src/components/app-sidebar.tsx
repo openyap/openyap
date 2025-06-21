@@ -20,6 +20,11 @@ import { Button } from "~/components/ui/button";
 import { useMutation } from "convex/react";
 import { Separator } from "~/components/ui/seperator";
 import { useChatsList } from "~/hooks/useChatsList";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
@@ -81,43 +86,64 @@ export function AppSidebar() {
                         to="/chat/$chatId"
                         params={{ chatId: chat._id }}
                       >
-                        <span className="block truncate max-w-full">
-                          {chat.title}
-                        </span>
+                        <Tooltip>
+                          <TooltipTrigger className="truncate">
+                            <span className="block truncate max-w-full">
+                              {chat.title}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent hideWhenDetached>
+                            <p>{chat.title}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </Link>
                     </SidebarMenuButton>
                     <div className="hidden absolute right-1 top-1.5 z-10 group-hover/item:flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
-                      <SidebarMenuAction
-                        showOnHover
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          await unpinChat({
-                            chatId: chat._id,
-                            sessionToken: session?.session.token ?? "",
-                          });
-                        }}
-                        className="static hover:text-blue-500 hover:cursor-pointer"
-                      >
-                        <PinOff className="size-4" />
-                      </SidebarMenuAction>
-                      <SidebarMenuAction
-                        showOnHover
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          await deleteChat({
-                            chatId: chat._id,
-                            sessionToken: session?.session.token ?? "",
-                          });
-                          if (params.chatId === chat._id) {
-                            navigate({ to: "/" });
-                          }
-                        }}
-                        className="static hover:text-destructive hover:cursor-pointer"
-                      >
-                        <X className="size-4" />
-                      </SidebarMenuAction>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <SidebarMenuAction
+                            showOnHover
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              await unpinChat({
+                                chatId: chat._id,
+                                sessionToken: session?.session.token ?? "",
+                              });
+                            }}
+                            className="static hover:text-blue-500 hover:cursor-pointer"
+                          >
+                            <PinOff className="size-4" />
+                          </SidebarMenuAction>
+                        </TooltipTrigger>
+                        <TooltipContent hideWhenDetached>
+                          <p>Unpin</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <SidebarMenuAction
+                            showOnHover
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              await deleteChat({
+                                chatId: chat._id,
+                                sessionToken: session?.session.token ?? "",
+                              });
+                              if (params.chatId === chat._id) {
+                                navigate({ to: "/" });
+                              }
+                            }}
+                            className="static hover:text-destructive hover:cursor-pointer"
+                          >
+                            <X className="size-4" />
+                          </SidebarMenuAction>
+                        </TooltipTrigger>
+                        <TooltipContent hideWhenDetached>
+                          <p>Delete</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </SidebarMenuItem>
                 ))}
@@ -140,43 +166,64 @@ export function AppSidebar() {
                       to="/chat/$chatId"
                       params={{ chatId: chat._id }}
                     >
-                      <span className="block truncate max-w-full">
-                        {chat.title}
-                      </span>
+                      <Tooltip>
+                        <TooltipTrigger className="truncate">
+                          <span className="block truncate max-w-full">
+                            {chat.title}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent hideWhenDetached>
+                          <p>{chat.title}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </Link>
                   </SidebarMenuButton>
                   <div className="hidden absolute right-1 top-1.5 z-10 group-hover/item:flex flex-row gap-1 items-center group-hover/item:bg-sidebar-accent">
-                    <SidebarMenuAction
-                      showOnHover
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        await pinChat({
-                          chatId: chat._id,
-                          sessionToken: session?.session.token ?? "",
-                        });
-                      }}
-                      className="static hover:text-blue-500 hover:cursor-pointer"
-                    >
-                      <Pin className="size-4" />
-                    </SidebarMenuAction>
-                    <SidebarMenuAction
-                      showOnHover
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        await deleteChat({
-                          chatId: chat._id,
-                          sessionToken: session?.session.token ?? "",
-                        });
-                        if (params.chatId === chat._id) {
-                          navigate({ to: "/" });
-                        }
-                      }}
-                      className="static hover:text-destructive hover:cursor-pointer"
-                    >
-                      <X className="size-4" />
-                    </SidebarMenuAction>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <SidebarMenuAction
+                          showOnHover
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            await pinChat({
+                              chatId: chat._id,
+                              sessionToken: session?.session.token ?? "",
+                            });
+                          }}
+                          className="static hover:text-blue-500 hover:cursor-pointer"
+                        >
+                          <Pin className="size-4" />
+                        </SidebarMenuAction>
+                      </TooltipTrigger>
+                      <TooltipContent hideWhenDetached>
+                        <p>Pin</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <SidebarMenuAction
+                          showOnHover
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            await deleteChat({
+                              chatId: chat._id,
+                              sessionToken: session?.session.token ?? "",
+                            });
+                            if (params.chatId === chat._id) {
+                              navigate({ to: "/" });
+                            }
+                          }}
+                          className="static hover:text-destructive hover:cursor-pointer"
+                        >
+                          <X className="size-4" />
+                        </SidebarMenuAction>
+                      </TooltipTrigger>
+                      <TooltipContent hideWhenDetached>
+                        <p>Delete</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </SidebarMenuItem>
               ))}
