@@ -1,46 +1,41 @@
 import { Icon } from "@iconify/react";
 import { memo, useCallback } from "react";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { Toggle } from "~/components/ui/toggle";
+import { Icon } from "@iconify/react";
 import { usePersisted } from "~/hooks/usePersisted";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
-export interface ToggleState {
-  search: boolean;
-}
-
 const ChatToggles = memo(function ChatToggles() {
-  const { value: toggles, set: setToggles } = usePersisted<ToggleState>(
-    "chat-toggle-options",
-    { search: false },
+  const { value: searchEnabled, set: setSearchEnabled } = usePersisted<boolean>(
+    "search-toggle",
+    false
   );
 
-  const groupValue = toggles.search ? ["search"] : [];
-
-  const handleChange = useCallback(
-    (values: string[]) => {
-      setToggles((prev) => ({ ...prev, search: values.includes("search") }));
+  const handleToggle = useCallback(
+    (pressed: boolean) => {
+      console.log("[ChatToggles] handleToggle", pressed);
+      setSearchEnabled(pressed);
     },
-    [setToggles],
+    [setSearchEnabled]
   );
 
   return (
-    <ToggleGroup
-      type="multiple"
-      variant="outline"
-      value={groupValue}
-      onValueChange={handleChange}
-    >
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <ToggleGroupItem value="search" size="default">
-            <Icon icon="lucide:globe" className="bg-transparent" />
-          </ToggleGroupItem>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Search</p>
-        </TooltipContent>
-      </Tooltip>
-    </ToggleGroup>
+    <Tooltip>
+      <TooltipTrigger>
+        <Toggle
+          variant="outline"
+          size="default"
+          pressed={searchEnabled}
+          onPressedChange={handleToggle}
+          asChild
+        >
+          <Icon icon="lucide:globe" className="bg-transparent" />
+        </Toggle>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Search</p>
+      </TooltipContent>
+    </Tooltip>
   );
 });
 

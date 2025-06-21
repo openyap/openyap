@@ -1,4 +1,14 @@
 import { useParams } from "@tanstack/react-router";
+<<<<<<< HEAD
+=======
+import { useMutation, useQuery } from "convex/react";
+import { authClient } from "~/lib/auth/client";
+import { api } from "~/lib/db/server";
+import { useChatsList } from "~/hooks/useChatsList";
+import { useCallback, useEffect, useState } from "react";
+import { usePersisted } from "~/hooks/usePersisted";
+import { models } from "~/lib/models";
+>>>>>>> 8d04a63 (fix(web): corrected search button not highlighting)
 import type { Id } from "convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
@@ -33,12 +43,17 @@ export function ChatView() {
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
 
+<<<<<<< HEAD
   const { value: toggles, reset: resetToggles } = usePersisted<ToggleState>(
     "chat-toggle-options",
     {
       search: false,
     },
   );
+=======
+  const { value: searchEnabled, reset: resetSearchToggle } =
+    usePersisted<boolean>("search-toggle", false);
+>>>>>>> 8d04a63 (fix(web): corrected search button not highlighting)
 
   const updateChat = useMutation(api.functions.chat.updateChat);
   const updateUserMessage = useMutation(
@@ -107,7 +122,7 @@ export function ChatView() {
             chatId,
             modelId: selectedModelId,
             messages: [...messages, { role, content }],
-            search: toggles.search,
+            search: searchEnabled,
           }),
         });
 
@@ -115,7 +130,7 @@ export function ChatView() {
           throw new Error("Failed to append message");
         }
 
-        resetToggles();
+        resetSearchToggle();
 
         const reader = response.body.getReader();
         let contentBuffer = "";
@@ -211,11 +226,16 @@ export function ChatView() {
       chatId,
       selectedModelId,
       messages,
-      toggles.search,
+      searchEnabled,
       updateUserMessage,
+<<<<<<< HEAD
       resetToggles,
       session?.session.token,
     ],
+=======
+      resetSearchToggle,
+    ]
+>>>>>>> 8d04a63 (fix(web): corrected search button not highlighting)
   );
 
   useEffect(() => {
