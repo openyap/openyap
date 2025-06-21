@@ -85,6 +85,19 @@ const updateAiMessage = async ({
   });
 };
 
+const getMessageStatus = async ({
+  messageId,
+  sessionToken,
+}: {
+  messageId: Id<"message">;
+  sessionToken: string;
+}) => {
+  return await convexServer.query(api.functions.message.getMessageStatus, {
+    messageId,
+    sessionToken,
+  });
+};
+
 export const ServerRoute = createServerFileRoute("/api/chat").methods({
   GET: ({ request }) => {
     return new Response("What do you think chat?");
@@ -142,6 +155,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         model: openrouter.chat(appendedModelId),
         system: getSystemPrompt(selectedModel, session.user.name),
         messages,
+        abortSignal: request.signal,
       });
       const messageId = await createAiMessage({
         chatId,
@@ -173,12 +187,20 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           steps: [],
         };
         let lastReasoningUpdate = Date.now();
-        let lastUpdate = Date.now();
         let usage: MessageUsage;
-        const UPDATE_INTERVAL_MS = 500;
+        let isAborted = false;
 
         try {
           for await (const part of result.fullStream) {
+            const messageStatus = await getMessageStatus({
+              messageId,
+              sessionToken,
+            });
+            if (messageStatus === "aborted") {
+              isAborted = true;
+              break;
+            }
+
             let isReasoning = false;
 
             if (part.type === "text-delta") {
@@ -197,20 +219,45 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               usage = part.usage;
             }
 
-            if (Date.now() - lastUpdate > UPDATE_INTERVAL_MS) {
-              lastUpdate = Date.now();
-              const completedReasoning = reasoningBuffer.steps.length > 0 ? {
-                steps: reasoningBuffer.steps,
-                duration: reasoningBuffer.steps.reduce((acc, step) => acc + (step.duration ?? 0), 0),
-              } : undefined;
-              void updateAiMessage({
-                messageId,
+            const completedReasoning = reasoningBuffer.steps.length > 0 ? {
+              steps: reasoningBuffer.steps,
+              duration: reasoningBuffer.steps.reduce((acc, step) => acc + (step.duration ?? 0), 0),
+            } : undefined;
+            void updateAiMessage({
+              messageId,
+              content: contentBuffer,
+              reasoning: completedReasoning,
+              status: isReasoning ? "reasoning" : "generating",
+              sessionToken,
+            });
+          }
+
+          if (isAborted) {
+            console.log("[Chat API] Stream finished, but client aborted. Marking as aborted.");
+            const completedReasoning = reasoningBuffer.steps.length > 0 ? {
+              steps: reasoningBuffer.steps,
+              duration: reasoningBuffer.steps.reduce((acc, step) => acc + (step.duration ?? 0), 0),
+            } : undefined;
+            void updateAiMessage({
+              messageId,
+              content: contentBuffer,
+              reasoning: completedReasoning,
+              status: "aborted",
+              sessionToken,
+              model: selectedModel.name,
+              provider,
+              usage,
+              historyEntry: {
+                version: 1,
                 content: contentBuffer,
+                status: "aborted",
                 reasoning: completedReasoning,
-                status: isReasoning ? "reasoning" : "generating",
-                sessionToken,
-              });
-            }
+                provider,
+                model: selectedModel.name,
+                usage,
+              },
+            });
+            return;
           }
 
           // TODO: Add usage
@@ -218,7 +265,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             steps: reasoningBuffer.steps,
             duration: reasoningBuffer.steps.reduce((acc, step) => acc + (step.duration ?? 0), 0),
           } : undefined;
-          await updateAiMessage({
+          void updateAiMessage({
             messageId,
             content: contentBuffer,
             reasoning: completedReasoning,
@@ -238,7 +285,33 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             },
           });
         } catch (error) {
-          console.error("Error updating AI message in background:", error);
+          if ((error as Error).name === "AbortError") {
+            const completedReasoning = reasoningBuffer.steps.length > 0 ? {
+              steps: reasoningBuffer.steps,
+              duration: reasoningBuffer.steps.reduce((acc, step) => acc + (step.duration ?? 0), 0),
+            } : undefined;
+            void updateAiMessage({
+              messageId,
+              content: contentBuffer,
+              reasoning: completedReasoning,
+              status: "aborted",
+              sessionToken,
+              model: selectedModel.name,
+              provider,
+              usage,
+              historyEntry: {
+                version: 1,
+                content: contentBuffer,
+                status: "aborted",
+                reasoning: completedReasoning,
+                provider,
+                model: selectedModel.name,
+                usage,
+              },
+            });
+          } else {
+            console.error("Error updating AI message in background:", error);
+          }
         }
       })();
 
