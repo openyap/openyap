@@ -1,4 +1,4 @@
-import { mutation, internalQuery, internalMutation } from "../_generated/server";
+import { mutation, internalQuery, internalMutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
@@ -41,8 +41,17 @@ export const updateUserMessage = mutation({
     content: v.optional(v.string()),
     status: v.optional(v.string()),
     error: v.optional(v.string()),
+    sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken: args.sessionToken,
+    });
+
+    if (!session) {
+      return;
+    }
+
     await ctx.runMutation(internal.functions.message.updateMessage, {
       messageId: args.messageId,
       content: args.content,
@@ -143,6 +152,22 @@ export const updateAiMessage = mutation({
       usage: args.usage,
       historyEntry: args.historyEntry,
     });
+  },
+});
+
+export const getMessageStatus = query({
+  args: { messageId: v.id("message"), sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken: args.sessionToken,
+    });
+
+    if (!session) {
+      return null;
+    }
+
+    const message = await ctx.db.get(args.messageId);
+    return message?.status;
   },
 });
 

@@ -16,6 +16,7 @@ interface ChatInputProps {
   sessionToken: string;
   disabled: boolean;
   addUserMessage: (message: string) => void;
+  onStop: () => void;
 }
 
 const ChatInput = memo(function ChatInput({
@@ -23,6 +24,7 @@ const ChatInput = memo(function ChatInput({
   sessionToken,
   disabled,
   addUserMessage,
+  onStop,
 }: ChatInputProps) {
   const navigate = useNavigate();
   const createChat = useMutation(api.functions.chat.createChat);
@@ -118,18 +120,25 @@ const ChatInput = memo(function ChatInput({
             disabled={disabled}
             onKeyDown={handleKeyDown}
           />
-          <Button
-            type="button"
-            disabled={isDisabled()}
-            onClick={handleSendClick}
-            className={`${isDisabled() && "cursor-not-allowed"} h-full w-12`}
-          >
-            {disabled ? (
-              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-            ) : (
+          {disabled ? (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onStop}
+              className="h-full w-12 flex items-center justify-center"
+            >
+              <div className="w-4 h-4 bg-foreground" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              disabled={isDisabled()}
+              onClick={handleSendClick}
+              className={`${isDisabled() && "cursor-not-allowed"} h-full w-12`}
+            >
               <ArrowUpIcon className="w-4 h-4" />
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
         <ChatOptions />
       </div>

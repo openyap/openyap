@@ -30,6 +30,7 @@ export function ChatView() {
   const [streamingMessage, setStreamingMessage] =
     useState<StreamingMessage | null>(null);
   const [status, setStatus] = useState<"streaming" | "idle">("idle");
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const { value: toggles, reset: resetToggles } = usePersisted<ToggleState>(
     "chat-toggle-options",
@@ -41,6 +42,9 @@ export function ChatView() {
   const updateChat = useMutation(api.functions.chat.updateChat);
   const updateUserMessage = useMutation(
     api.functions.message.updateUserMessage
+  );
+  const updateAiMessage = useMutation(
+    api.functions.message.updateAiMessage
   );
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
@@ -93,9 +97,13 @@ export function ChatView() {
         status: "streaming",
       });
 
+      const controller = new AbortController();
+      setAbortController(controller);
+
       try {
         const response = await fetch("/api/chat", {
           method: "POST",
+          signal: controller.signal,
           body: JSON.stringify({
             chatId,
             modelId: selectedModelId,
@@ -178,13 +186,26 @@ export function ChatView() {
           status: "finished",
         });
       } catch (error) {
-        console.error(error);
-        updateUserMessage({
-          messageId: messages[messages.length]._id,
-          error: "Failed to generate message",
-        });
+        if ((error as Error).name === "AbortError") {
+          setStreamingMessage((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: "aborted",
+                }
+              : null
+          );
+        } else {
+          console.error(error);
+          updateUserMessage({
+            messageId: messages[messages.length - 1]._id,
+            error: "Failed to generate message",
+            sessionToken: session?.session.token ?? "skip",
+          });
+        }
       } finally {
         setStatus("idle");
+        setAbortController(null);
       }
     },
     [
@@ -194,6 +215,7 @@ export function ChatView() {
       toggles.search,
       updateUserMessage,
       resetToggles,
+      session?.session.token,
     ]
   );
 
@@ -225,6 +247,17 @@ export function ChatView() {
     },
     [append]
   );
+
+  const handleStop = useCallback(() => {
+    if (abortController) {
+      updateAiMessage({
+        messageId: messages[messages.length - 1]._id,
+        status: "aborted",
+        sessionToken: session?.session.token ?? "skip",
+      });
+      abortController.abort();
+    }
+  }, [abortController, messages, updateAiMessage, session?.session.token]);
 
   const isLoading = chatId && getChatMessages === undefined;
 
@@ -292,6 +325,7 @@ export function ChatView() {
         sessionToken={session?.session.token ?? "skip"}
         disabled={status === "streaming"}
         addUserMessage={addUserMessage}
+        onStop={handleStop}
       />
     </div>
   );
