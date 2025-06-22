@@ -3,6 +3,14 @@ import { internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
 import { mutation, query } from "../_generated/server";
 
+export const checkChatExists = query({
+  args: { chatId: v.id("chat") },
+  handler: async (ctx, args) => {
+    const chat = await ctx.db.get(args.chatId);
+    return !!chat;
+  },
+});
+
 export const getUserChats = query({
   args: { sessionToken: v.string() },
   handler: async (ctx, args) => {

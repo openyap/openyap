@@ -229,7 +229,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                     ),
                   }
                 : undefined;
-            void updateAiMessage({
+            await updateAiMessage({
               messageId,
               content: contentBuffer,
               reasoning: completedReasoning,
@@ -252,7 +252,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                     ),
                   }
                 : undefined;
-            void updateAiMessage({
+            await updateAiMessage({
               messageId,
               content: contentBuffer,
               reasoning: completedReasoning,
@@ -285,7 +285,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                   ),
                 }
               : undefined;
-          void updateAiMessage({
+          await updateAiMessage({
             messageId,
             content: contentBuffer,
             reasoning: completedReasoning,
@@ -316,7 +316,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                     ),
                   }
                 : undefined;
-            void updateAiMessage({
+            await updateAiMessage({
               messageId,
               content: contentBuffer,
               reasoning: completedReasoning,
