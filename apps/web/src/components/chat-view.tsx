@@ -1,19 +1,8 @@
 import { useParams } from "@tanstack/react-router";
-<<<<<<< HEAD
-=======
-import { useMutation, useQuery } from "convex/react";
-import { authClient } from "~/lib/auth/client";
-import { api } from "~/lib/db/server";
-import { useChatsList } from "~/hooks/useChatsList";
-import { useCallback, useEffect, useState } from "react";
-import { usePersisted } from "~/hooks/usePersisted";
-import { models } from "~/lib/models";
->>>>>>> 8d04a63 (fix(web): corrected search button not highlighting)
 import type { Id } from "convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
-import type { ToggleState } from "~/components/chat/chat-toggles";
 import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import type {
   ChatMessage,
@@ -43,28 +32,19 @@ export function ChatView() {
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
 
-<<<<<<< HEAD
-  const { value: toggles, reset: resetToggles } = usePersisted<ToggleState>(
-    "chat-toggle-options",
-    {
-      search: false,
-    },
-  );
-=======
   const { value: searchEnabled, reset: resetSearchToggle } =
     usePersisted<boolean>("search-toggle", false);
->>>>>>> 8d04a63 (fix(web): corrected search button not highlighting)
 
   const updateChat = useMutation(api.functions.chat.updateChat);
   const updateUserMessage = useMutation(
-    api.functions.message.updateUserMessage,
+    api.functions.message.updateUserMessage
   );
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
     isConvexId<"chat">(chatId)
       ? { chatId: chatId, sessionToken: session?.session.token }
-      : "skip",
+      : "skip"
   );
 
   const chatsList = useChatsList();
@@ -207,7 +187,7 @@ export function ChatView() {
                   ...prev,
                   status: "aborted",
                 }
-              : null,
+              : null
           );
         } else {
           console.error(error);
@@ -228,14 +208,9 @@ export function ChatView() {
       messages,
       searchEnabled,
       updateUserMessage,
-<<<<<<< HEAD
-      resetToggles,
-      session?.session.token,
-    ],
-=======
       resetSearchToggle,
+      session?.session.token,
     ]
->>>>>>> 8d04a63 (fix(web): corrected search button not highlighting)
   );
 
   useEffect(() => {
@@ -264,7 +239,7 @@ export function ChatView() {
     (message: string) => {
       append({ role: "user", content: message });
     },
-    [append],
+    [append]
   );
 
   const handleStop = useCallback(() => {
@@ -286,7 +261,7 @@ export function ChatView() {
       (m) =>
         m.role === "assistant" &&
         m.content === streamingMessage.content &&
-        m.status === "finished",
+        m.status === "finished"
     );
 
   return (

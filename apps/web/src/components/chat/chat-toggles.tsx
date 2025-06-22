@@ -1,7 +1,6 @@
 import { Icon } from "@iconify/react";
 import { memo, useCallback } from "react";
 import { Toggle } from "~/components/ui/toggle";
-import { Icon } from "@iconify/react";
 import { usePersisted } from "~/hooks/usePersisted";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
