@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
 import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
+import { SEARCH_TOGGLE_KEY } from "~/components/chat/chat-toggles";
 import type {
   ChatMessage,
   MessageReasoning,
@@ -33,7 +34,7 @@ export function ChatView() {
     useState<AbortController | null>(null);
 
   const { value: searchEnabled, reset: resetSearchToggle } =
-    usePersisted<boolean>("search-toggle", false);
+    usePersisted<boolean>(SEARCH_TOGGLE_KEY, false);
 
   const updateChat = useMutation(api.functions.chat.updateChat);
   const updateUserMessage = useMutation(
