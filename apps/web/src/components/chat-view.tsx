@@ -273,10 +273,11 @@ export function ChatView() {
               <h1 className="text-2xl">Where should we begin?</h1>
             </div>
           ) : (
-            messages.map((m) => {
+            messages.map((m, index) => {
               if (
                 m.role === "assistant" &&
-                (m.status === "generating" || m.status === "reasoning")
+                status === "streaming" &&
+                index === messages.length - 1
               ) {
                 return null;
               }
