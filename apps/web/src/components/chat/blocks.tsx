@@ -4,11 +4,11 @@ import type { Token, Tokens } from "marked";
 import { memo, useEffect, useMemo, useState, useTransition } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
-  oneLight,
   atomDark,
+  oneLight,
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { cn } from "~/lib/utils";
-import { useTheme } from "./theme-provider";
+import { useTheme } from "../theme-provider";
 
 function randomKey() {
   return crypto.randomUUID();
@@ -156,7 +156,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
           setShouldHighlight(true);
         });
       }, 750),
-    []
+    [],
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run only when the incoming text chunk changes
@@ -243,7 +243,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
       key={randomKey()}
       className="my-3 overflow-hidden rounded-lg border border-border bg-card shadow"
     >
-      <div className="flex justify-between border-b border-border bg-muted px-2 py-2">
+      <div className="flex justify-between border-border border-b bg-muted px-2 py-2">
         <div className="flex items-center gap-x-1">
           {/* TODO: Move icon state to prevent flickering from re-rendering */}
           {/* {token.lang && (
@@ -264,7 +264,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
               "iconify h-4 w-4",
               isChecked
                 ? "lucide--check text-green-500"
-                : "lucide--copy text-muted-foreground"
+                : "lucide--copy text-muted-foreground",
             )}
           />
         </button>
@@ -527,7 +527,7 @@ function TableBlock({ token }: { token: Tokens.Table }) {
             {token.header.map((cell) => (
               <th
                 key={randomKey()}
-                className={`border-b border-border px-4 py-2 font-semibold text-foreground ${cell.align ? `text-${cell.align}` : ""}`}
+                className={`border-border border-b px-4 py-2 font-semibold text-foreground ${cell.align ? `text-${cell.align}` : ""}`}
                 align={cell.align ?? undefined}
               >
                 {cell.tokens.map((t) => (
@@ -543,7 +543,7 @@ function TableBlock({ token }: { token: Tokens.Table }) {
               {row.map((cell) => (
                 <td
                   key={randomKey()}
-                  className={`border-b border-border px-4 py-2 text-foreground${cell.align ? ` text-${cell.align}` : ""}`}
+                  className={`border-border border-b px-4 py-2 text-foreground${cell.align ? `text-${cell.align}` : ""}`}
                   align={cell.align ?? undefined}
                 >
                   {cell.tokens.map((t) => (

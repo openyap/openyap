@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react";
 import { memo, useCallback } from "react";
 import { Toggle } from "~/components/ui/toggle";
-import { usePersisted } from "~/hooks/usePersisted";
+import { usePersisted } from "~/hooks/use-persisted";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export const SEARCH_TOGGLE_KEY = "search-toggle";
@@ -9,14 +9,14 @@ export const SEARCH_TOGGLE_KEY = "search-toggle";
 const ChatToggles = memo(function ChatToggles() {
   const { value: searchEnabled, set: setSearchEnabled } = usePersisted<boolean>(
     SEARCH_TOGGLE_KEY,
-    false
+    false,
   );
 
   const handleToggle = useCallback(
     (pressed: boolean) => {
       setSearchEnabled(pressed);
     },
-    [setSearchEnabled]
+    [setSearchEnabled],
   );
 
   return (

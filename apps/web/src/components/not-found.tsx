@@ -2,21 +2,21 @@ import { Link } from "@tanstack/react-router";
 
 export function NotFound() {
   return (
-    <section className="bg-background font-sans min-h-screen flex items-center justify-center">
+    <section className="flex min-h-screen items-center justify-center bg-background font-sans">
       <div className="container mx-auto">
         <div className="flex justify-center">
-          <div className="w-full sm:w-10/12 md:w-8/12 text-center">
+          <div className="w-full text-center sm:w-10/12 md:w-8/12">
             <div
-              className="bg-[url(https://cdn.dribbble.com/users/285475/screenshots/2083086/dribbble_1.gif)] h-[250px] sm:h-[350px] md:h-[400px] bg-center bg-no-repeat bg-contain"
+              className="h-[250px] bg-[url(https://cdn.dribbble.com/users/285475/screenshots/2083086/dribbble_1.gif)] bg-center bg-contain bg-no-repeat sm:h-[350px] md:h-[400px]"
               aria-hidden="true"
             >
-              <h1 className="text-center text-foreground text-6xl sm:text-7xl md:text-8xl pt-6 sm:pt-8">
+              <h1 className="pt-6 text-center text-6xl text-foreground sm:pt-8 sm:text-7xl md:text-8xl">
                 OpenYap
               </h1>
             </div>
 
             <div className="mt-[-50px]">
-              <h3 className="text-2xl text-foreground sm:text-3xl font-bold mb-4">
+              <h3 className="mb-4 font-bold text-2xl text-foreground sm:text-3xl">
                 Look like you're lost
               </h3>
               <p className="mb-6 text-foreground sm:mb-5">
@@ -25,7 +25,7 @@ export function NotFound() {
 
               <Link
                 to="/"
-                className="my-5 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md"
+                className="my-5 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
               >
                 Start a new chat
               </Link>

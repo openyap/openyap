@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react";
 import { marked } from "marked";
 import { memo, useMemo, useState } from "react";
-import { TokenBlock } from "~/components/blocks";
+import { TokenBlock } from "~/components/chat/blocks";
 import type {
   ChatMessage,
   MessageReasoning,
@@ -13,7 +13,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
-import { AnimatedShinyText } from "./ui/animated-shiny-text";
+import { AnimatedShinyText } from "../ui/animated-shiny-text";
 
 interface ReasoningCollapsibleProps {
   readonly reasoning: MessageReasoning;

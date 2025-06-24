@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { usePersisted } from "~/hooks/usePersisted";
+import { usePersisted } from "~/hooks/use-persisted";
 import { getDefaultModel, models } from "~/lib/models";
 
 export const MODEL_PERSIST_KEY = "selected-model";

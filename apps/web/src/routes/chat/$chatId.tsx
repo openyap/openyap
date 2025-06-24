@@ -1,10 +1,10 @@
-import { notFound } from "@tanstack/react-router";
 import { convexQuery } from "@convex-dev/react-query";
+import { notFound } from "@tanstack/react-router";
 import type { Id } from "convex/_generated/dataModel";
+import { ChatView } from "~/components/chat/chat-view";
+import { NotFound } from "~/components/not-found";
 import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
-import { ChatView } from "~/components/chat-view";
-import { NotFound } from "~/components/not-found";
 
 export const Route = createFileRoute({
   loader: async ({ params, context }) => {
