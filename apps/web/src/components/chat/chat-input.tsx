@@ -7,7 +7,7 @@ import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { inputStore } from "~/components/chat/stores";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { usePersisted } from "~/hooks/usePersisted";
+import { usePersisted } from "~/hooks/use-persisted";
 import { api } from "~/lib/db/server";
 import { getDefaultModel, getModelById } from "~/lib/models";
 
@@ -110,7 +110,7 @@ const ChatInput = memo(function ChatInput({
 
   return (
     <div className="sticky bottom-0 z-10 bg-background pb-4">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 px-4">
         <div className="flex h-12 gap-2">
           <Input
             className="h-full bg-background"

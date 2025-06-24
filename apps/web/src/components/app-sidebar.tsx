@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
 import { useMutation } from "convex/react";
 import { Pin, PinOff, X } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/seperator";
 import {
@@ -21,10 +21,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { useChatsList } from "~/hooks/useChatsList";
+import { useChatsList } from "~/hooks/use-chats-list";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { ProfileCard } from "./auth/profile-card";
+import { useTheme } from "~/components/theme-provider";
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
@@ -43,8 +44,11 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="pt-2">
+        <div className="pt-2 relative">
           <h1 className="text-center font-semibold text-lg">OpenYap</h1>
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            <ThemeToggle />
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -235,5 +239,20 @@ export function AppSidebar() {
         <ProfileCard />
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="Toggle theme"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      className="ml-2"
+    >
+      {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+    </Button>
   );
 }

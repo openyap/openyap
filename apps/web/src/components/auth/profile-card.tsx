@@ -66,7 +66,7 @@ export function ProfileCard() {
   }
 
   return (
-    <div className="flex h-12 items-center justify-center rounded border border-gray-200">
+    <div className="flex h-12 items-center justify-center rounded">
       <Button
         type="button"
         onClick={handleGoogleLogin}

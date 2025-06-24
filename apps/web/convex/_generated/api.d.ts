@@ -17,6 +17,7 @@ import type * as betterAuth from "../betterAuth.js";
 import type * as functions_chat from "../functions/chat.js";
 import type * as functions_chatMember from "../functions/chatMember.js";
 import type * as functions_message from "../functions/message.js";
+import type * as functions_user from "../functions/user.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   "functions/chat": typeof functions_chat;
   "functions/chatMember": typeof functions_chatMember;
   "functions/message": typeof functions_message;
+  "functions/user": typeof functions_user;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

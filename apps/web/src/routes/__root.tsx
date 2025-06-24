@@ -8,12 +8,12 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { AppSidebar } from "~/components/app-sidebar";
+import { ThemeProvider } from "~/components/theme-provider";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "~/components/ui/sidebar";
-import { ThemeProvider } from "~/components/theme-provider";
 
 import appCss from "~/styles.css?url";
 
@@ -38,6 +38,16 @@ export const Route = createRootRouteWithContext<{
       },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
+    scripts: [
+      ...(import.meta.env.DEV
+        ? [
+            {
+              src: "https://unpkg.com/react-scan/dist/auto.global.js",
+              crossOrigin: "anonymous" as const,
+            },
+          ]
+        : []),
+    ],
   }),
   component: RootComponent,
 });
@@ -54,16 +64,10 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {import.meta.env.DEV && (
-          <script
-            crossOrigin="anonymous"
-            src="//unpkg.com/react-scan/dist/auto.global.js"
-          />
-        )}
         <HeadContent />
       </head>
       <body>
-        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <ThemeProvider defaultTheme="system">
           <SidebarProvider>
             <div className="fixed top-0 left-0 z-50 p-4">
               <SidebarTrigger />

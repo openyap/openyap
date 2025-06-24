@@ -1,5 +1,5 @@
 import { useQuery as useConvexQuery } from "convex/react";
-import { usePersistedQuery } from "~/hooks/usePersistedQuery";
+import { usePersistedQuery } from "~/hooks/use-persisted-query";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 

@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { usePersisted } from "~/hooks/use-persisted";
 
 export type Theme = "dark" | "light" | "system";
 
 interface ThemeProviderProps {
   readonly children: React.ReactNode;
   readonly defaultTheme?: Theme;
-  readonly storageKey?: string;
 }
 
 interface ThemeProviderState {
@@ -25,12 +25,11 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "ui-theme",
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return defaultTheme;
-    return (localStorage.getItem(storageKey) as Theme) ?? defaultTheme;
-  });
+  const { value: theme, set: setTheme } = usePersisted<Theme>(
+    "theme",
+    defaultTheme,
+  );
 
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") {
@@ -69,10 +68,7 @@ export function ThemeProvider({
   const value: ThemeProviderState = {
     theme,
     resolvedTheme,
-    setTheme: (newTheme) => {
-      localStorage.setItem(storageKey, newTheme);
-      setTheme(newTheme);
-    },
+    setTheme,
   };
 
   return (

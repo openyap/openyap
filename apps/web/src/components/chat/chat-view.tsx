@@ -3,16 +3,16 @@ import type { Id } from "convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
-import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { SEARCH_TOGGLE_KEY } from "~/components/chat/chat-toggles";
+import { Message } from "~/components/chat/message";
+import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import type {
   ChatMessage,
   MessageReasoning,
   StreamingMessage,
 } from "~/components/chat/types";
-import { Message } from "~/components/message";
-import { useChatsList } from "~/hooks/useChatsList";
-import { usePersisted } from "~/hooks/usePersisted";
+import { useChatsList } from "~/hooks/use-chats-list";
+import { usePersisted } from "~/hooks/use-persisted";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
@@ -38,14 +38,14 @@ export function ChatView() {
 
   const updateChat = useMutation(api.functions.chat.updateChat);
   const updateUserMessage = useMutation(
-    api.functions.message.updateUserMessage
+    api.functions.message.updateUserMessage,
   );
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
     isConvexId<"chat">(chatId)
       ? { chatId: chatId, sessionToken: session?.session.token }
-      : "skip"
+      : "skip",
   );
 
   const chatsList = useChatsList();
@@ -188,7 +188,7 @@ export function ChatView() {
                   ...prev,
                   status: "aborted",
                 }
-              : null
+              : null,
           );
         } else {
           console.error(error);
@@ -211,7 +211,7 @@ export function ChatView() {
       updateUserMessage,
       resetSearchToggle,
       session?.session.token,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -240,7 +240,7 @@ export function ChatView() {
     (message: string) => {
       append({ role: "user", content: message });
     },
-    [append]
+    [append],
   );
 
   const handleStop = useCallback(() => {
@@ -262,7 +262,7 @@ export function ChatView() {
       (m) =>
         m.role === "assistant" &&
         m.content === streamingMessage.content &&
-        m.status === "finished"
+        m.status === "finished",
     );
 
   return (
