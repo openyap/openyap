@@ -48,7 +48,7 @@ export function ProfileCard() {
 
   if (session.data?.user) {
     return (
-      <div className="flex h-12 items-center justify-between rounded border border-gray-200 px-2">
+      <div className="flex h-12 items-center justify-between rounded border border-border px-2 dark:border-border">
         <div className="flex items-center gap-2">
           <Avatar>
             <AvatarImage src={session.data.user.image ?? ""} />

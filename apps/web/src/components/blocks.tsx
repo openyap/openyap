@@ -3,8 +3,12 @@ import debounce from "lodash/debounce";
 import type { Token, Tokens } from "marked";
 import { memo, useEffect, useMemo, useState, useTransition } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import {
+  oneLight,
+  atomDark,
+} from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { cn } from "~/lib/utils";
+import { useTheme } from "./theme-provider";
 
 function randomKey() {
   return crypto.randomUUID();
@@ -96,7 +100,7 @@ export function TokenBlock({ token }: TokenBlockProps) {
       return <TextBlock key={randomKey()} token={token as Tokens.Text} />;
     default:
       return (
-        <span key={randomKey()} className="text-base text-gray-800">
+        <span key={randomKey()} className="text-base text-foreground">
           {token.raw}
         </span>
       );
@@ -106,13 +110,13 @@ export function TokenBlock({ token }: TokenBlockProps) {
 function StrongBlock({ token }: { token: Tokens.Strong }) {
   if (!token.tokens) {
     return (
-      <strong key={randomKey()} className="text-base text-gray-900">
+      <strong key={randomKey()} className="text-base text-foreground">
         {token.text}
       </strong>
     );
   }
   return (
-    <strong key={randomKey()} className="text-gray-900">
+    <strong key={randomKey()} className="text-foreground">
       {token.tokens.map((t, _i) => (
         <TokenBlock key={randomKey()} token={t} />
       ))}
@@ -123,13 +127,13 @@ function StrongBlock({ token }: { token: Tokens.Strong }) {
 function TextBlock({ token }: { token: Tokens.Text }) {
   if (!token.tokens) {
     return (
-      <span key={randomKey()} className="text-gray-800">
+      <span key={randomKey()} className="text-foreground">
         {token.text}
       </span>
     );
   }
   return (
-    <span key={randomKey()} className="text-gray-800">
+    <span key={randomKey()} className="text-foreground">
       {token.tokens.map((t, _i) => (
         <TokenBlock key={randomKey()} token={t} />
       ))}
@@ -142,6 +146,8 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
   const [shouldHighlight, setShouldHighlight] = useState<boolean>(false);
   const [pendingHighlight, startTransition] = useTransition();
   const highlightedLang = token.lang ?? "text";
+  const { resolvedTheme } = useTheme();
+  const isDarkTheme = resolvedTheme === "dark";
 
   const triggerHighlight = useMemo(
     () =>
@@ -150,7 +156,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
           setShouldHighlight(true);
         });
       }, 750),
-    [],
+    []
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run only when the incoming text chunk changes
@@ -169,9 +175,9 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
     if (!shouldHighlight || pendingHighlight) {
       return (
         <pre
-          className="language-none text-gray-400"
+          className="language-none text-muted-foreground"
           style={{
-            background: "#fafafa",
+            background: isDarkTheme ? "#1D1F21" : "#fafafa",
             fontFamily: commonFont,
             whiteSpace: "pre",
             direction: "ltr",
@@ -210,7 +216,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
     return (
       <SyntaxHighlighter
         language={highlightedLang}
-        style={oneLight}
+        style={isDarkTheme ? atomDark : oneLight}
         customStyle={{
           fontSize: "14px",
           fontFamily: commonFont,
@@ -219,7 +225,13 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
         {token.text}
       </SyntaxHighlighter>
     );
-  }, [shouldHighlight, pendingHighlight, highlightedLang, token.text]);
+  }, [
+    shouldHighlight,
+    pendingHighlight,
+    highlightedLang,
+    token.text,
+    isDarkTheme,
+  ]);
 
   async function copyText() {
     setIsChecked(await copyToClipboard(token.text));
@@ -229,9 +241,9 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
   return (
     <div
       key={randomKey()}
-      className="my-3 overflow-hidden rounded-lg border border-gray-200 bg-white shadow"
+      className="my-3 overflow-hidden rounded-lg border border-border bg-card shadow"
     >
-      <div className="flex justify-between border-gray-200 border-b bg-gray-50 px-2 py-2">
+      <div className="flex justify-between border-b border-border bg-muted px-2 py-2">
         <div className="flex items-center gap-x-1">
           {/* TODO: Move icon state to prevent flickering from re-rendering */}
           {/* {token.lang && (
@@ -252,12 +264,12 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
               "iconify h-4 w-4",
               isChecked
                 ? "lucide--check text-green-500"
-                : "lucide--copy text-gray-400",
+                : "lucide--copy text-muted-foreground"
             )}
           />
         </button>
       </div>
-      <pre className="*:!m-0 overflow-auto bg-gray-50">{codeElement}</pre>
+      <pre className="*:!m-0 overflow-auto bg-background">{codeElement}</pre>
     </div>
   );
 }
@@ -272,7 +284,7 @@ function CodeSpanBlock({ token }: { token: Tokens.Codespan }) {
     <code
       key={randomKey()}
       onMouseDown={copyText}
-      className="cursor-pointer rounded bg-gray-100 px-1 py-[0.5px] text-base text-gray-800"
+      className="cursor-pointer rounded bg-muted px-1 py-[0.5px] text-base text-foreground"
     >
       {token.text}
     </code>
@@ -283,7 +295,7 @@ function ParagraphBlock({ token }: { token: Tokens.Paragraph }) {
   if (!token.tokens) {
     return (
       <p key={randomKey()}>
-        <span className="text-base text-gray-800">{token.text}</span>
+        <span className="text-base text-foreground">{token.text}</span>
       </p>
     );
   }
@@ -306,7 +318,7 @@ function ListItemBlock({
   return (
     <li key={randomKey()}>
       {number && (
-        <span className="pr-1 text-base text-gray-500">{number}.</span>
+        <span className="pr-1 text-base text-muted-foreground">{number}.</span>
       )}
       {(token.tokens ?? []).map((t, _i) => (
         <TokenBlock key={randomKey()} token={t} />
@@ -333,7 +345,10 @@ function ListBlock({ token }: { token: Tokens.List }) {
     );
   }
   return (
-    <ul key={randomKey()} className="list-disc pl-3 text-base text-gray-500">
+    <ul
+      key={randomKey()}
+      className="list-disc pl-3 text-base text-muted-foreground"
+    >
       {token.items.map((item: Tokens.ListItem) => (
         <ListItemBlock key={randomKey()} token={item} />
       ))}
@@ -456,7 +471,7 @@ function ImageBlock({ token }: { token: Tokens.Image }) {
 
 function BlockquoteBlock({ token }: { token: Tokens.Blockquote }) {
   return (
-    <blockquote key={randomKey()} className="border-gray-300 border-l-4 pl-4">
+    <blockquote key={randomKey()} className="border-border border-l-4 pl-4">
       {token.text}
     </blockquote>
   );
@@ -464,7 +479,7 @@ function BlockquoteBlock({ token }: { token: Tokens.Blockquote }) {
 
 function DelBlock({ token }: { token: Tokens.Del }) {
   return (
-    <del key={randomKey()} className="text-base text-gray-500">
+    <del key={randomKey()} className="text-base text-muted-foreground">
       {token.text}
     </del>
   );
@@ -473,13 +488,13 @@ function DelBlock({ token }: { token: Tokens.Del }) {
 function EmBlock({ token }: { token: Tokens.Em }) {
   if (!token.tokens) {
     return (
-      <em key={randomKey()} className="text-base text-gray-500">
+      <em key={randomKey()} className="text-base text-muted-foreground">
         {token.text}
       </em>
     );
   }
   return (
-    <em key={randomKey()} className="text-gray-500">
+    <em key={randomKey()} className="text-muted-foreground">
       {token.tokens.map((t, _i) => (
         <TokenBlock key={randomKey()} token={t} />
       ))}
@@ -489,7 +504,7 @@ function EmBlock({ token }: { token: Tokens.Em }) {
 
 function EscapeBlock({ token }: { token: Tokens.Escape }) {
   return (
-    <span key={randomKey()} className="text-base text-gray-500">
+    <span key={randomKey()} className="text-base text-muted-foreground">
       {token.text}
     </span>
   );
@@ -506,13 +521,13 @@ function HrBlock({ token: _ }: { token: Tokens.Hr }) {
 function TableBlock({ token }: { token: Tokens.Table }) {
   return (
     <div className="my-4 overflow-x-auto">
-      <table className="min-w-full border border-gray-200 bg-white text-left text-sm">
-        <thead className="bg-gray-50">
+      <table className="min-w-full border border-border bg-card text-left text-sm">
+        <thead className="bg-muted">
           <tr>
             {token.header.map((cell) => (
               <th
                 key={randomKey()}
-                className={`border-gray-200 border-b px-4 py-2 font-semibold text-gray-900 ${cell.align ? `text-${cell.align}` : ""}`}
+                className={`border-b border-border px-4 py-2 font-semibold text-foreground ${cell.align ? `text-${cell.align}` : ""}`}
                 align={cell.align ?? undefined}
               >
                 {cell.tokens.map((t) => (
@@ -524,11 +539,11 @@ function TableBlock({ token }: { token: Tokens.Table }) {
         </thead>
         <tbody>
           {token.rows.map((row) => (
-            <tr key={randomKey()} className="even:bg-gray-50">
+            <tr key={randomKey()} className="even:bg-muted">
               {row.map((cell) => (
                 <td
                   key={randomKey()}
-                  className={`border-gray-200 border-b px-4 py-2 text-gray-800${cell.align ? `text-${cell.align}` : ""}`}
+                  className={`border-b border-border px-4 py-2 text-foreground${cell.align ? ` text-${cell.align}` : ""}`}
                   align={cell.align ?? undefined}
                 >
                   {cell.tokens.map((t) => (
