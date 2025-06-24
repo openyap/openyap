@@ -13,6 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "~/components/ui/sidebar";
+import { ThemeProvider } from "~/components/theme-provider";
 
 import appCss from "~/styles.css?url";
 
@@ -62,13 +63,15 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <SidebarProvider>
-          <div className="fixed top-0 left-0 z-50 p-4">
-            <SidebarTrigger />
-          </div>
-          <AppSidebar />
-          <SidebarInset>{children}</SidebarInset>
-        </SidebarProvider>
+        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+          <SidebarProvider>
+            <div className="fixed top-0 left-0 z-50 p-4">
+              <SidebarTrigger />
+            </div>
+            <AppSidebar />
+            <SidebarInset>{children}</SidebarInset>
+          </SidebarProvider>
+        </ThemeProvider>
         <Scripts />
         <ReactQueryDevtools initialIsOpen={false} />
         <TanStackRouterDevtools initialIsOpen={false} />
