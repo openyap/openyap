@@ -268,7 +268,7 @@ export function ChatView() {
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="mb-16 flex-1 overflow-y-auto p-4">
-        <div className="mx-auto h-full max-w-4xl space-y-4">
+        <div className="mx-auto h-full max-w-3xl space-y-4">
           {messages.length === 0 && !isLoading ? (
             <div className="flex h-full items-center justify-center text-foreground">
               <h1 className="text-2xl">Where should we begin?</h1>
@@ -276,9 +276,11 @@ export function ChatView() {
           ) : (
             messages.map((m, index) => {
               if (
-                m.role === "assistant" &&
-                status === "streaming" &&
-                index === messages.length - 1
+                (m.role === "assistant" &&
+                  status === "streaming" &&
+                  index === messages.length - 1) ||
+                m.status === "generating" ||
+                m.status === "reasoning"
               ) {
                 return null;
               }
@@ -298,7 +300,7 @@ export function ChatView() {
                       )}
                     </div>
                   ) : (
-                    <div className="max-w-[70%] text-foreground">
+                    <div className="max-w-full text-foreground">
                       <Message data={m} />
                     </div>
                   )}
@@ -308,7 +310,7 @@ export function ChatView() {
           )}
           {showOptimisticMessage && (
             <div className="flex justify-start">
-              <div className="max-w-[70%] text-foreground">
+              <div className="max-w-full text-foreground">
                 <Message data={streamingMessage} />
               </div>
             </div>
