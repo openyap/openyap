@@ -127,4 +127,12 @@ export const models: readonly Model[] = [
     premium: false,
     reasoningEffort: false,
   },
+  {
+    id: 8,
+    name: "o4-mini",
+    modelId: "openai/o4-mini",
+    provider: "openrouter",
+    premium: false,
+    reasoningEffort: true,
+  },
 ] as const;
