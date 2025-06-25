@@ -19,27 +19,25 @@ const ModelSelector = memo(function ModelSelector() {
     (value: string) => {
       setSelectedModelId(Number.parseInt(value));
     },
-    [setSelectedModelId],
+    [setSelectedModelId]
   );
 
   return (
-    <div className="flex justify-start">
-      <Select
-        value={selectedModelId.toString()}
-        onValueChange={handleModelChange}
-      >
-        <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Select model" />
-        </SelectTrigger>
-        <SelectContent>
-          {models.map((model) => (
-            <SelectItem key={model.id} value={model.id.toString()}>
-              {model.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select
+      value={selectedModelId.toString()}
+      onValueChange={handleModelChange}
+    >
+      <SelectTrigger className="w-[200px]">
+        <SelectValue placeholder="Select model" />
+      </SelectTrigger>
+      <SelectContent>
+        {models.map((model) => (
+          <SelectItem key={model.id} value={model.id.toString()}>
+            {model.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 });
 

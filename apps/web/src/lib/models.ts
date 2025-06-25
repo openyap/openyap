@@ -4,8 +4,18 @@ export interface Model {
   readonly modelId: string;
   readonly provider: string;
   readonly premium: boolean;
+  readonly reasoningEffort: boolean;
   readonly isDefault?: boolean;
 }
+
+export const ReasoningEffort = {
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH: "High",
+} as const;
+
+export type EffortKey = keyof typeof ReasoningEffort;
+export type EffortLabel = (typeof ReasoningEffort)[EffortKey];
 
 export const getSystemPrompt = (model: Model, userName: string) => {
   const modelName = model.name;
@@ -65,6 +75,7 @@ export const models: readonly Model[] = [
     modelId: "google/gemini-2.0-flash-lite-001",
     provider: "openrouter",
     premium: false,
+    reasoningEffort: false,
     isDefault: true,
   },
   {
@@ -73,6 +84,7 @@ export const models: readonly Model[] = [
     modelId: "google/gemini-2.0-flash-001",
     provider: "openrouter",
     premium: false,
+    reasoningEffort: false,
   },
   {
     id: 3,
@@ -80,6 +92,7 @@ export const models: readonly Model[] = [
     modelId: "google/gemini-2.5-flash-lite-preview-06-17",
     provider: "openrouter",
     premium: false,
+    reasoningEffort: false,
     isDefault: false,
   },
   {
@@ -88,6 +101,7 @@ export const models: readonly Model[] = [
     modelId: "google/gemini-2.5-flash-preview-05-20",
     provider: "openrouter",
     premium: false,
+    reasoningEffort: false,
   },
   {
     id: 5,
@@ -95,6 +109,7 @@ export const models: readonly Model[] = [
     modelId: "google/gemini-2.5-pro-preview",
     provider: "openrouter",
     premium: false,
+    reasoningEffort: true,
   },
   {
     id: 6,
@@ -102,6 +117,7 @@ export const models: readonly Model[] = [
     modelId: "anthropic/claude-sonnet-4",
     provider: "openrouter",
     premium: true,
+    reasoningEffort: false,
   },
   {
     id: 7,
@@ -109,5 +125,6 @@ export const models: readonly Model[] = [
     modelId: "openai/gpt-4.1",
     provider: "openrouter",
     premium: false,
+    reasoningEffort: false,
   },
 ] as const;
