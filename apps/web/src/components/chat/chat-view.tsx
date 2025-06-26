@@ -1,5 +1,4 @@
 import { useParams } from "@tanstack/react-router";
-import type { Id } from "convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { useEffect } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
@@ -8,6 +7,7 @@ import { useChat } from "~/hooks/use-chat";
 import { useChatsList } from "~/hooks/use-chats-list";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
+import { isConvexId } from "~/lib/db/utils";
 import { models } from "~/lib/models";
 
 export function ChatView() {
@@ -23,7 +23,7 @@ export function ChatView() {
     stop,
     setSelectedModelId,
   } = useChat(chatId);
-  const updateChat = useMutation(api.functions.chat.updateChat);
+  const generateChatTitle = useMutation(api.functions.chat.generateChatTitle);
 
   // Restore model sync hook
   useEffect(() => {
@@ -43,23 +43,18 @@ export function ChatView() {
   useEffect(() => {
     async function sendFirstMessage() {
       const firstMessage = localStorage.getItem("firstMessage");
-      if (chatId && firstMessage) {
+      if (chatId && isConvexId<"chat">(chatId) && firstMessage) {
         localStorage.removeItem("firstMessage");
-        await append({ role: "user", content: firstMessage });
-        const response = await fetch("/api/generateChatTitle", {
-          method: "POST",
-          body: JSON.stringify({ message: firstMessage }),
-        });
-        const { title } = await response.json();
-        await updateChat({
-          chatId: chatId as Id<"chat">,
-          title,
+        await generateChatTitle({
+          message: firstMessage,
+          chatId,
           sessionToken: session?.session.token ?? "skip",
         });
+        await append({ role: "user", content: firstMessage });
       }
     }
     sendFirstMessage();
-  }, [chatId, session?.session.token, updateChat, append]);
+  }, [chatId, session?.session.token, append, generateChatTitle]);
 
   const isLoading = chatId && messages.length === 0;
 
