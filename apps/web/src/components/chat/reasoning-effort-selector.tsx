@@ -31,12 +31,12 @@ const effortOptions: EffortLabel[] = [
 const ReasoningEffortSelector = memo(function ReasoningEffortSelector() {
   const { value: selectedModelId } = usePersisted<number>(
     MODEL_PERSIST_KEY,
-    getDefaultModel().id,
+    getDefaultModel().id
   );
   const { value: selectedEffort, set: setSelectedEffort } =
     usePersisted<EffortLabel>(
       REASONING_EFFORT_PERSIST_KEY,
-      ReasoningEffort.LOW,
+      ReasoningEffort.LOW
     );
 
   const selectedModel = getModelById(selectedModelId);
@@ -45,7 +45,7 @@ const ReasoningEffortSelector = memo(function ReasoningEffortSelector() {
     (value: string) => {
       setSelectedEffort(value as EffortLabel);
     },
-    [setSelectedEffort],
+    [setSelectedEffort]
   );
 
   if (!selectedModel || !selectedModel.reasoningEffort) return null;
@@ -60,7 +60,7 @@ const ReasoningEffortSelector = memo(function ReasoningEffortSelector() {
           <SelectContent>
             {effortOptions.map((effort) => (
               <SelectItem key={effort} value={effort}>
-                {effort}
+                {effort.charAt(0).toUpperCase() + effort.slice(1)}
               </SelectItem>
             ))}
           </SelectContent>

@@ -96,7 +96,7 @@ export const createAiMessage = mutation({
           completionTokens: 0,
           totalTokens: 0,
         },
-      },
+      }
     );
 
     return messageId;
@@ -112,7 +112,8 @@ export const updateAiMessage = mutation({
         text: v.string(),
         details: v.array(v.object({ text: v.string() })),
         duration: v.number(),
-      }),
+        reasoningEffort: v.optional(v.string()),
+      })
     ),
     status: v.optional(v.string()),
     sessionToken: v.string(),
@@ -123,7 +124,7 @@ export const updateAiMessage = mutation({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      }),
+      })
     ),
     historyEntry: v.optional(
       v.object({
@@ -135,7 +136,8 @@ export const updateAiMessage = mutation({
             text: v.string(),
             details: v.array(v.object({ text: v.string() })),
             duration: v.number(),
-          }),
+            reasoningEffort: v.optional(v.string()),
+          })
         ),
         provider: v.optional(v.string()),
         model: v.optional(v.string()),
@@ -144,9 +146,9 @@ export const updateAiMessage = mutation({
             promptTokens: v.number(),
             completionTokens: v.number(),
             totalTokens: v.number(),
-          }),
+          })
         ),
-      }),
+      })
     ),
   },
   handler: async (ctx, args) => {
@@ -204,7 +206,8 @@ export const createMessage = internalMutation({
         text: v.string(),
         details: v.array(v.object({ text: v.string() })),
         duration: v.number(),
-      }),
+        reasoningEffort: v.optional(v.string()),
+      })
     ),
     status: v.string(),
     error: v.optional(v.string()),
@@ -213,7 +216,7 @@ export const createMessage = internalMutation({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      }),
+      })
     ),
     tools: v.optional(v.array(v.any())),
     sources: v.optional(v.array(v.any())),
@@ -227,7 +230,8 @@ export const createMessage = internalMutation({
               text: v.string(),
               details: v.array(v.object({ text: v.string() })),
               duration: v.number(),
-            }),
+              reasoningEffort: v.optional(v.string()),
+            })
           ),
           provider: v.optional(v.string()),
           model: v.optional(v.string()),
@@ -236,14 +240,14 @@ export const createMessage = internalMutation({
               promptTokens: v.number(),
               completionTokens: v.number(),
               totalTokens: v.number(),
-            }),
+            })
           ),
           status: v.string(),
           error: v.optional(v.string()),
           tools: v.optional(v.array(v.any())),
           sources: v.optional(v.array(v.any())),
-        }),
-      ),
+        })
+      )
     ),
     webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
@@ -284,7 +288,8 @@ export const updateMessage = internalMutation({
         text: v.string(),
         details: v.array(v.object({ text: v.string() })),
         duration: v.number(),
-      }),
+        reasoningEffort: v.optional(v.string()),
+      })
     ),
     status: v.optional(v.string()),
     error: v.optional(v.string()),
@@ -293,7 +298,7 @@ export const updateMessage = internalMutation({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      }),
+      })
     ),
     tools: v.optional(v.array(v.any())),
     sources: v.optional(v.array(v.any())),
@@ -306,7 +311,8 @@ export const updateMessage = internalMutation({
             text: v.string(),
             details: v.array(v.object({ text: v.string() })),
             duration: v.number(),
-          }),
+            reasoningEffort: v.optional(v.string()),
+          })
         ),
         provider: v.optional(v.string()),
         model: v.optional(v.string()),
@@ -315,13 +321,13 @@ export const updateMessage = internalMutation({
             promptTokens: v.number(),
             completionTokens: v.number(),
             totalTokens: v.number(),
-          }),
+          })
         ),
         status: v.optional(v.string()),
         error: v.optional(v.string()),
         tools: v.optional(v.array(v.any())),
         sources: v.optional(v.array(v.any())),
-      }),
+      })
     ),
     webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),

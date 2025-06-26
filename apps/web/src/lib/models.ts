@@ -9,9 +9,9 @@ export interface Model {
 }
 
 export const ReasoningEffort = {
-  LOW: "Low",
-  MEDIUM: "Medium",
-  HIGH: "High",
+  LOW: "low",
+  MEDIUM: "medium",
+  HIGH: "high",
 } as const;
 
 export type EffortKey = keyof typeof ReasoningEffort;
