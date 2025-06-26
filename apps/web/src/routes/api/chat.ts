@@ -8,7 +8,12 @@ import type { MessageReasoning, MessageUsage } from "~/components/chat/types";
 import { splitReasoningSteps } from "~/lib/ai/reasoning";
 import { auth } from "~/lib/auth/server";
 import { api, convexServer } from "~/lib/db/server";
-import { getDefaultModel, getModelById, getSystemPrompt } from "~/lib/models";
+import {
+  getDefaultModel,
+  getModelById,
+  getSystemPrompt,
+  ReasoningEffort,
+} from "~/lib/models";
 import { openrouter } from "~/lib/openrouter";
 
 // TODO: update messages with as much fields as possible
@@ -106,6 +111,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       chatId,
       modelId: requestedModelId,
       search = false,
+      reasoningEffort,
     } = await request.json();
 
     const lastMessage = messages[messages.length - 1];
@@ -132,12 +138,24 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       "Model ID: ",
       modelId,
       "Search: ",
-      search,
+      search
     );
+
+    if (reasoningEffort) {
+      console.log("[Chat API] Reasoning Effort:", reasoningEffort);
+    }
 
     const appendedModelId = search ? `${modelId}:online` : modelId;
 
     console.log("[Chat API] Appended Model ID: ", appendedModelId);
+
+    const providerOptions =
+      reasoningEffort && selectedModel.reasoningEffort
+        ? { openrouter: { reasoning: { effort: reasoningEffort } } }
+        : undefined;
+    if (providerOptions) {
+      console.log("[Chat API] Provider Options:", providerOptions);
+    }
 
     try {
       const result = streamText({
@@ -145,6 +163,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         system: getSystemPrompt(selectedModel, session.user.name),
         messages,
         abortSignal: request.signal,
+        ...(providerOptions ? { providerOptions } : {}),
       });
       const messageId = await createAiMessage({
         chatId,
@@ -176,6 +195,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           text: "",
           details: [],
           duration: 0,
+          reasoningEffort,
         };
         let lastReasoningUpdate = Date.now();
         let usage: MessageUsage;
@@ -203,7 +223,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               isReasoning = true;
               reasoningBuffer.text += part.textDelta;
               const steps = splitReasoningSteps(reasoningBuffer.text).map(
-                (step) => ({ text: step }),
+                (step) => ({ text: step })
               );
               reasoningBuffer.details = steps;
               reasoningBuffer.duration += Date.now() - lastReasoningUpdate;
@@ -215,7 +235,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             }
 
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
+              (step) => ({ text: step })
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -223,6 +243,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                     text: reasoningBuffer.text,
                     details: steps,
                     duration: reasoningBuffer.duration,
+                    reasoningEffort: reasoningEffort,
                   }
                 : undefined;
 
@@ -243,10 +264,10 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
           if (isAborted) {
             console.log(
-              "[Chat API] Stream finished, but client aborted. Marking as aborted.",
+              "[Chat API] Stream finished, but client aborted. Marking as aborted."
             );
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
+              (step) => ({ text: step })
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -254,6 +275,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                     text: reasoningBuffer.text,
                     details: steps,
                     duration: reasoningBuffer.duration,
+                    reasoningEffort: reasoningEffort,
                   }
                 : undefined;
             await updateAiMessage({
@@ -279,7 +301,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           }
 
           const steps = splitReasoningSteps(reasoningBuffer.text).map(
-            (step) => ({ text: step }),
+            (step) => ({ text: step })
           );
           const completedReasoning =
             reasoningBuffer.text.length > 0
@@ -287,6 +309,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                   text: reasoningBuffer.text,
                   details: steps,
                   duration: reasoningBuffer.duration,
+                  reasoningEffort: reasoningEffort,
                 }
               : undefined;
           await updateAiMessage({
@@ -311,7 +334,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         } catch (error) {
           if ((error as Error).name === "AbortError") {
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
+              (step) => ({ text: step })
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -319,6 +342,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                     text: reasoningBuffer.text,
                     details: steps,
                     duration: reasoningBuffer.duration,
+                    reasoningEffort: reasoningEffort,
                   }
                 : undefined;
             await updateAiMessage({

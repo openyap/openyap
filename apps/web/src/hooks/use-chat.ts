@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import { SEARCH_TOGGLE_KEY } from "~/components/chat/chat-toggles";
 import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
+import { REASONING_EFFORT_PERSIST_KEY } from "~/components/chat/reasoning-effort-selector";
 import type {
   ChatMessage,
   MessageReasoning,
@@ -13,7 +14,12 @@ import { splitReasoningSteps } from "~/lib/ai/reasoning";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
-import { getDefaultModel } from "~/lib/models";
+import {
+  getDefaultModel,
+  type EffortLabel,
+  ReasoningEffort,
+  getModelById,
+} from "~/lib/models";
 
 type ChatStatus = "streaming" | "idle";
 type Role = "user" | "data" | "system" | "assistant";
@@ -27,6 +33,10 @@ export function useChat(chatId: string | undefined) {
     set: setSearchEnabled,
     reset: resetSearchToggle,
   } = usePersisted<boolean>(SEARCH_TOGGLE_KEY, false);
+  const { value: reasoningEffort } = usePersisted<EffortLabel>(
+    REASONING_EFFORT_PERSIST_KEY,
+    ReasoningEffort.LOW
+  );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamingMessage, setStreamingMessage] =
     useState<StreamingMessage | null>(null);
@@ -35,14 +45,14 @@ export function useChat(chatId: string | undefined) {
     useState<AbortController | null>(null);
 
   const updateUserMessage = useMutation(
-    api.functions.message.updateUserMessage,
+    api.functions.message.updateUserMessage
   );
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
     isConvexId<"chat">(chatId)
       ? { chatId: chatId, sessionToken: session?.session.token }
-      : "skip",
+      : "skip"
   );
 
   useEffect(() => {
@@ -52,13 +62,7 @@ export function useChat(chatId: string | undefined) {
   }, [getChatMessages]);
 
   const append = useCallback(
-    async ({
-      role,
-      content,
-    }: {
-      role: Role;
-      content: string;
-    }) => {
+    async ({ role, content }: { role: Role; content: string }) => {
       if (!isConvexId<"chat">(chatId)) {
         return;
       }
@@ -71,6 +75,9 @@ export function useChat(chatId: string | undefined) {
       });
       const controller = new AbortController();
       setAbortController(controller);
+
+      const selectedModel = getModelById(selectedModelId);
+
       try {
         const response = await fetch("/api/chat", {
           method: "POST",
@@ -80,6 +87,10 @@ export function useChat(chatId: string | undefined) {
             modelId: selectedModelId,
             messages: [...messages, { role, content }],
             search: searchEnabled,
+            reasoningEffort:
+              selectedModel && !!selectedModel.reasoningEffort
+                ? reasoningEffort
+                : undefined,
           }),
         });
 
@@ -94,6 +105,7 @@ export function useChat(chatId: string | undefined) {
           text: "",
           details: [],
           duration: 0,
+          reasoningEffort: reasoningEffort,
         };
 
         await processDataStream({
@@ -116,7 +128,7 @@ export function useChat(chatId: string | undefined) {
             reasoningBuffer.text += value;
 
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
+              (step) => ({ text: step })
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -124,6 +136,7 @@ export function useChat(chatId: string | undefined) {
                     text: reasoningBuffer.text,
                     details: steps,
                     duration: reasoningBuffer.duration,
+                    reasoningEffort: reasoningEffort,
                   }
                 : undefined;
             setStreamingMessage((prev) => {
@@ -140,7 +153,7 @@ export function useChat(chatId: string | undefined) {
           },
           onFinishMessagePart() {
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
+              (step) => ({ text: step })
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -148,6 +161,7 @@ export function useChat(chatId: string | undefined) {
                     text: reasoningBuffer.text,
                     details: steps,
                     duration: reasoningBuffer.duration,
+                    reasoningEffort: reasoningEffort,
                   }
                 : undefined;
             setStreamingMessage({
@@ -162,7 +176,7 @@ export function useChat(chatId: string | undefined) {
       } catch (error) {
         if ((error as Error).name === "AbortError") {
           setStreamingMessage((prev) =>
-            prev ? { ...prev, status: "aborted" } : null,
+            prev ? { ...prev, status: "aborted" } : null
           );
         } else {
           updateUserMessage({
@@ -184,7 +198,8 @@ export function useChat(chatId: string | undefined) {
       updateUserMessage,
       resetSearchToggle,
       session?.session.token,
-    ],
+      reasoningEffort,
+    ]
   );
 
   const stop = useCallback(() => {
