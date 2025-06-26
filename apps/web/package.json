@@ -12,6 +12,8 @@
     "auth:secret": "pnpm dlx @better-auth/cli@latest secret"
   },
   "dependencies": {
+    "@ai-sdk/provider": "1.1.3",
+    "@ai-sdk/provider-utils": "2.2.8",
     "@ai-sdk/react": "^1.2.12",
     "@better-auth-kit/convex": "1.2.2",
     "@convex-dev/react-query": "0.0.0-alpha.8",
