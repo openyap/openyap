@@ -1,7 +1,8 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { Pin, PinOff, X } from "lucide-react";
-import { Sun, Moon } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "~/components/theme-provider";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/seperator";
 import {
@@ -25,7 +26,6 @@ import { useChatsList } from "~/hooks/use-chats-list";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { ProfileCard } from "./auth/profile-card";
-import { useTheme } from "~/components/theme-provider";
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();
@@ -44,9 +44,9 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="pt-2 relative">
+        <div className="relative pt-2">
           <h1 className="text-center font-semibold text-lg">OpenYap</h1>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+          <div className="-translate-y-1/2 absolute top-1/2 right-0">
             <ThemeToggle />
           </div>
         </div>
@@ -252,7 +252,11 @@ function ThemeToggle() {
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
       className="ml-2"
     >
-      {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      {resolvedTheme === "dark" ? (
+        <Sun className="size-4" />
+      ) : (
+        <Moon className="size-4" />
+      )}
     </Button>
   );
 }

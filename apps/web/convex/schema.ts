@@ -69,13 +69,13 @@ export default defineSchema({
     // Reasoning for the message (if AI)
     reasoning: v.optional(
       v.object({
-        steps: v.array(
+        text: v.string(),
+        details: v.array(
           v.object({
             text: v.string(),
-            duration: v.optional(v.number()),
           }),
         ),
-        duration: v.optional(v.number()),
+        duration: v.number(),
       }),
     ),
     // Metadata
@@ -102,13 +102,13 @@ export default defineSchema({
           // The reasoning for the message (if AI)
           reasoning: v.optional(
             v.object({
-              steps: v.array(
+              text: v.string(),
+              details: v.array(
                 v.object({
                   text: v.string(),
-                  duration: v.optional(v.number()),
                 }),
               ),
-              duration: v.optional(v.number()),
+              duration: v.number(),
             }),
           ),
           // The provider and model used for THIS attempt

@@ -1,4 +1,5 @@
 import { memo, useCallback } from "react";
+import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import {
   Select,
   SelectContent,
@@ -13,12 +14,11 @@ import {
 } from "~/components/ui/tooltip";
 import { usePersisted } from "~/hooks/use-persisted";
 import {
+  type EffortLabel,
+  ReasoningEffort,
   getDefaultModel,
   getModelById,
-  ReasoningEffort,
-  type EffortLabel,
 } from "~/lib/models";
-import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 
 export const REASONING_EFFORT_PERSIST_KEY = "selected-reasoning-effort";
 
@@ -31,12 +31,12 @@ const effortOptions: EffortLabel[] = [
 const ReasoningEffortSelector = memo(function ReasoningEffortSelector() {
   const { value: selectedModelId } = usePersisted<number>(
     MODEL_PERSIST_KEY,
-    getDefaultModel().id
+    getDefaultModel().id,
   );
   const { value: selectedEffort, set: setSelectedEffort } =
     usePersisted<EffortLabel>(
       REASONING_EFFORT_PERSIST_KEY,
-      ReasoningEffort.LOW
+      ReasoningEffort.LOW,
     );
 
   const selectedModel = getModelById(selectedModelId);
@@ -45,7 +45,7 @@ const ReasoningEffortSelector = memo(function ReasoningEffortSelector() {
     (value: string) => {
       setSelectedEffort(value as EffortLabel);
     },
-    [setSelectedEffort]
+    [setSelectedEffort],
   );
 
   if (!selectedModel || !selectedModel.reasoningEffort) return null;

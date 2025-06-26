@@ -8,12 +8,12 @@ import type {
   MessageStatus,
   StreamingMessage,
 } from "~/components/chat/types";
+import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
-import { AnimatedShinyText } from "../ui/animated-shiny-text";
 
 interface ReasoningCollapsibleProps {
   readonly reasoning: MessageReasoning;
@@ -32,7 +32,7 @@ const ReasoningCollapsible = ({
   if (!reasoning) return null;
 
   const [reasoningOpen, setReasoningOpen] = useState(false);
-  const reasoningHidden = reasoning.steps.length === 0;
+  const reasoningHidden = reasoning.text.length === 0;
 
   const isReasoning = status === "reasoning";
   const reasoningTitle = `Thought ${reasoning.duration ? `for ${formatSeconds(reasoning.duration)} seconds` : ""}`;
@@ -68,8 +68,8 @@ const ReasoningCollapsible = ({
         )}
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-2 text-xs">
-        {reasoning.steps.map((step) => {
-          const tokens = marked.lexer(step.text);
+        {reasoning.details.map((detail) => {
+          const tokens = marked.lexer(detail.text);
           return (
             <div key={crypto.randomUUID()} className="flex gap-x-2">
               <div className="flex w-4 shrink-0 flex-col items-center">
