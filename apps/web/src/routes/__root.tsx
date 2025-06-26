@@ -1,3 +1,4 @@
+import { scan } from "react-scan";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
@@ -16,6 +17,7 @@ import {
 } from "~/components/ui/sidebar";
 
 import appCss from "~/styles.css?url";
+import { useEffect } from "react";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -38,16 +40,7 @@ export const Route = createRootRouteWithContext<{
       },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
-    scripts: [
-      ...(import.meta.env.DEV
-        ? [
-            {
-              src: "https://unpkg.com/react-scan/dist/auto.global.js",
-              crossOrigin: "anonymous" as const,
-            },
-          ]
-        : []),
-    ],
+    scripts: [],
   }),
   component: RootComponent,
 });
@@ -61,6 +54,12 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: { readonly children: React.ReactNode }) {
+  useEffect(() => {
+    scan({
+      enabled: true,
+    });
+  }, []);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
