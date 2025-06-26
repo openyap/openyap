@@ -5,6 +5,7 @@ import {
 import { streamText } from "ai";
 import type { Id } from "convex/_generated/dataModel";
 import type { MessageReasoning, MessageUsage } from "~/components/chat/types";
+import { splitReasoningSteps } from "~/lib/ai/reasoning";
 import { auth } from "~/lib/auth/server";
 import { api, convexServer } from "~/lib/db/server";
 import { getDefaultModel, getModelById, getSystemPrompt } from "~/lib/models";
@@ -44,13 +45,7 @@ const updateAiMessage = async ({
 }: {
   messageId: Id<"message">;
   content: string;
-  reasoning?: {
-    steps: {
-      text: string;
-      duration?: number;
-    }[];
-    duration?: number;
-  };
+  reasoning?: MessageReasoning;
   status: string;
   sessionToken: string;
   model?: string;
@@ -60,13 +55,7 @@ const updateAiMessage = async ({
     version: number;
     content: string;
     status: string;
-    reasoning?: {
-      steps: {
-        text: string;
-        duration?: number;
-      }[];
-      duration?: number;
-    };
+    reasoning?: MessageReasoning;
     provider: string;
     model: string;
     usage?: MessageUsage;
@@ -184,11 +173,15 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       (async () => {
         let contentBuffer = "";
         const reasoningBuffer: MessageReasoning = {
-          steps: [],
+          text: "",
+          details: [],
+          duration: 0,
         };
         let lastReasoningUpdate = Date.now();
         let usage: MessageUsage;
         let isAborted = false;
+        let lastUpdate = Date.now();
+        const UPDATE_INTERVAL = 300;
 
         try {
           for await (const part of result.fullStream) {
@@ -208,10 +201,12 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             }
             if (part.type === "reasoning") {
               isReasoning = true;
-              reasoningBuffer.steps.push({
-                text: part.textDelta,
-                duration: Date.now() - lastReasoningUpdate,
-              });
+              reasoningBuffer.text += part.textDelta;
+              const steps = splitReasoningSteps(reasoningBuffer.text).map(
+                (step) => ({ text: step }),
+              );
+              reasoningBuffer.details = steps;
+              reasoningBuffer.duration += Date.now() - lastReasoningUpdate;
               lastReasoningUpdate = Date.now();
             }
 
@@ -219,37 +214,46 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               usage = part.usage;
             }
 
+            const steps = splitReasoningSteps(reasoningBuffer.text).map(
+              (step) => ({ text: step }),
+            );
             const completedReasoning =
-              reasoningBuffer.steps.length > 0
+              reasoningBuffer.text.length > 0
                 ? {
-                    steps: reasoningBuffer.steps,
-                    duration: reasoningBuffer.steps.reduce(
-                      (acc, step) => acc + (step.duration ?? 0),
-                      0,
-                    ),
+                    text: reasoningBuffer.text,
+                    details: steps,
+                    duration: reasoningBuffer.duration,
                   }
                 : undefined;
-            await updateAiMessage({
-              messageId,
-              content: contentBuffer,
-              reasoning: completedReasoning,
-              status: isReasoning ? "reasoning" : "generating",
-              sessionToken,
-            });
+
+            const now = Date.now();
+            const isFinal = part.type === "finish";
+            const shouldUpdate = isFinal || now - lastUpdate > UPDATE_INTERVAL;
+            if (shouldUpdate) {
+              lastUpdate = now;
+              await updateAiMessage({
+                messageId,
+                content: contentBuffer,
+                reasoning: completedReasoning,
+                status: isReasoning ? "reasoning" : "generating",
+                sessionToken,
+              });
+            }
           }
 
           if (isAborted) {
             console.log(
               "[Chat API] Stream finished, but client aborted. Marking as aborted.",
             );
+            const steps = splitReasoningSteps(reasoningBuffer.text).map(
+              (step) => ({ text: step }),
+            );
             const completedReasoning =
-              reasoningBuffer.steps.length > 0
+              reasoningBuffer.text.length > 0
                 ? {
-                    steps: reasoningBuffer.steps,
-                    duration: reasoningBuffer.steps.reduce(
-                      (acc, step) => acc + (step.duration ?? 0),
-                      0,
-                    ),
+                    text: reasoningBuffer.text,
+                    details: steps,
+                    duration: reasoningBuffer.duration,
                   }
                 : undefined;
             await updateAiMessage({
@@ -274,15 +278,15 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             return;
           }
 
-          // TODO: Add usage
+          const steps = splitReasoningSteps(reasoningBuffer.text).map(
+            (step) => ({ text: step }),
+          );
           const completedReasoning =
-            reasoningBuffer.steps.length > 0
+            reasoningBuffer.text.length > 0
               ? {
-                  steps: reasoningBuffer.steps,
-                  duration: reasoningBuffer.steps.reduce(
-                    (acc, step) => acc + (step.duration ?? 0),
-                    0,
-                  ),
+                  text: reasoningBuffer.text,
+                  details: steps,
+                  duration: reasoningBuffer.duration,
                 }
               : undefined;
           await updateAiMessage({
@@ -306,14 +310,15 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           });
         } catch (error) {
           if ((error as Error).name === "AbortError") {
+            const steps = splitReasoningSteps(reasoningBuffer.text).map(
+              (step) => ({ text: step }),
+            );
             const completedReasoning =
-              reasoningBuffer.steps.length > 0
+              reasoningBuffer.text.length > 0
                 ? {
-                    steps: reasoningBuffer.steps,
-                    duration: reasoningBuffer.steps.reduce(
-                      (acc, step) => acc + (step.duration ?? 0),
-                      0,
-                    ),
+                    text: reasoningBuffer.text,
+                    details: steps,
+                    duration: reasoningBuffer.duration,
                   }
                 : undefined;
             await updateAiMessage({

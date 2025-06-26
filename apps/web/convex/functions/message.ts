@@ -109,13 +109,9 @@ export const updateAiMessage = mutation({
     content: v.optional(v.string()),
     reasoning: v.optional(
       v.object({
-        steps: v.array(
-          v.object({
-            text: v.string(),
-            duration: v.optional(v.number()),
-          }),
-        ),
-        duration: v.optional(v.number()),
+        text: v.string(),
+        details: v.array(v.object({ text: v.string() })),
+        duration: v.number(),
       }),
     ),
     status: v.optional(v.string()),
@@ -136,13 +132,9 @@ export const updateAiMessage = mutation({
         status: v.string(),
         reasoning: v.optional(
           v.object({
-            steps: v.array(
-              v.object({
-                text: v.string(),
-                duration: v.optional(v.number()),
-              }),
-            ),
-            duration: v.optional(v.number()),
+            text: v.string(),
+            details: v.array(v.object({ text: v.string() })),
+            duration: v.number(),
           }),
         ),
         provider: v.optional(v.string()),
@@ -209,13 +201,9 @@ export const createMessage = internalMutation({
     content: v.string(),
     reasoning: v.optional(
       v.object({
-        steps: v.array(
-          v.object({
-            text: v.string(),
-            duration: v.optional(v.number()),
-          }),
-        ),
-        duration: v.optional(v.number()),
+        text: v.string(),
+        details: v.array(v.object({ text: v.string() })),
+        duration: v.number(),
       }),
     ),
     status: v.string(),
@@ -236,13 +224,9 @@ export const createMessage = internalMutation({
           content: v.string(),
           reasoning: v.optional(
             v.object({
-              steps: v.array(
-                v.object({
-                  text: v.string(),
-                  duration: v.optional(v.number()),
-                }),
-              ),
-              duration: v.optional(v.number()),
+              text: v.string(),
+              details: v.array(v.object({ text: v.string() })),
+              duration: v.number(),
             }),
           ),
           provider: v.optional(v.string()),
@@ -297,13 +281,9 @@ export const updateMessage = internalMutation({
     content: v.optional(v.string()),
     reasoning: v.optional(
       v.object({
-        steps: v.array(
-          v.object({
-            text: v.string(),
-            duration: v.optional(v.number()),
-          }),
-        ),
-        duration: v.optional(v.number()),
+        text: v.string(),
+        details: v.array(v.object({ text: v.string() })),
+        duration: v.number(),
       }),
     ),
     status: v.optional(v.string()),
@@ -323,13 +303,9 @@ export const updateMessage = internalMutation({
         content: v.string(),
         reasoning: v.optional(
           v.object({
-            steps: v.array(
-              v.object({
-                text: v.string(),
-                duration: v.optional(v.number()),
-              }),
-            ),
-            duration: v.optional(v.number()),
+            text: v.string(),
+            details: v.array(v.object({ text: v.string() })),
+            duration: v.number(),
           }),
         ),
         provider: v.optional(v.string()),

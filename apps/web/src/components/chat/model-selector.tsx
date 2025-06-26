@@ -19,7 +19,7 @@ const ModelSelector = memo(function ModelSelector() {
     (value: string) => {
       setSelectedModelId(Number.parseInt(value));
     },
-    [setSelectedModelId]
+    [setSelectedModelId],
   );
 
   return (
