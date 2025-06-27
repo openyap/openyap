@@ -27,7 +27,7 @@ const ModelSelector = memo(function ModelSelector() {
       value={selectedModelId.toString()}
       onValueChange={handleModelChange}
     >
-      <SelectTrigger className="w-fit">
+      <SelectTrigger className="w-fit bg-transparent dark:bg-transparent border-none shadow-none">
         <SelectValue placeholder="Select model" />
       </SelectTrigger>
       <SelectContent>

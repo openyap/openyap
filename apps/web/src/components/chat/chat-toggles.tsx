@@ -9,20 +9,21 @@ export const SEARCH_TOGGLE_KEY = "search-toggle";
 const ChatToggles = memo(function ChatToggles() {
   const { value: searchEnabled, set: setSearchEnabled } = usePersisted<boolean>(
     SEARCH_TOGGLE_KEY,
-    false,
+    false
   );
 
   const handleToggle = useCallback(
     (pressed: boolean) => {
       setSearchEnabled(pressed);
     },
-    [setSearchEnabled],
+    [setSearchEnabled]
   );
 
   return (
     <Tooltip>
-      <TooltipTrigger>
+      <TooltipTrigger className="hover:cursor-pointer">
         <Toggle
+          className="bg-transparent dark:bg-transparent border-none shadow-none"
           variant="outline"
           size="default"
           pressed={searchEnabled}

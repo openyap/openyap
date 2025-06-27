@@ -48,9 +48,12 @@ export function ProfileCard() {
 
   if (session.data?.user) {
     return (
-      <div className="flex h-12 items-center justify-between rounded border border-border px-2 dark:border-border">
+      <div className="flex h-12 items-center justify-between rounded-md border border-border px-2 dark:border-border">
         <div className="flex items-center gap-2">
-          <ProfileAvatar image={session.data.user.image ?? ""} name={session.data.user.name ?? ""} />
+          <ProfileAvatar
+            image={session.data.user.image ?? ""}
+            name={session.data.user.name ?? ""}
+          />
           <p>{session.data.user.name}</p>
         </div>
         <Button onClick={() => authClient.signOut()}>
