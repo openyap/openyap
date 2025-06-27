@@ -64,12 +64,12 @@ export function ChatView() {
       (m) =>
         m.role === "assistant" &&
         m.content === streamingMessage.content &&
-        m.status === "finished",
+        m.status === "finished"
     );
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="mb-16 flex-1 p-4">
+      <div className="mb-16 flex-1 p-4 mt-5">
         <div className="mx-auto h-full max-w-3xl space-y-3">
           {messages.length === 0 && !isLoading ? (
             <div className="flex h-full items-center justify-center text-foreground">
@@ -86,9 +86,7 @@ export function ChatView() {
               ) {
                 return null;
               }
-              return (
-                <Message key={m._id} data={m} user={session?.user} />
-              );
+              return <Message key={m._id} data={m} user={session?.user} />;
             })
           )}
           {showOptimisticMessage && (

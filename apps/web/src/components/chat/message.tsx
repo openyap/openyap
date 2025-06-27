@@ -144,7 +144,7 @@ const Message = memo(function Message({ data, user }: MessageProps) {
   const error = "error" in data && data.error ? data.error : null;
 
   return (
-    <div className="w-full flex flex-col gap-y-2 group">
+    <div className="max-w-full flex flex-col gap-y-2 group">
       <div
         className={cn(
           "py-2 space-y-2",
@@ -160,7 +160,7 @@ const Message = memo(function Message({ data, user }: MessageProps) {
             status={data.status}
           />
         )}
-        <div className="flex gap-x-3">
+        <div className="flex gap-x-3 min-w-0">
           {isUser && (
             <ProfileAvatar
               image={user?.image ?? ""}
@@ -168,12 +168,12 @@ const Message = memo(function Message({ data, user }: MessageProps) {
               className="size-6"
             />
           )}
-          <div className="flex flex-col gap-y-0.5">
+          <div className="flex flex-col gap-y-0.5 min-w-0">
             <div className="flex items-center gap-x-1.5">
               {isUser && <div className="text-xs text-gray-500">{name}</div>}
               {isUser && <div className="text-xs text-gray-500">{date}</div>}
             </div>
-            <div className="whitespace-pre-wrap break-words">
+            <div className="whitespace-pre-wrap break-words min-w-0">
               {contentTokens.map((token) => (
                 <TokenBlock key={crypto.randomUUID()} token={token} />
               ))}
@@ -219,11 +219,11 @@ const StreamingAiMessage = memo(function StreamingAiMessage({
   const error = "error" in data && data.error ? data.error : null;
 
   return (
-    <div className="w-full flex flex-col gap-y-2 group">
+    <div className="max-w-full flex flex-col gap-y-2 group">
       <div className={cn("px-3 py-2 space-y-2 text-foreground")}>
         <ReasoningCollapsible reasoning={data.reasoning} status={data.status} />
-        <div className="flex items-center gap-x-2">
-          <div className="whitespace-pre-wrap break-words">
+        <div className="flex items-center gap-x-2 min-w-0">
+          <div className="whitespace-pre-wrap break-words min-w-0">
             {contentTokens.map((token) => (
               <TokenBlock key={crypto.randomUUID()} token={token} />
             ))}

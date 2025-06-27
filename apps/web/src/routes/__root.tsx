@@ -56,7 +56,8 @@ function RootComponent() {
 function RootDocument({ children }: { readonly children: React.ReactNode }) {
   useEffect(() => {
     scan({
-      enabled: true,
+      enabled: false,
+      showToolbar: false,
     });
   }, []);
 
