@@ -3,9 +3,9 @@ import { useState } from "react";
 import { useTransition } from "react";
 import { CaptchaWidget } from "~/components/auth/captcha-widget";
 import { DomainLogo } from "~/components/domains";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { authClient, getClientIP } from "~/lib/auth/client";
+import { ProfileAvatar } from "~/components/auth/profile-avatar";
 
 export function ProfileCard() {
   const session = authClient.useSession();
@@ -50,12 +50,7 @@ export function ProfileCard() {
     return (
       <div className="flex h-12 items-center justify-between rounded border border-border px-2 dark:border-border">
         <div className="flex items-center gap-2">
-          <Avatar>
-            <AvatarImage src={session.data.user.image ?? ""} />
-            <AvatarFallback>
-              {session.data.user.name?.charAt(0).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
+          <ProfileAvatar image={session.data.user.image ?? ""} name={session.data.user.name ?? ""} />
           <p>{session.data.user.name}</p>
         </div>
         <Button onClick={() => authClient.signOut()}>
