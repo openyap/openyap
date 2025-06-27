@@ -18,6 +18,8 @@ import { cn } from "~/lib/utils";
 import { motion } from "motion/react";
 import { Button } from "../ui/button";
 import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
+import { ProfileAvatar } from "../auth/profile-avatar";
+import type { User } from "better-auth";
 
 interface ReasoningCollapsibleProps {
   readonly reasoning: MessageReasoning;
@@ -27,6 +29,27 @@ interface ReasoningCollapsibleProps {
 function formatSeconds(duration: number) {
   const seconds = duration / 1000;
   return seconds.toFixed(0);
+}
+
+function formatDate(date: Date): string {
+  const now = new Date();
+  const isToday =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  const hour = date.getHours() % 12 || 12;
+  const minuteStr = date.getMinutes().toString().padStart(2, "0");
+  const ampm = date.getHours() >= 12 ? " PM" : " AM";
+  const time = `${hour}:${minuteStr}${ampm}`;
+  if (isToday) return time;
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getFullYear() === yesterday.getFullYear() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getDate() === yesterday.getDate();
+  if (isYesterday) return `Yesterday at ${time}`;
+  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()} at ${time}`;
 }
 
 const ReasoningCollapsible = memo(function ReasoningCollapsible({ reasoning, status }: ReasoningCollapsibleProps) {
@@ -88,36 +111,55 @@ const ReasoningCollapsible = memo(function ReasoningCollapsible({ reasoning, sta
   );
 });
 
-type MessageUnion = ChatMessage | StreamingMessage;
-
 interface MessageProps {
-  readonly data: MessageUnion;
+  readonly data: ChatMessage;
+  readonly user?: User;
 }
 
-const Message = memo(function Message({ data }: MessageProps) {
+const Message = memo(function Message({ data, user }: MessageProps) {
   const { isCopied, copy } = useClipboardCopy();
   const contentTokens = useMemo(() => marked.lexer(data.content), [data.content]);
 
   const isUser = data.role === "user";
   const isAssistant = data.role === "assistant";
+  const name = user?.name ?? "Unknown";
+  const date = formatDate(new Date(data?._creationTime));
   const error = "error" in data && data.error ? data.error : null;
 
   return (
     <div className="w-full flex flex-col gap-y-2 group">
       <div className={cn(
-        "px-4 py-2 space-y-2",
-        isUser && "rounded-lg border border-border bg-sidebar-accent text-sidebar-accent-foreground",
-        isAssistant && "text-foreground",
+        "py-2 space-y-2",
+        isUser && "px-3 rounded-lg border border-border bg-sidebar-accent text-sidebar-accent-foreground",
+        isAssistant && "px-3 text-foreground",
         error && "border-red-500",
       )}>
-        <ReasoningCollapsible reasoning={data.reasoning} status={data.status} />
-        <div className="whitespace-pre-wrap break-words">
-          {contentTokens.map((token) => (
-            <TokenBlock key={crypto.randomUUID()} token={token} />
-          ))}
+        {isAssistant && <ReasoningCollapsible reasoning={data.reasoning} status={data.status} />}
+        <div className="flex gap-x-3">
+          {isUser && <ProfileAvatar image={user?.image ?? ""} name={user?.name ?? ""} className="size-6" />}
+          <div className="flex flex-col gap-y-0.5">
+            <div className="flex items-center gap-x-1.5"> 
+              {isUser && (
+                <div className="text-xs text-gray-500">
+                  {name}
+                </div>
+              )}
+              {isUser && (
+                <div className="text-xs text-gray-500">
+                {date}
+              </div>
+              )}
+            </div>
+            <div className="whitespace-pre-wrap break-words">
+              {contentTokens.map((token) => (
+                <TokenBlock key={crypto.randomUUID()} token={token} />
+              ))}
+            </div>
+          </div>
+          
         </div>
       </div>
-      <div className="flex items-center justify-between gap-x-2 min-h-[1.25rem] pl-4">
+      <div className="flex items-center justify-between gap-x-2 min-h-[1.25rem] pl-3">
         <div className="text-red-500 text-xs flex-1 min-w-0 truncate">
           {error}
         </div>
@@ -144,7 +186,46 @@ interface StreamingAiMessageProps {
   readonly data: StreamingMessage;
 }
 const StreamingAiMessage = memo(function StreamingAiMessage({ data }: StreamingAiMessageProps) {
-  return <Message data={data} />;
+  const { isCopied, copy } = useClipboardCopy();
+  const contentTokens = useMemo(() => marked.lexer(data.content), [data.content]);
+
+  const error = "error" in data && data.error ? data.error : null;
+
+  return (
+    <div className="w-full flex flex-col gap-y-2 group">
+      <div className={cn(
+        "px-3 py-2 space-y-2 text-foreground",
+      )}>
+        <ReasoningCollapsible reasoning={data.reasoning} status={data.status} />
+        <div className="flex items-center gap-x-2">
+          <div className="whitespace-pre-wrap break-words">
+            {contentTokens.map((token) => (
+              <TokenBlock key={crypto.randomUUID()} token={token} />
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-x-2 min-h-[1.25rem] pl-3">
+        <div className="text-red-500 text-xs flex-1 min-w-0 truncate">
+          {error}
+        </div>
+        <div className="flex items-center gap-x-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
+          <Button
+            type="button"
+            onMouseDown={() => copy(data.content)}
+            variant="ghost"
+            size="icon"
+            className="h-4 w-4"
+          >
+            <Icon
+              icon={isCopied ? "lucide:check" : "lucide:copy"}
+              className="bg-transparent text-gray-500"
+            />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 });
 
 export { Message, StreamingAiMessage };
