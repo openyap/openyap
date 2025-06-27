@@ -9,19 +9,10 @@ import {
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { cn } from "~/lib/utils";
 import { useTheme } from "../theme-provider";
+import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
 
 function randomKey() {
   return crypto.randomUUID();
-}
-
-async function copyToClipboard(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
 }
 
 // TODO: Add more languages, or make a library for this
@@ -100,7 +91,7 @@ export function TokenBlock({ token }: TokenBlockProps) {
       return <TextBlock key={randomKey()} token={token as Tokens.Text} />;
     default:
       return (
-        <span key={randomKey()} className="text-base text-foreground">
+        <span key={randomKey()} className="text-foreground">
           {token.raw}
         </span>
       );
@@ -110,7 +101,7 @@ export function TokenBlock({ token }: TokenBlockProps) {
 function StrongBlock({ token }: { token: Tokens.Strong }) {
   if (!token.tokens) {
     return (
-      <strong key={randomKey()} className="text-base text-foreground">
+      <strong key={randomKey()} className="text-foreground">
         {token.text}
       </strong>
     );
@@ -142,7 +133,7 @@ function TextBlock({ token }: { token: Tokens.Text }) {
 }
 
 function CodeBlock({ token }: { token: Tokens.Code }) {
-  const [isChecked, setIsChecked] = useState<boolean>(false);
+  const { isCopied, copy } = useClipboardCopy();
   const [shouldHighlight, setShouldHighlight] = useState<boolean>(false);
   const [pendingHighlight, startTransition] = useTransition();
   const highlightedLang = token.lang ?? "text";
@@ -233,11 +224,6 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
     isDarkTheme,
   ]);
 
-  async function copyText() {
-    setIsChecked(await copyToClipboard(token.text));
-    setTimeout(() => setIsChecked(false), 3000);
-  }
-
   return (
     <div
       key={randomKey()}
@@ -256,13 +242,13 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
         </div>
         <button
           type="button"
-          onMouseDown={copyText}
+          onMouseDown={() => copy(token.text)}
           className="flex cursor-pointer items-center justify-center"
         >
           <span
             className={cn(
               "iconify h-4 w-4",
-              isChecked
+              isCopied
                 ? "lucide--check text-green-500"
                 : "lucide--copy text-muted-foreground",
             )}
@@ -277,14 +263,13 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
 const MemoizedCodeBlock = memo(CodeBlock);
 
 function CodeSpanBlock({ token }: { token: Tokens.Codespan }) {
-  async function copyText() {
-    await copyToClipboard(token.text);
-  }
+  const { copy } = useClipboardCopy();
+
   return (
     <code
       key={randomKey()}
-      onMouseDown={copyText}
-      className="cursor-pointer rounded bg-muted px-1 py-[0.5px] text-base text-foreground"
+      onMouseDown={() => copy(token.text)}
+      className="cursor-pointer rounded bg-muted px-1 py-[0.5px] text-foreground"
     >
       {token.text}
     </code>
@@ -295,7 +280,7 @@ function ParagraphBlock({ token }: { token: Tokens.Paragraph }) {
   if (!token.tokens) {
     return (
       <p key={randomKey()}>
-        <span className="text-base text-foreground">{token.text}</span>
+        <span className="text-foreground">{token.text}</span>
       </p>
     );
   }
@@ -318,7 +303,7 @@ function ListItemBlock({
   return (
     <li key={randomKey()}>
       {number && (
-        <span className="pr-1 text-base text-muted-foreground">{number}.</span>
+        <span className="pr-1 text-muted-foreground">{number}.</span>
       )}
       {(token.tokens ?? []).map((t, _i) => (
         <TokenBlock key={randomKey()} token={t} />
@@ -347,7 +332,7 @@ function ListBlock({ token }: { token: Tokens.List }) {
   return (
     <ul
       key={randomKey()}
-      className="list-disc pl-3 text-base text-muted-foreground"
+      className="list-disc pl-3 text-muted-foreground"
     >
       {token.items.map((item: Tokens.ListItem) => (
         <ListItemBlock key={randomKey()} token={item} />
@@ -479,7 +464,7 @@ function BlockquoteBlock({ token }: { token: Tokens.Blockquote }) {
 
 function DelBlock({ token }: { token: Tokens.Del }) {
   return (
-    <del key={randomKey()} className="text-base text-muted-foreground">
+    <del key={randomKey()} className="text-muted-foreground">
       {token.text}
     </del>
   );
@@ -488,7 +473,7 @@ function DelBlock({ token }: { token: Tokens.Del }) {
 function EmBlock({ token }: { token: Tokens.Em }) {
   if (!token.tokens) {
     return (
-      <em key={randomKey()} className="text-base text-muted-foreground">
+      <em key={randomKey()} className="text-muted-foreground">
         {token.text}
       </em>
     );
@@ -504,7 +489,7 @@ function EmBlock({ token }: { token: Tokens.Em }) {
 
 function EscapeBlock({ token }: { token: Tokens.Escape }) {
   return (
-    <span key={randomKey()} className="text-base text-muted-foreground">
+    <span key={randomKey()} className="text-muted-foreground">
       {token.text}
     </span>
   );
