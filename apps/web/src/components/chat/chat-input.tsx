@@ -1,12 +1,17 @@
 import { isRedirect, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { ArrowUpIcon } from "lucide-react";
+import { ArrowUpIcon, Square } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { ChatOptions } from "~/components/chat/chat-options";
 import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { inputStore } from "~/components/chat/stores";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+import {
+  PromptInput,
+  PromptInputAction,
+  PromptInputActions,
+  PromptInputTextarea,
+} from "~/components/ui/prompt-input";
 import { usePersisted } from "~/hooks/use-persisted";
 import { api } from "~/lib/db/server";
 import { getDefaultModel, getModelById } from "~/lib/models";
@@ -30,17 +35,9 @@ const ChatInput = memo(function ChatInput({
   const createChat = useMutation(api.functions.chat.createChat);
   const { value: selectedModelId } = usePersisted<number>(
     MODEL_PERSIST_KEY,
-    getDefaultModel().id,
+    getDefaultModel().id
   );
   const [input, setInput] = useState(inputStore.getState().input);
-
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setInput(e.target.value);
-      inputStore.getState().setInput(e.target.value);
-    },
-    [],
-  );
 
   const send = useCallback(
     async (input: string) => {
@@ -83,64 +80,65 @@ const ChatInput = memo(function ChatInput({
       navigate,
       addUserMessage,
       selectedModelId,
-    ],
+    ]
   );
+
+  const handleSubmit = useCallback(() => {
+    const currentInput = inputStore.getState().input;
+    send(currentInput);
+    setInput("");
+    inputStore.getState().setInput("");
+  }, [send]);
 
   const isDisabled = useCallback(() => {
     return disabled || !inputStore.getState().input.trim();
   }, [disabled]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        send(input);
-        setInput("");
-        inputStore.getState().setInput("");
-      }
-    },
-    [input, send],
-  );
-
-  const handleSendClick = useCallback(() => {
-    send(inputStore.getState().input);
-    setInput("");
-    inputStore.getState().setInput("");
-  }, [send]);
-
   return (
     <div className="sticky bottom-0 z-10 bg-background pb-4">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 px-4">
-        <div className="flex h-12 gap-2">
-          <Input
-            className="h-full bg-background"
-            placeholder="Ask anything"
-            value={input}
-            onChange={handleInputChange}
-            disabled={disabled}
-            onKeyDown={handleKeyDown}
-          />
-          {disabled ? (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={onStop}
-              className="flex h-full w-12 items-center justify-center"
+        <PromptInput
+          value={input}
+          onValueChange={(val) => {
+            setInput(val);
+            inputStore.getState().setInput(val);
+          }}
+          isLoading={disabled}
+          onSubmit={handleSubmit}
+          className="w-full"
+        >
+          <PromptInputTextarea placeholder="Ask anything" />
+
+          <PromptInputActions className="flex items-center justify-between pt-2">
+            <ChatOptions />
+
+            <PromptInputAction
+              tooltip={disabled ? "Stop generation" : "Send message"}
+              side="top"
             >
-              <div className="h-4 w-4 bg-foreground" />
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              disabled={isDisabled()}
-              onClick={handleSendClick}
-              className={`${isDisabled() && "cursor-not-allowed"} h-full w-12`}
-            >
-              <ArrowUpIcon className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        <ChatOptions />
+              {disabled ? (
+                <Button
+                  variant="default"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={onStop}
+                >
+                  <Square className="h-4 w-4 fill-background" />
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={handleSubmit}
+                  disabled={isDisabled()}
+                >
+                  <ArrowUpIcon className="h-4 w-4" />
+                </Button>
+              )}
+            </PromptInputAction>
+          </PromptInputActions>
+        </PromptInput>
       </div>
     </div>
   );
