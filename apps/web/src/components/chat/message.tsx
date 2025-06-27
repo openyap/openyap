@@ -144,7 +144,16 @@ const Message = memo(function Message({ data, user }: MessageProps) {
   const error = "error" in data && data.error ? data.error : null;
 
   return (
-    <div className="max-w-full flex flex-col gap-y-2 group">
+    <motion.div
+      className="max-w-full flex flex-col gap-y-2 group"
+      {...(isUser
+        ? {
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 },
+            transition: { duration: 0.25 },
+          }
+        : {})}
+    >
       <div
         className={cn(
           "py-2 space-y-2",
@@ -200,7 +209,7 @@ const Message = memo(function Message({ data, user }: MessageProps) {
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 });
 
