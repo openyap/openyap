@@ -52,7 +52,10 @@ function formatDate(date: Date): string {
   return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()} at ${time}`;
 }
 
-const ReasoningCollapsible = memo(function ReasoningCollapsible({ reasoning, status }: ReasoningCollapsibleProps) {
+const ReasoningCollapsible = memo(function ReasoningCollapsible({
+  reasoning,
+  status,
+}: ReasoningCollapsibleProps) {
   if (!reasoning) return null;
   const [reasoningOpen, setReasoningOpen] = useState(false);
   const reasoningHidden = reasoning.text.length === 0;
@@ -60,7 +63,12 @@ const ReasoningCollapsible = memo(function ReasoningCollapsible({ reasoning, sta
   const reasoningTitle = `Thought ${reasoning.duration ? `for ${formatSeconds(reasoning.duration)} seconds` : ""}`;
 
   return (
-    <Collapsible open={reasoningOpen} onOpenChange={setReasoningOpen} hidden={reasoningHidden} className="space-y-2">
+    <Collapsible
+      open={reasoningOpen}
+      onOpenChange={setReasoningOpen}
+      hidden={reasoningHidden}
+      className="space-y-2"
+    >
       <CollapsibleTrigger>
         {!isReasoning ? (
           <div className="flex cursor-pointer items-center gap-x-0.5 text-gray-500">
@@ -70,7 +78,10 @@ const ReasoningCollapsible = memo(function ReasoningCollapsible({ reasoning, sta
               transition={{ duration: 0.2 }}
               style={{ display: "inline-flex" }}
             >
-              <Icon icon="lucide:chevron-right" className="h-4 w-4 bg-transparent text-gray-500" />
+              <Icon
+                icon="lucide:chevron-right"
+                className="h-4 w-4 bg-transparent text-gray-500"
+              />
             </motion.span>
           </div>
         ) : (
@@ -101,7 +112,10 @@ const ReasoningCollapsible = memo(function ReasoningCollapsible({ reasoning, sta
         {!isReasoning && (
           <div className="flex items-center gap-x-2 text-gray-500">
             <div className="flex w-4 shrink-0 justify-center">
-              <Icon icon="lucide:circle-check" className="h-4 w-4 bg-transparent text-gray-500" />
+              <Icon
+                icon="lucide:circle-check"
+                className="h-4 w-4 bg-transparent text-gray-500"
+              />
             </div>
             <span className="text-gray-500">Done</span>
           </div>
@@ -118,7 +132,10 @@ interface MessageProps {
 
 const Message = memo(function Message({ data, user }: MessageProps) {
   const { isCopied, copy } = useClipboardCopy();
-  const contentTokens = useMemo(() => marked.lexer(data.content), [data.content]);
+  const contentTokens = useMemo(
+    () => marked.lexer(data.content),
+    [data.content]
+  );
 
   const isUser = data.role === "user";
   const isAssistant = data.role === "assistant";
@@ -128,27 +145,33 @@ const Message = memo(function Message({ data, user }: MessageProps) {
 
   return (
     <div className="w-full flex flex-col gap-y-2 group">
-      <div className={cn(
-        "py-2 space-y-2",
-        isUser && "px-3 rounded-lg border border-border bg-sidebar-accent text-sidebar-accent-foreground",
-        isAssistant && "px-3 text-foreground",
-        error && "border-red-500",
-      )}>
-        {isAssistant && <ReasoningCollapsible reasoning={data.reasoning} status={data.status} />}
+      <div
+        className={cn(
+          "py-2 space-y-2",
+          isUser &&
+            "px-3 rounded-lg border border-border bg-sidebar-accent text-sidebar-accent-foreground",
+          isAssistant && "text-foreground",
+          error && "border-red-500"
+        )}
+      >
+        {isAssistant && (
+          <ReasoningCollapsible
+            reasoning={data.reasoning}
+            status={data.status}
+          />
+        )}
         <div className="flex gap-x-3">
-          {isUser && <ProfileAvatar image={user?.image ?? ""} name={user?.name ?? ""} className="size-6" />}
+          {isUser && (
+            <ProfileAvatar
+              image={user?.image ?? ""}
+              name={user?.name ?? ""}
+              className="size-6"
+            />
+          )}
           <div className="flex flex-col gap-y-0.5">
-            <div className="flex items-center gap-x-1.5"> 
-              {isUser && (
-                <div className="text-xs text-gray-500">
-                  {name}
-                </div>
-              )}
-              {isUser && (
-                <div className="text-xs text-gray-500">
-                {date}
-              </div>
-              )}
+            <div className="flex items-center gap-x-1.5">
+              {isUser && <div className="text-xs text-gray-500">{name}</div>}
+              {isUser && <div className="text-xs text-gray-500">{date}</div>}
             </div>
             <div className="whitespace-pre-wrap break-words">
               {contentTokens.map((token) => (
@@ -156,7 +179,6 @@ const Message = memo(function Message({ data, user }: MessageProps) {
               ))}
             </div>
           </div>
-          
         </div>
       </div>
       <div className="flex items-center justify-between gap-x-2 min-h-[1.25rem] pl-3">
@@ -185,17 +207,20 @@ const Message = memo(function Message({ data, user }: MessageProps) {
 interface StreamingAiMessageProps {
   readonly data: StreamingMessage;
 }
-const StreamingAiMessage = memo(function StreamingAiMessage({ data }: StreamingAiMessageProps) {
+const StreamingAiMessage = memo(function StreamingAiMessage({
+  data,
+}: StreamingAiMessageProps) {
   const { isCopied, copy } = useClipboardCopy();
-  const contentTokens = useMemo(() => marked.lexer(data.content), [data.content]);
+  const contentTokens = useMemo(
+    () => marked.lexer(data.content),
+    [data.content]
+  );
 
   const error = "error" in data && data.error ? data.error : null;
 
   return (
     <div className="w-full flex flex-col gap-y-2 group">
-      <div className={cn(
-        "px-3 py-2 space-y-2 text-foreground",
-      )}>
+      <div className={cn("px-3 py-2 space-y-2 text-foreground")}>
         <ReasoningCollapsible reasoning={data.reasoning} status={data.status} />
         <div className="flex items-center gap-x-2">
           <div className="whitespace-pre-wrap break-words">

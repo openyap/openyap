@@ -76,7 +76,7 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
           </SidebarProvider>
         </ThemeProvider>
         <Scripts />
-        <ReactQueryDevtools initialIsOpen={false} />
+        {/* <ReactQueryDevtools initialIsOpen={false} /> */}
         {/* <TanStackRouterDevtools initialIsOpen={false} /> */}
       </body>
     </html>

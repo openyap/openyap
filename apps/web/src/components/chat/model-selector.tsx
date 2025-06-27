@@ -19,7 +19,7 @@ const ModelSelector = memo(function ModelSelector() {
     (value: string) => {
       setSelectedModelId(Number.parseInt(value));
     },
-    [setSelectedModelId],
+    [setSelectedModelId]
   );
 
   return (
@@ -27,7 +27,7 @@ const ModelSelector = memo(function ModelSelector() {
       value={selectedModelId.toString()}
       onValueChange={handleModelChange}
     >
-      <SelectTrigger className="w-[200px]">
+      <SelectTrigger className="w-fit">
         <SelectValue placeholder="Select model" />
       </SelectTrigger>
       <SelectContent>

@@ -54,7 +54,7 @@ const ReasoningEffortSelector = memo(function ReasoningEffortSelector() {
     <Tooltip>
       <TooltipTrigger asChild>
         <Select value={selectedEffort} onValueChange={handleEffortChange}>
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="w-fit">
             <SelectValue placeholder="Effort" />
           </SelectTrigger>
           <SelectContent>

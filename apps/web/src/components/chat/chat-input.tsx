@@ -96,7 +96,7 @@ const ChatInput = memo(function ChatInput({
 
   return (
     <div className="sticky bottom-0 z-10 bg-background pb-4">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 px-4">
+      <div className="mx-auto flex w-full max-w-full sm:max-w-2xl lg:max-w-4xl flex-col gap-2 px-4">
         <PromptInput
           value={input}
           onValueChange={(val) => {
