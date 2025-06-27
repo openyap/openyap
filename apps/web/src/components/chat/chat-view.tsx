@@ -1,6 +1,7 @@
 import { useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { useEffect, useRef } from "react";
+import { AnimatePresence } from "motion/react";
 import { ChatInput } from "~/components/chat/chat-input";
 import { Message, StreamingAiMessage } from "~/components/chat/message";
 import { useChat } from "~/hooks/use-chat";
@@ -82,18 +83,20 @@ export function ChatView() {
               <h1 className="text-2xl">Where should we begin?</h1>
             </div>
           ) : (
-            messages.map((m, index) => {
-              if (
-                (m.role === "assistant" &&
-                  status === "streaming" &&
-                  index === messages.length - 1) ||
-                m.status === "generating" ||
-                m.status === "reasoning"
-              ) {
-                return null;
-              }
-              return <Message key={m._id} data={m} user={session?.user} />;
-            })
+            <AnimatePresence initial={false}>
+              {messages.map((m, index) => {
+                if (
+                  (m.role === "assistant" &&
+                    status === "streaming" &&
+                    index === messages.length - 1) ||
+                  m.status === "generating" ||
+                  m.status === "reasoning"
+                ) {
+                  return null;
+                }
+                return <Message key={m._id} data={m} user={session?.user} />;
+              })}
+            </AnimatePresence>
           )}
           {showOptimisticMessage && (
             <StreamingAiMessage data={streamingMessage} />
