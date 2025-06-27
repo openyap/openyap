@@ -2,7 +2,7 @@ import { useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { useEffect } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
-import { Message } from "~/components/chat/message";
+import { Message, StreamingAiMessage } from "~/components/chat/message";
 import { useChat } from "~/hooks/use-chat";
 import { useChatsList } from "~/hooks/use-chats-list";
 import { authClient } from "~/lib/auth/client";
@@ -69,7 +69,7 @@ export function ChatView() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="mb-16 flex-1 overflow-y-auto p-4">
+      <div className="mb-16 flex-1 p-4">
         <div className="mx-auto h-full max-w-3xl space-y-4">
           {messages.length === 0 && !isLoading ? (
             <div className="flex h-full items-center justify-center text-foreground">
@@ -87,34 +87,12 @@ export function ChatView() {
                 return null;
               }
               return (
-                <div
-                  key={m._id}
-                  className={`flex ${
-                    m.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {m.role === "user" ? (
-                    <div className="ml-auto max-w-[70%] rounded-lg border border-border bg-sidebar-accent px-4 py-2 text-sidebar-accent-foreground">
-                      <Message data={m} />
-                      {m.error && (
-                        <div className="text-red-500 text-xs">{m.error}</div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="max-w-full text-foreground">
-                      <Message data={m} />
-                    </div>
-                  )}
-                </div>
+                <Message key={m._id} data={m} />
               );
             })
           )}
           {showOptimisticMessage && (
-            <div className="flex justify-start">
-              <div className="max-w-full text-foreground">
-                <Message data={streamingMessage} />
-              </div>
-            </div>
+            <StreamingAiMessage data={streamingMessage} />
           )}
         </div>
       </div>
