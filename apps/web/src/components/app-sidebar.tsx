@@ -92,7 +92,7 @@ export function AppSidebar() {
                       >
                         <Tooltip>
                           <TooltipTrigger className="truncate" asChild>
-                            <span className="block max-w-full truncate">
+                            <span className="block max-w-full truncate pl-1">
                               {chat.title}
                             </span>
                           </TooltipTrigger>
@@ -172,7 +172,7 @@ export function AppSidebar() {
                     >
                       <Tooltip>
                         <TooltipTrigger className="truncate" asChild>
-                          <span className="block max-w-full truncate">
+                          <span className="block max-w-full truncate pl-1">
                             {chat.title}
                           </span>
                         </TooltipTrigger>
