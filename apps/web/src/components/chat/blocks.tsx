@@ -10,6 +10,7 @@ import {
 import { cn } from "~/lib/utils";
 import { useTheme } from "../theme-provider";
 import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 
 function randomKey() {
   return crypto.randomUUID();
@@ -147,7 +148,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
           setShouldHighlight(true);
         });
       }, 750),
-    [],
+    []
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run only when the incoming text chunk changes
@@ -166,7 +167,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
     if (!shouldHighlight || pendingHighlight) {
       return (
         <pre
-          className="language-none text-muted-foreground"
+          className="language-none text-muted-foreground overflow-x-auto"
           style={{
             background: isDarkTheme ? "#1D1F21" : "#fafafa",
             fontFamily: commonFont,
@@ -179,9 +180,6 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
             tabSize: 2,
             hyphens: "none",
             padding: "1em",
-            margin: "0.5em 0",
-            overflow: "auto",
-            borderRadius: "0.3em",
             fontSize: "14px",
           }}
         >
@@ -209,6 +207,10 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
         language={highlightedLang}
         style={isDarkTheme ? atomDark : oneLight}
         customStyle={{
+          borderRadius: "0",
+          marginTop: "0",
+          overflowX: "auto",
+          width: "100%",
           fontSize: "14px",
           fontFamily: commonFont,
         }}
@@ -227,9 +229,9 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
   return (
     <div
       key={randomKey()}
-      className="my-3 overflow-hidden rounded-lg border border-border bg-card shadow"
+      className="my-3 rounded-md border border-border bg-card shadow max-w-full overflow-x-auto"
     >
-      <div className="flex justify-between border-border border-b bg-muted px-2 py-2">
+      <div className="flex justify-between border-border border-b bg-muted px-4 py-2">
         <div className="flex items-center gap-x-1">
           {/* TODO: Move icon state to prevent flickering from re-rendering */}
           {/* {token.lang && (
@@ -250,12 +252,20 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
               "iconify h-4 w-4",
               isCopied
                 ? "lucide--check text-green-500"
-                : "lucide--copy text-muted-foreground",
+                : "lucide--copy text-muted-foreground"
             )}
           />
         </button>
       </div>
-      <pre className="*:!m-0 overflow-auto bg-background">{codeElement}</pre>
+      <ScrollArea
+        className="w-full max-w-full overflow-x-auto"
+        style={{
+          background: isDarkTheme ? "#1D1F21" : "#fafafa",
+        }}
+      >
+        <div className="bg-background">{codeElement}</div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </div>
   );
 }
@@ -302,9 +312,7 @@ function ListItemBlock({
 }) {
   return (
     <li key={randomKey()}>
-      {number && (
-        <span className="pr-1 text-muted-foreground">{number}.</span>
-      )}
+      {number && <span className="pr-1 text-muted-foreground">{number}.</span>}
       {(token.tokens ?? []).map((t, _i) => (
         <TokenBlock key={randomKey()} token={t} />
       ))}
@@ -330,10 +338,7 @@ function ListBlock({ token }: { token: Tokens.List }) {
     );
   }
   return (
-    <ul
-      key={randomKey()}
-      className="list-disc pl-3 text-muted-foreground"
-    >
+    <ul key={randomKey()} className="list-disc pl-3 text-muted-foreground">
       {token.items.map((item: Tokens.ListItem) => (
         <ListItemBlock key={randomKey()} token={item} />
       ))}
