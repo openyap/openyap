@@ -1,6 +1,6 @@
 import { useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
 import { Message, StreamingAiMessage } from "~/components/chat/message";
 import { useChat } from "~/hooks/use-chat";
@@ -24,6 +24,7 @@ export function ChatView() {
     setSelectedModelId,
   } = useChat(chatId);
   const generateChatTitle = useMutation(api.functions.chat.generateChatTitle);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   // Restore model sync hook
   useEffect(() => {
@@ -67,6 +68,11 @@ export function ChatView() {
         m.status === "finished"
     );
 
+  useEffect(() => {
+    if (messages.length === 0 && !streamingMessage) return;
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length, streamingMessage]);
+
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="mb-16 flex-1 p-4 mt-5">
@@ -92,6 +98,7 @@ export function ChatView() {
           {showOptimisticMessage && (
             <StreamingAiMessage data={streamingMessage} />
           )}
+          <div ref={bottomRef} />
         </div>
       </div>
       <ChatInput
