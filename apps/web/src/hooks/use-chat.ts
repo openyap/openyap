@@ -3,10 +3,10 @@ import { useCallback, useEffect, useState } from "react";
 import { SEARCH_TOGGLE_KEY } from "~/components/chat/chat-toggles";
 import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { REASONING_EFFORT_PERSIST_KEY } from "~/components/chat/reasoning-effort-selector";
-import type {
-  ChatMessage,
-  MessageReasoning,
-  StreamingMessage,
+import {
+  type ChatMessage,
+  type MessageReasoning,
+  ChatStatus,
 } from "~/components/chat/types";
 import { usePersisted } from "~/hooks/use-persisted";
 import { processDataStream } from "~/lib/ai/process-chat-response";
@@ -20,9 +20,6 @@ import {
   ReasoningEffort,
   getModelById,
 } from "~/lib/models";
-
-type ChatStatus = "streaming" | "idle";
-type Role = "user" | "data" | "system" | "assistant";
 
 export function useChat(chatId: string | undefined) {
   const { data: session } = authClient.useSession();
@@ -38,15 +35,10 @@ export function useChat(chatId: string | undefined) {
     ReasoningEffort.LOW
   );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [streamingMessage, setStreamingMessage] =
-    useState<StreamingMessage | null>(null);
-  const [status, setStatus] = useState<ChatStatus>("idle");
+  const [status, setStatus] = useState<ChatStatus>(ChatStatus.IDLE);
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
 
-  const updateUserMessage = useMutation(
-    api.functions.message.updateUserMessage
-  );
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
@@ -56,23 +48,19 @@ export function useChat(chatId: string | undefined) {
   );
 
   useEffect(() => {
-    if (getChatMessages) {
+    if (getChatMessages && status !== ChatStatus.STREAMING) {
       setMessages(getChatMessages);
     }
-  }, [getChatMessages]);
+  }, [getChatMessages, status]);
 
   const append = useCallback(
-    async ({ role, content }: { role: Role; content: string }) => {
+    async ({ content }: { content: string }) => {
       if (!isConvexId<"chat">(chatId)) {
         return;
       }
-      setStatus("streaming");
-      setStreamingMessage({
-        chatId,
-        role,
-        content,
-        status: "streaming",
-      });
+
+      setStatus(ChatStatus.LOADING);
+
       const controller = new AbortController();
       setAbortController(controller);
 
@@ -85,7 +73,7 @@ export function useChat(chatId: string | undefined) {
           body: JSON.stringify({
             chatId,
             modelId: selectedModelId,
-            messages: [...messages, { role, content }],
+            messages: [...messages, { role: "user", content }],
             search: searchEnabled,
             reasoningEffort:
               selectedModel && !!selectedModel.reasoningEffort
@@ -111,20 +99,21 @@ export function useChat(chatId: string | undefined) {
         await processDataStream({
           stream: response.body,
           onTextPart(value) {
+            setStatus(ChatStatus.STREAMING);
             contentBuffer += value;
 
-            setStreamingMessage((prev) => {
-              if (!prev) return null;
-              return {
-                ...prev,
-                chatId,
-                role: "assistant",
-                content: contentBuffer,
-                status: "generating",
-              };
+            setMessages(prev => {
+              const newMessages = [...prev];
+              const lastMessage = newMessages[newMessages.length - 1];
+              if (lastMessage) {
+                lastMessage.content = contentBuffer;
+                lastMessage.status = "generating";
+              }
+              return newMessages;
             });
           },
           onReasoningPart(value) {
+            setStatus(ChatStatus.STREAMING);
             reasoningBuffer.text += value;
 
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
@@ -139,16 +128,16 @@ export function useChat(chatId: string | undefined) {
                     reasoningEffort: reasoningEffort,
                   }
                 : undefined;
-            setStreamingMessage((prev) => {
-              if (!prev) return null;
-              return {
-                ...prev,
-                chatId,
-                role: "assistant",
-                content: contentBuffer,
-                reasoning: completedReasoning,
-                status: "reasoning",
-              };
+            
+            setMessages(prev => {
+              const newMessages = [...prev];
+              const lastMessage = newMessages[newMessages.length - 1];
+              if (lastMessage) {
+                lastMessage.content = contentBuffer;
+                lastMessage.reasoning = completedReasoning;
+                lastMessage.status = "reasoning";
+              }
+              return newMessages;
             });
           },
           onFinishMessagePart() {
@@ -164,29 +153,32 @@ export function useChat(chatId: string | undefined) {
                     reasoningEffort: reasoningEffort,
                   }
                 : undefined;
-            setStreamingMessage({
-              chatId,
-              role: "assistant",
-              content: contentBuffer,
-              reasoning: completedReasoning,
-              status: "finished",
+            
+            setMessages(prev => {
+              const newMessages = [...prev];
+              const lastMessage = newMessages[newMessages.length - 1];
+              if (lastMessage) {
+                lastMessage.content = contentBuffer;
+                lastMessage.reasoning = completedReasoning;
+                lastMessage.status = "finished";
+              }
+              return newMessages;
             });
           },
         });
       } catch (error) {
         if ((error as Error).name === "AbortError") {
-          setStreamingMessage((prev) =>
-            prev ? { ...prev, status: "aborted" } : null
-          );
-        } else {
-          updateUserMessage({
-            messageId: messages[messages.length - 1]._id,
-            error: "Failed to generate message",
-            sessionToken: session?.session.token ?? "skip",
+          setMessages(prev => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage) {
+              lastMessage.status = "aborted";
+            }
+            return newMessages;
           });
         }
       } finally {
-        setStatus("idle");
+        setStatus(ChatStatus.IDLE);
         setAbortController(null);
       }
     },
@@ -195,9 +187,7 @@ export function useChat(chatId: string | undefined) {
       selectedModelId,
       messages,
       searchEnabled,
-      updateUserMessage,
       resetSearchToggle,
-      session?.session.token,
       reasoningEffort,
     ]
   );
@@ -215,7 +205,6 @@ export function useChat(chatId: string | undefined) {
 
   return {
     messages,
-    streamingMessage,
     status,
     append,
     stop,
