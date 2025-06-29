@@ -1,9 +1,9 @@
 import { useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { ChatInput } from "~/components/chat/chat-input";
-import { Message, MemoizedMessage} from "~/components/chat/message";
+import { Message, MemoizedMessage } from "~/components/chat/message";
 import { ChatStatus } from "~/components/chat/types";
 import { useChat } from "~/hooks/use-chat";
 import { useChatsList } from "~/hooks/use-chats-list";
@@ -12,21 +12,34 @@ import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
 import { models } from "~/lib/models";
 import { AnimatedShinyText } from "../ui/animated-shiny-text";
+import { Button } from "~/components/ui/button";
+import { ArrowDown } from "lucide-react";
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
   const chatsList = useChatsList();
-  const {
-    messages,
-    status,
-    append,
-    stop,
-    setSelectedModelId,
-  } = useChat(chatId);
+  const { messages, status, append, stop, setSelectedModelId } =
+    useChat(chatId);
   const generateChatTitle = useMutation(api.functions.chat.generateChatTitle);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const [showScrollButton, setShowScrollButton] = useState(false);
+
+  useEffect(() => {
+    const element = bottomRef.current;
+
+    if (!element) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setShowScrollButton(!entry.isIntersecting);
+    });
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
 
   // Restore model sync hook
   useEffect(() => {
@@ -61,11 +74,6 @@ export function ChatView() {
 
   const isEmpty = !chatId || messages.length === 0;
 
-  useEffect(() => {
-    if (messages.length === 0 || status !== ChatStatus.LOADING) return;
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, status]);
-
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="mb-16 flex-1 p-4 mt-5">
@@ -77,22 +85,21 @@ export function ChatView() {
           ) : (
             <AnimatePresence initial={false}>
               {messages.map((m, index) => {
-                if (status === ChatStatus.LOADING && index === messages.length - 1 && m.status !== "finished") return null;
+                if (
+                  status === ChatStatus.LOADING &&
+                  index === messages.length - 1 &&
+                  m.status !== "finished"
+                )
+                  return null;
 
-                if (status === ChatStatus.STREAMING && index === messages.length - 1) return (
-                  <Message
-                    key={m._id}
-                    data={m}
-                    user={session?.user}
-                  />
-                );
+                if (
+                  status === ChatStatus.STREAMING &&
+                  index === messages.length - 1
+                )
+                  return <Message key={m._id} data={m} user={session?.user} />;
 
                 return (
-                  <MemoizedMessage
-                    key={m._id}
-                    data={m}
-                    user={session?.user}
-                  />
+                  <MemoizedMessage key={m._id} data={m} user={session?.user} />
                 );
               })}
             </AnimatePresence>
@@ -112,6 +119,19 @@ export function ChatView() {
         addUserMessage={(message) => append({ content: message })}
         onStop={stop}
       />
+
+      <div className="sticky bottom-36 flex justify-center z-50">
+        <Button
+          variant="secondary"
+          size="icon"
+          className={`transition-all duration-300 ${showScrollButton ? "opacity-100" : "opacity-0 pointer-events-none"} hover:bg-primary hover:text-primary-foreground`}
+          onClick={() =>
+            bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+          }
+        >
+          <ArrowDown className="size-4" />
+        </Button>
+      </div>
     </div>
   );
 }
