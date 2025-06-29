@@ -3,13 +3,15 @@ import { useMutation } from "convex/react";
 import { useEffect, useRef } from "react";
 import { AnimatePresence } from "motion/react";
 import { ChatInput } from "~/components/chat/chat-input";
-import { Message, StreamingAiMessage } from "~/components/chat/message";
+import { Message, MemoizedMessage} from "~/components/chat/message";
+import { ChatStatus } from "~/components/chat/types";
 import { useChat } from "~/hooks/use-chat";
 import { useChatsList } from "~/hooks/use-chats-list";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
 import { models } from "~/lib/models";
+import { AnimatedShinyText } from "../ui/animated-shiny-text";
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
@@ -18,7 +20,6 @@ export function ChatView() {
   const chatsList = useChatsList();
   const {
     messages,
-    streamingMessage,
     status,
     append,
     stop,
@@ -52,54 +53,54 @@ export function ChatView() {
           chatId,
           sessionToken: session?.session.token ?? "skip",
         });
-        await append({ role: "user", content: firstMessage });
+        await append({ content: firstMessage });
       }
     }
     sendFirstMessage();
   }, [chatId, session?.session.token, append, generateChatTitle]);
 
-  const isLoading = chatId && messages.length === 0;
-
-  const showOptimisticMessage =
-    streamingMessage?.role === "assistant" &&
-    !messages.some(
-      (m) =>
-        m.role === "assistant" &&
-        m.content === streamingMessage.content &&
-        m.status === "finished"
-    );
+  const isEmpty = !chatId || messages.length === 0;
 
   useEffect(() => {
-    if (messages.length === 0 && !streamingMessage) return;
+    if (messages.length === 0 || status !== ChatStatus.LOADING) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, streamingMessage]);
+  }, [messages.length, status]);
 
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="mb-16 flex-1 p-4 mt-5">
         <div className="mx-auto h-full max-w-3xl space-y-3">
-          {messages.length === 0 && !isLoading ? (
+          {isEmpty ? (
             <div className="flex h-full items-center justify-center text-foreground">
               <h1 className="text-2xl">Where should we begin?</h1>
             </div>
           ) : (
             <AnimatePresence initial={false}>
               {messages.map((m, index) => {
-                if (
-                  (m.role === "assistant" &&
-                    status === "streaming" &&
-                    index === messages.length - 1) ||
-                  m.status === "generating" ||
-                  m.status === "reasoning"
-                ) {
-                  return null;
-                }
-                return <Message key={m._id} data={m} user={session?.user} />;
+                if (status === ChatStatus.LOADING && index === messages.length - 1 && m.status !== "finished") return null;
+
+                if (status === ChatStatus.STREAMING && index === messages.length - 1) return (
+                  <Message
+                    key={m._id}
+                    data={m}
+                    user={session?.user}
+                  />
+                );
+
+                return (
+                  <MemoizedMessage
+                    key={m._id}
+                    data={m}
+                    user={session?.user}
+                  />
+                );
               })}
             </AnimatePresence>
           )}
-          {showOptimisticMessage && (
-            <StreamingAiMessage data={streamingMessage} />
+          {status === ChatStatus.LOADING && (
+            <div className="px-3 pt-2">
+              <AnimatedShinyText>Loading</AnimatedShinyText>
+            </div>
           )}
           <div ref={bottomRef} />
         </div>
@@ -108,7 +109,7 @@ export function ChatView() {
         chatId={chatId}
         sessionToken={session?.session.token ?? "skip"}
         disabled={status === "streaming"}
-        addUserMessage={(message) => append({ role: "user", content: message })}
+        addUserMessage={(message) => append({ content: message })}
         onStop={stop}
       />
     </div>

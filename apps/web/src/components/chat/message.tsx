@@ -4,7 +4,6 @@ import { memo, useMemo, useState } from "react";
 import { TokenBlock } from "~/components/chat/blocks";
 import type {
   ChatMessage,
-  StreamingMessage,
   MessageReasoning,
   MessageStatus,
 } from "~/components/chat/types";
@@ -90,36 +89,48 @@ const ReasoningCollapsible = memo(function ReasoningCollapsible({
           </div>
         )}
       </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-2 text-xs">
-        {reasoning.details.map((detail) => {
-          const tokens = marked.lexer(detail.text);
-          return (
-            <div key={crypto.randomUUID()} className="flex gap-x-2">
-              <div className="flex w-4 shrink-0 flex-col items-center">
-                <div className="flex h-5 items-center justify-center">
-                  <div className="h-[6px] w-[6px] rounded-full bg-gray-300" />
+      <CollapsibleContent forceMount asChild>
+        <motion.div
+          initial="collapsed"
+          animate={reasoningOpen ? "open" : "collapsed"}
+          variants={{
+            open: { height: "auto", opacity: 1 },
+            collapsed: { height: 0, opacity: 0 },
+          }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          style={{ overflow: "hidden" }}
+          className="space-y-2 text-xs"
+        >
+          {reasoning.details.map((detail) => {
+            const tokens = marked.lexer(detail.text);
+            return (
+              <div key={crypto.randomUUID()} className="flex gap-x-2">
+                <div className="flex w-4 shrink-0 flex-col items-center">
+                  <div className="flex h-5 items-center justify-center">
+                    <div className="h-[6px] w-[6px] rounded-full bg-gray-300" />
+                  </div>
+                  <div className="w-[1px] flex-grow bg-gray-300" />
                 </div>
-                <div className="w-[1px] flex-grow bg-gray-300" />
+                <div className="flex-grow">
+                  {tokens.map((token) => (
+                    <TokenBlock key={crypto.randomUUID()} token={token} />
+                  ))}
+                </div>
               </div>
-              <div className="flex-grow">
-                {tokens.map((token) => (
-                  <TokenBlock key={crypto.randomUUID()} token={token} />
-                ))}
+            );
+          })}
+          {!isReasoning && (
+            <div className="flex items-center gap-x-2 text-gray-500">
+              <div className="flex w-4 shrink-0 justify-center">
+                <Icon
+                  icon="lucide:circle-check"
+                  className="h-4 w-4 bg-transparent text-gray-500"
+                />
               </div>
+              <span className="text-gray-500">Done</span>
             </div>
-          );
-        })}
-        {!isReasoning && (
-          <div className="flex items-center gap-x-2 text-gray-500">
-            <div className="flex w-4 shrink-0 justify-center">
-              <Icon
-                icon="lucide:circle-check"
-                className="h-4 w-4 bg-transparent text-gray-500"
-              />
-            </div>
-            <span className="text-gray-500">Done</span>
-          </div>
-        )}
+          )}
+        </motion.div>
       </CollapsibleContent>
     </Collapsible>
   );
@@ -130,7 +141,7 @@ interface MessageProps {
   readonly user?: User;
 }
 
-const Message = memo(function Message({ data, user }: MessageProps) {
+export const Message = function Message({ data, user }: MessageProps) {
   const { isCopied, copy } = useClipboardCopy();
   const contentTokens = useMemo(
     () => marked.lexer(data.content),
@@ -144,21 +155,12 @@ const Message = memo(function Message({ data, user }: MessageProps) {
   const error = "error" in data && data.error ? data.error : null;
 
   return (
-    <motion.div
-      className="max-w-full flex flex-col gap-y-2 group"
-      {...(isUser
-        ? {
-            initial: { opacity: 0, y: 20 },
-            animate: { opacity: 1, y: 0 },
-            transition: { duration: 0.25 },
-          }
-        : {})}
-    >
+    <div className="max-w-full flex flex-col gap-y-2 group">
       <div
         className={cn(
-          "py-2 space-y-2",
+          "px-3 py-2 space-y-2",
           isUser &&
-            "px-3 rounded-lg border border-border bg-sidebar-accent text-sidebar-accent-foreground",
+            "rounded-lg border border-border bg-sidebar-accent text-sidebar-accent-foreground",
           isAssistant && "text-foreground",
           error && "border-red-500"
         )}
@@ -190,56 +192,7 @@ const Message = memo(function Message({ data, user }: MessageProps) {
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-x-2 min-h-[1.25rem] pl-3">
-        <div className="text-red-500 text-xs flex-1 min-w-0 truncate">
-          {error}
-        </div>
-        <div className="flex items-center gap-x-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
-          <Button
-            type="button"
-            onMouseDown={() => copy(data.content)}
-            variant="ghost"
-            size="icon"
-            className="h-4 w-4"
-          >
-            <Icon
-              icon={isCopied ? "lucide:check" : "lucide:copy"}
-              className="bg-transparent text-gray-500"
-            />
-          </Button>
-        </div>
-      </div>
-    </motion.div>
-  );
-});
-
-interface StreamingAiMessageProps {
-  readonly data: StreamingMessage;
-}
-const StreamingAiMessage = memo(function StreamingAiMessage({
-  data,
-}: StreamingAiMessageProps) {
-  const { isCopied, copy } = useClipboardCopy();
-  const contentTokens = useMemo(
-    () => marked.lexer(data.content),
-    [data.content]
-  );
-
-  const error = "error" in data && data.error ? data.error : null;
-
-  return (
-    <div className="max-w-full flex flex-col gap-y-2 group">
-      <div className={cn("px-3 py-2 space-y-2 text-foreground")}>
-        <ReasoningCollapsible reasoning={data.reasoning} status={data.status} />
-        <div className="flex items-center gap-x-2 min-w-0">
-          <div className="whitespace-pre-wrap break-words min-w-0">
-            {contentTokens.map((token) => (
-              <TokenBlock key={crypto.randomUUID()} token={token} />
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center justify-between gap-x-2 min-h-[1.25rem] pl-3">
+      <div className="flex items-center justify-between gap-x-2 min-h-[1.25rem] px-3">
         <div className="text-red-500 text-xs flex-1 min-w-0 truncate">
           {error}
         </div>
@@ -260,6 +213,6 @@ const StreamingAiMessage = memo(function StreamingAiMessage({
       </div>
     </div>
   );
-});
+};
 
-export { Message, StreamingAiMessage };
+export const MemoizedMessage = memo(Message);
