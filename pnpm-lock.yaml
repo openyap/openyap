@@ -32,6 +32,9 @@ importers:
       '@convex-dev/react-query':
         specifier: 0.0.0-alpha.8
         version: 0.0.0-alpha.8(@tanstack/react-query@5.80.7(react@19.1.0))(convex@1.24.8(react@19.1.0))
+      '@iconify-json/simple-icons':
+        specifier: ^1.2.41
+        version: 1.2.41
       '@marsidev/react-turnstile':
         specifier: 1.1.0
         version: 1.1.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -746,6 +749,9 @@ packages:
 
   '@iconify-json/lucide@1.2.47':
     resolution: {integrity: sha512-kI7IK5I3iWRcJeAZv9yBSEQ26EETgTVeUYJNXkJ9QN8raWvmRMLB/PICdcfyOWBTaaEosru8MNxKEwbJfnrnUQ==}
+
+  '@iconify-json/simple-icons@1.2.41':
+    resolution: {integrity: sha512-4tt29cKzNsxvt6rjAOVhEgpZV0L8jleTDTMdtvIJjF14Afp9aH8peuwGYyX35l6idfFwuzbvjSVfVyVjJtfmYA==}
 
   '@iconify-json/vscode-icons@1.2.22':
     resolution: {integrity: sha512-qQ+2q3E7ULfDreFOspoYKcGJ76o0/D7wZiBt5g8wco9v+Qq6JDH3z2YNoM/36zzAqRnhVEIs5A9sdZeAJeJUwA==}
@@ -4977,6 +4983,10 @@ snapshots:
   '@hexagon/base64@1.1.28': {}
 
   '@iconify-json/lucide@1.2.47':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/simple-icons@1.2.41':
     dependencies:
       '@iconify/types': 2.0.0
 
