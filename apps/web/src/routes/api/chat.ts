@@ -4,16 +4,16 @@ import {
 } from "@tanstack/react-start/server";
 import { streamText } from "ai";
 import type { Id } from "convex/_generated/dataModel";
-import type { MessageReasoning, MessageUsage } from "~/components/chat/types";
+import type {
+  AttachmentId,
+  MessageId,
+  MessageReasoning,
+  MessageUsage,
+} from "~/components/chat/types";
 import { splitReasoningSteps } from "~/lib/ai/reasoning";
 import { auth } from "~/lib/auth/server";
 import { api, convexServer } from "~/lib/db/server";
-import {
-  getDefaultModel,
-  getModelById,
-  getSystemPrompt,
-  ReasoningEffort,
-} from "~/lib/models";
+import { getDefaultModel, getModelById, getSystemPrompt } from "~/lib/models";
 import { openrouter } from "~/lib/openrouter";
 
 // TODO: update messages with as much fields as possible
@@ -48,7 +48,7 @@ const updateAiMessage = async ({
   historyEntry,
   sessionToken,
 }: {
-  messageId: Id<"message">;
+  messageId: MessageId;
   content: string;
   reasoning?: MessageReasoning;
   status: string;
@@ -83,7 +83,7 @@ const getMessageStatus = async ({
   messageId,
   sessionToken,
 }: {
-  messageId: Id<"message">;
+  messageId: MessageId;
   sessionToken: string;
 }) => {
   return await convexServer.query(api.functions.message.getMessageStatus, {
@@ -112,15 +112,197 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       modelId: requestedModelId,
       search = false,
       reasoningEffort,
+      attachments = [],
     } = await request.json();
 
     const lastMessage = messages[messages.length - 1];
+    let userMessageId: MessageId | null = null;
+    let transformedMessages = messages;
+
     if (lastMessage.role === "user") {
-      await convexServer.mutation(api.functions.message.createUserMessage, {
-        chatId,
-        content: lastMessage.content,
-        sessionToken,
-      });
+      userMessageId = await convexServer.mutation(
+        api.functions.message.createUserMessage,
+        {
+          chatId,
+          content: lastMessage.content,
+          sessionToken,
+        },
+      );
+
+      // Transform messages with attachment content for AI model
+      if (attachments.length > 0) {
+        // Check if attachments are already uploaded (have IDs) or new base64 data
+        const existingAttachmentIds = attachments.filter(
+          (att: string | object) =>
+            typeof att === "string" && att.startsWith("k"),
+        ) as string[];
+        const newAttachments = attachments.filter(
+          (att: string | object) => typeof att === "object" && "data" in att,
+        ) as { name: string; size: number; type: string; data: string }[];
+
+        // Fetch existing attachments data if any
+        const existingAttachmentsData = await Promise.all(
+          existingAttachmentIds.map(async (attachmentId) => {
+            try {
+              return await convexServer.query(
+                api.functions.attachment.getAttachment,
+                {
+                  attachmentId: attachmentId as AttachmentId,
+                  sessionToken,
+                },
+              );
+            } catch (error) {
+              console.error("Error fetching attachment:", error);
+              return null;
+            }
+          }),
+        );
+
+        // Combine all attachments for message transformation
+        const allAttachmentsForAI = [
+          ...existingAttachmentsData.filter((att) => att !== null),
+          ...newAttachments.map((att) => ({
+            type: att.type.startsWith("image/") ? "image" : "document",
+            name: att.name,
+            mimeType: att.type,
+            url: `data:${att.type};base64,${att.data}`,
+            extractedText: undefined,
+          })),
+        ];
+
+        // Transform last message to include attachments for AI
+        if (allAttachmentsForAI.length > 0) {
+          const messageContent: Array<{
+            type: string;
+            text?: string;
+            image?: string;
+          }> = [];
+
+          // Add text content if it exists
+          if (lastMessage.content.trim()) {
+            messageContent.push({ type: "text", text: lastMessage.content });
+          }
+
+          for (const attachment of allAttachmentsForAI) {
+            if (attachment && attachment.type === "image") {
+              messageContent.push({
+                type: "image",
+                image: attachment.url,
+              });
+            } else if (
+              attachment &&
+              (attachment.type === "pdf" || attachment.type === "document")
+            ) {
+              // For text-based documents, include as text reference
+              messageContent.push({
+                type: "text",
+                text: `[File: ${attachment.name} (${attachment.mimeType})]${attachment.extractedText ? `\n\nContent:\n${attachment.extractedText}` : ""}`,
+              });
+            }
+          }
+
+          // Update transformedMessages with multimodal content
+          transformedMessages = [
+            ...messages.slice(0, -1),
+            {
+              ...lastMessage,
+              content: messageContent,
+            },
+          ];
+        }
+
+        // Process attachments in background (fire-and-forget) - only for new attachments
+        if (newAttachments.length > 0 && userMessageId) {
+          (async () => {
+            try {
+              const uploadPromises = newAttachments.map(
+                async (attachment: {
+                  name: string;
+                  size: number;
+                  type: string;
+                  data: string;
+                }) => {
+                  try {
+                    // Generate upload URL
+                    const uploadUrl = await convexServer.mutation(
+                      api.functions.attachment.generateUploadUrl,
+                      {
+                        sessionToken,
+                      },
+                    );
+
+                    // Convert base64 to blob
+                    const binary = atob(attachment.data);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) {
+                      bytes[i] = binary.charCodeAt(i);
+                    }
+                    const blob = new Blob([bytes], { type: attachment.type });
+
+                    // Upload to Convex storage
+                    const uploadResult = await fetch(uploadUrl, {
+                      method: "POST",
+                      headers: { "Content-Type": attachment.type },
+                      body: blob,
+                    });
+
+                    if (!uploadResult.ok) {
+                      throw new Error("Upload failed");
+                    }
+
+                    const { storageId } = await uploadResult.json();
+
+                    // Create attachment record
+                    const attachmentId = await convexServer.mutation(
+                      api.functions.attachment.createAttachment,
+                      {
+                        storageId,
+                        messageId: userMessageId as MessageId,
+                        name: attachment.name,
+                        size: attachment.size,
+                        mimeType: attachment.type,
+                        sessionToken,
+                      },
+                    );
+
+                    return attachmentId as string;
+                  } catch (error) {
+                    console.error("Attachment upload error:", error);
+                    return null;
+                  }
+                },
+              );
+
+              const uploadedAttachmentIds = await Promise.all(uploadPromises);
+              const successfulUploads = uploadedAttachmentIds.filter(
+                (id): id is string => id !== null,
+              );
+
+              // Combine existing and new attachment IDs for updating the message
+              const allAttachmentIds = [
+                ...existingAttachmentIds,
+                ...successfulUploads,
+              ];
+
+              // Update message with all attachment IDs
+              if (allAttachmentIds.length > 0) {
+                await convexServer.mutation(
+                  api.functions.message.updateUserMessage,
+                  {
+                    messageId: userMessageId as MessageId,
+                    sessionToken,
+                    attachments: allAttachmentIds.map(
+                      (id) => id as AttachmentId,
+                    ),
+                  },
+                );
+              }
+            } catch (error) {
+              console.error("Background attachment processing error:", error);
+            }
+          })();
+        }
+      }
     }
 
     const selectedModel = requestedModelId
@@ -138,7 +320,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       "Model ID: ",
       modelId,
       "Search: ",
-      search
+      search,
     );
 
     if (reasoningEffort) {
@@ -161,10 +343,11 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       const result = streamText({
         model: openrouter.chat(appendedModelId),
         system: getSystemPrompt(selectedModel, session.user.name),
-        messages,
+        messages: transformedMessages,
         abortSignal: request.signal,
         ...(providerOptions ? { providerOptions } : {}),
       });
+
       const messageId = await createAiMessage({
         chatId,
         sessionToken,
@@ -223,7 +406,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               isReasoning = true;
               reasoningBuffer.text += part.textDelta;
               const steps = splitReasoningSteps(reasoningBuffer.text).map(
-                (step) => ({ text: step })
+                (step) => ({ text: step }),
               );
               reasoningBuffer.details = steps;
               reasoningBuffer.duration += Date.now() - lastReasoningUpdate;
@@ -235,7 +418,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             }
 
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step })
+              (step) => ({ text: step }),
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -264,10 +447,10 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
           if (isAborted) {
             console.log(
-              "[Chat API] Stream finished, but client aborted. Marking as aborted."
+              "[Chat API] Stream finished, but client aborted. Marking as aborted.",
             );
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step })
+              (step) => ({ text: step }),
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -301,7 +484,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           }
 
           const steps = splitReasoningSteps(reasoningBuffer.text).map(
-            (step) => ({ text: step })
+            (step) => ({ text: step }),
           );
           const completedReasoning =
             reasoningBuffer.text.length > 0
@@ -334,7 +517,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         } catch (error) {
           if ((error as Error).name === "AbortError") {
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step })
+              (step) => ({ text: step }),
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0

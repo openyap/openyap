@@ -2,10 +2,10 @@ import { LogOutIcon } from "lucide-react";
 import { useState } from "react";
 import { useTransition } from "react";
 import { CaptchaWidget } from "~/components/auth/captcha-widget";
+import { ProfileAvatar } from "~/components/auth/profile-avatar";
 import { DomainLogo } from "~/components/domains";
 import { Button } from "~/components/ui/button";
 import { authClient, getClientIP } from "~/lib/auth/client";
-import { ProfileAvatar } from "~/components/auth/profile-avatar";
 
 export function ProfileCard() {
   const session = authClient.useSession();

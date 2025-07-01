@@ -11,3 +11,5 @@ export type MessageId = Doc<"message">["_id"];
 export type MessageReasoning = Doc<"message">["reasoning"];
 export type MessageStatus = Doc<"message">["status"];
 export type MessageUsage = Doc<"message">["usage"];
+
+export type AttachmentId = Doc<"attachment">["_id"];

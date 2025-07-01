@@ -14,7 +14,7 @@ export default defineSchema({
     visibility: v.union(
       v.literal("private"), // only owner + invited members
       v.literal("shared"), // anyone with link
-      v.literal("public") // discoverable/searchable
+      v.literal("public"), // discoverable/searchable
     ),
     // Token for sharing the chat
     shareToken: v.optional(v.string()),
@@ -73,11 +73,11 @@ export default defineSchema({
         details: v.array(
           v.object({
             text: v.string(),
-          })
+          }),
         ),
         duration: v.number(),
         reasoningEffort: v.optional(v.string()),
-      })
+      }),
     ),
     // Metadata
     status: v.string(),
@@ -88,7 +88,7 @@ export default defineSchema({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      })
+      }),
     ),
     tools: v.optional(v.array(v.any())),
     sources: v.optional(v.array(v.any())),
@@ -107,11 +107,11 @@ export default defineSchema({
               details: v.array(
                 v.object({
                   text: v.string(),
-                })
+                }),
               ),
               duration: v.number(),
               reasoningEffort: v.optional(v.string()),
-            })
+            }),
           ),
           // The provider and model used for THIS attempt
           provider: v.optional(v.string()),
@@ -122,7 +122,7 @@ export default defineSchema({
               promptTokens: v.number(),
               completionTokens: v.number(),
               totalTokens: v.number(),
-            })
+            }),
           ),
           // Metadata
           status: v.string(),
@@ -130,8 +130,8 @@ export default defineSchema({
           tools: v.optional(v.array(v.any())),
           sources: v.optional(v.array(v.any())),
           createdAt: v.string(),
-        })
-      )
+        }),
+      ),
     ),
 
     // Web search/RAG results (if any)
@@ -180,13 +180,13 @@ export default defineSchema({
             promptTokens: v.number(),
             completionTokens: v.number(),
             totalTokens: v.number(),
-          })
+          }),
         ),
         // When this version was created
         createdAt: v.string(),
         // Optional reason for the change (e.g., "user_retry", "initial_generation")
         reason: v.optional(v.string()),
-      })
+      }),
     ),
     // Order/index among siblings
     order: v.number(),
@@ -219,7 +219,9 @@ export default defineSchema({
     extractedText: v.optional(v.string()),
     // Attachment metadata (OCR, thumbnail, etc.)
     meta: v.optional(v.object({})),
-  }),
+  })
+    .index("by_messageId", ["messageId"])
+    .index("by_userId", ["userId"]),
 
   // Better Auth Tables
   user: defineTable({
@@ -235,7 +237,7 @@ export default defineSchema({
         defaultModel: v.optional(v.string()),
         theme: v.optional(v.string()),
         language: v.optional(v.string()),
-      })
+      }),
     ),
     // Encrypted API keys for the user
     apiKeys: v.optional(v.object({})),

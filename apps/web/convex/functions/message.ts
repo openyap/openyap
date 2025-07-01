@@ -12,33 +12,41 @@ export const createUserMessage = mutation({
   args: {
     content: v.string(),
     chatId: v.id("chat"),
+    attachments: v.optional(v.array(v.id("attachment"))),
     sessionToken: v.string(),
   },
-  handler: async (ctx, args) => {
+  returns: v.union(v.id("message"), v.null()),
+  handler: async (ctx, args): Promise<Id<"message"> | null> => {
     const session = await ctx.runQuery(internal.betterAuth.getSession, {
       sessionToken: args.sessionToken,
     });
 
     if (!session) {
-      return;
+      return null;
     }
 
     const userId = session.userId as Id<"user">;
 
-    await ctx.runMutation(internal.functions.message.createMessage, {
-      chatId: args.chatId,
-      userId,
-      role: "user",
-      content: args.content,
-      status: "created",
-      history: [
-        {
-          content: args.content,
-          version: 0,
-          status: "created",
-        },
-      ],
-    });
+    const messageId: Id<"message"> = await ctx.runMutation(
+      internal.functions.message.createMessage,
+      {
+        chatId: args.chatId,
+        userId,
+        role: "user",
+        content: args.content,
+        status: "created",
+        attachments: args.attachments,
+        history: [
+          {
+            content: args.content,
+            version: 0,
+            status: "created",
+          },
+        ],
+      },
+    );
+
+    return messageId;
   },
 });
 
@@ -48,6 +56,7 @@ export const updateUserMessage = mutation({
     content: v.optional(v.string()),
     status: v.optional(v.string()),
     error: v.optional(v.string()),
+    attachments: v.optional(v.array(v.id("attachment"))),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
@@ -64,6 +73,7 @@ export const updateUserMessage = mutation({
       content: args.content,
       status: args.status,
       error: args.error,
+      attachments: args.attachments,
     });
   },
 });
@@ -96,7 +106,7 @@ export const createAiMessage = mutation({
           completionTokens: 0,
           totalTokens: 0,
         },
-      }
+      },
     );
 
     return messageId;
@@ -113,7 +123,7 @@ export const updateAiMessage = mutation({
         details: v.array(v.object({ text: v.string() })),
         duration: v.number(),
         reasoningEffort: v.optional(v.string()),
-      })
+      }),
     ),
     status: v.optional(v.string()),
     sessionToken: v.string(),
@@ -124,7 +134,7 @@ export const updateAiMessage = mutation({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      })
+      }),
     ),
     historyEntry: v.optional(
       v.object({
@@ -137,7 +147,7 @@ export const updateAiMessage = mutation({
             details: v.array(v.object({ text: v.string() })),
             duration: v.number(),
             reasoningEffort: v.optional(v.string()),
-          })
+          }),
         ),
         provider: v.optional(v.string()),
         model: v.optional(v.string()),
@@ -146,9 +156,9 @@ export const updateAiMessage = mutation({
             promptTokens: v.number(),
             completionTokens: v.number(),
             totalTokens: v.number(),
-          })
+          }),
         ),
-      })
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -207,7 +217,7 @@ export const createMessage = internalMutation({
         details: v.array(v.object({ text: v.string() })),
         duration: v.number(),
         reasoningEffort: v.optional(v.string()),
-      })
+      }),
     ),
     status: v.string(),
     error: v.optional(v.string()),
@@ -216,7 +226,7 @@ export const createMessage = internalMutation({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      })
+      }),
     ),
     tools: v.optional(v.array(v.any())),
     sources: v.optional(v.array(v.any())),
@@ -231,7 +241,7 @@ export const createMessage = internalMutation({
               details: v.array(v.object({ text: v.string() })),
               duration: v.number(),
               reasoningEffort: v.optional(v.string()),
-            })
+            }),
           ),
           provider: v.optional(v.string()),
           model: v.optional(v.string()),
@@ -240,14 +250,14 @@ export const createMessage = internalMutation({
               promptTokens: v.number(),
               completionTokens: v.number(),
               totalTokens: v.number(),
-            })
+            }),
           ),
           status: v.string(),
           error: v.optional(v.string()),
           tools: v.optional(v.array(v.any())),
           sources: v.optional(v.array(v.any())),
-        })
-      )
+        }),
+      ),
     ),
     webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
@@ -289,7 +299,7 @@ export const updateMessage = internalMutation({
         details: v.array(v.object({ text: v.string() })),
         duration: v.number(),
         reasoningEffort: v.optional(v.string()),
-      })
+      }),
     ),
     status: v.optional(v.string()),
     error: v.optional(v.string()),
@@ -298,7 +308,7 @@ export const updateMessage = internalMutation({
         promptTokens: v.number(),
         completionTokens: v.number(),
         totalTokens: v.number(),
-      })
+      }),
     ),
     tools: v.optional(v.array(v.any())),
     sources: v.optional(v.array(v.any())),
@@ -312,7 +322,7 @@ export const updateMessage = internalMutation({
             details: v.array(v.object({ text: v.string() })),
             duration: v.number(),
             reasoningEffort: v.optional(v.string()),
-          })
+          }),
         ),
         provider: v.optional(v.string()),
         model: v.optional(v.string()),
@@ -321,13 +331,13 @@ export const updateMessage = internalMutation({
             promptTokens: v.number(),
             completionTokens: v.number(),
             totalTokens: v.number(),
-          })
+          }),
         ),
         status: v.optional(v.string()),
         error: v.optional(v.string()),
         tools: v.optional(v.array(v.any())),
         sources: v.optional(v.array(v.any())),
-      })
+      }),
     ),
     webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
@@ -376,6 +386,13 @@ export const deleteMessage = internalMutation({
     messageId: v.id("message"),
   },
   handler: async (ctx, args) => {
+    await ctx.runMutation(
+      internal.functions.attachment.deleteAttachmentsByMessageId,
+      {
+        messageId: args.messageId,
+      },
+    );
+
     await ctx.db.delete(args.messageId);
   },
 });

@@ -16,7 +16,7 @@ export function useClipboardCopy() {
   async function copy(text: string) {
     setIsCopied(await copyToClipboard(text));
     setTimeout(() => setIsCopied(false), 3000);
-  };
+  }
 
   return { isCopied, copy };
 }

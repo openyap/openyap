@@ -5,8 +5,8 @@ import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { REASONING_EFFORT_PERSIST_KEY } from "~/components/chat/reasoning-effort-selector";
 import {
   type ChatMessage,
-  type MessageReasoning,
   ChatStatus,
+  type MessageReasoning,
 } from "~/components/chat/types";
 import { usePersisted } from "~/hooks/use-persisted";
 import { processDataStream } from "~/lib/ai/process-chat-response";
@@ -15,9 +15,9 @@ import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
 import {
-  getDefaultModel,
   type EffortLabel,
   ReasoningEffort,
+  getDefaultModel,
   getModelById,
 } from "~/lib/models";
 
@@ -32,7 +32,7 @@ export function useChat(chatId: string | undefined) {
   } = usePersisted<boolean>(SEARCH_TOGGLE_KEY, false);
   const { value: reasoningEffort } = usePersisted<EffortLabel>(
     REASONING_EFFORT_PERSIST_KEY,
-    ReasoningEffort.LOW
+    ReasoningEffort.LOW,
   );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ChatStatus>(ChatStatus.IDLE);
@@ -44,7 +44,7 @@ export function useChat(chatId: string | undefined) {
     api.functions.chat.getChatMessages,
     isConvexId<"chat">(chatId)
       ? { chatId: chatId, sessionToken: session?.session.token }
-      : "skip"
+      : "skip",
   );
 
   useEffect(() => {
@@ -66,6 +66,13 @@ export function useChat(chatId: string | undefined) {
 
       const selectedModel = getModelById(selectedModelId);
 
+      // Get pending attachments if any
+      const pendingAttachments = sessionStorage.getItem("pendingAttachments");
+      console.log(
+        "[useChat] Retrieved pending attachments:",
+        pendingAttachments,
+      );
+
       try {
         const response = await fetch("/api/chat", {
           method: "POST",
@@ -79,6 +86,9 @@ export function useChat(chatId: string | undefined) {
               selectedModel && !!selectedModel.reasoningEffort
                 ? reasoningEffort
                 : undefined,
+            attachments: pendingAttachments
+              ? JSON.parse(pendingAttachments)
+              : [],
           }),
         });
 
@@ -87,6 +97,9 @@ export function useChat(chatId: string | undefined) {
         }
 
         resetSearchToggle();
+
+        // Clear pending attachments after successful request
+        sessionStorage.removeItem("pendingAttachments");
 
         let contentBuffer = "";
         const reasoningBuffer: MessageReasoning = {
@@ -102,7 +115,7 @@ export function useChat(chatId: string | undefined) {
             setStatus(ChatStatus.STREAMING);
             contentBuffer += value;
 
-            setMessages(prev => {
+            setMessages((prev) => {
               const newMessages = [...prev];
               const lastMessage = newMessages[newMessages.length - 1];
               if (lastMessage) {
@@ -117,7 +130,7 @@ export function useChat(chatId: string | undefined) {
             reasoningBuffer.text += value;
 
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step })
+              (step) => ({ text: step }),
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -128,8 +141,8 @@ export function useChat(chatId: string | undefined) {
                     reasoningEffort: reasoningEffort,
                   }
                 : undefined;
-            
-            setMessages(prev => {
+
+            setMessages((prev) => {
               const newMessages = [...prev];
               const lastMessage = newMessages[newMessages.length - 1];
               if (lastMessage) {
@@ -142,7 +155,7 @@ export function useChat(chatId: string | undefined) {
           },
           onFinishMessagePart() {
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step })
+              (step) => ({ text: step }),
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -153,8 +166,8 @@ export function useChat(chatId: string | undefined) {
                     reasoningEffort: reasoningEffort,
                   }
                 : undefined;
-            
-            setMessages(prev => {
+
+            setMessages((prev) => {
               const newMessages = [...prev];
               const lastMessage = newMessages[newMessages.length - 1];
               if (lastMessage) {
@@ -168,7 +181,7 @@ export function useChat(chatId: string | undefined) {
         });
       } catch (error) {
         if ((error as Error).name === "AbortError") {
-          setMessages(prev => {
+          setMessages((prev) => {
             const newMessages = [...prev];
             const lastMessage = newMessages[newMessages.length - 1];
             if (lastMessage) {
@@ -189,7 +202,7 @@ export function useChat(chatId: string | undefined) {
       searchEnabled,
       resetSearchToggle,
       reasoningEffort,
-    ]
+    ],
   );
 
   const stop = useCallback(() => {

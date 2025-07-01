@@ -1,7 +1,8 @@
-import { Icon } from "@iconify/react";
+import { Globe } from "lucide-react";
 import { memo, useCallback } from "react";
 import { Toggle } from "~/components/ui/toggle";
 import { usePersisted } from "~/hooks/use-persisted";
+import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export const SEARCH_TOGGLE_KEY = "search-toggle";
@@ -9,32 +10,36 @@ export const SEARCH_TOGGLE_KEY = "search-toggle";
 const ChatToggles = memo(function ChatToggles() {
   const { value: searchEnabled, set: setSearchEnabled } = usePersisted<boolean>(
     SEARCH_TOGGLE_KEY,
-    false
+    false,
   );
 
   const handleToggle = useCallback(
     (pressed: boolean) => {
       setSearchEnabled(pressed);
     },
-    [setSearchEnabled]
+    [setSearchEnabled],
   );
 
   return (
     <Tooltip>
-      <TooltipTrigger className="hover:cursor-pointer">
+      <TooltipTrigger asChild>
         <Toggle
-          className="bg-transparent dark:bg-transparent border-none shadow-none"
           variant="outline"
-          size="default"
+          size="sm"
+          className={cn(
+            "h-8 w-8 cursor-pointer border-none p-0",
+            searchEnabled
+              ? "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary data-[state=on]:bg-primary/10"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground",
+          )}
           pressed={searchEnabled}
           onPressedChange={handleToggle}
-          asChild
         >
-          <Icon icon="lucide:globe" className="bg-transparent" />
+          <Globe className="h-4 w-4" />
         </Toggle>
       </TooltipTrigger>
       <TooltipContent>
-        <p>Search</p>
+        <p>Search {searchEnabled ? "enabled" : "disabled"}</p>
       </TooltipContent>
     </Tooltip>
   );

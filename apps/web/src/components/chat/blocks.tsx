@@ -7,10 +7,10 @@ import {
   atomDark,
   oneLight,
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
+import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
 import { cn } from "~/lib/utils";
 import { useTheme } from "../theme-provider";
-import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
-import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 
 function randomKey() {
   return crypto.randomUUID();
@@ -148,7 +148,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
           setShouldHighlight(true);
         });
       }, 750),
-    []
+    [],
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run only when the incoming text chunk changes
@@ -167,7 +167,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
     if (!shouldHighlight || pendingHighlight) {
       return (
         <pre
-          className="language-none text-muted-foreground overflow-x-auto"
+          className="language-none overflow-x-auto text-muted-foreground"
           style={{
             background: isDarkTheme ? "#1D1F21" : "#fafafa",
             fontFamily: commonFont,
@@ -229,7 +229,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
   return (
     <div
       key={randomKey()}
-      className="my-3 rounded-md border border-border bg-card shadow max-w-full overflow-x-auto"
+      className="my-3 max-w-full overflow-x-auto rounded-md border border-border bg-card shadow"
     >
       <div className="flex justify-between border-border border-b bg-muted px-4 py-2">
         <div className="flex items-center gap-x-1">
@@ -252,7 +252,7 @@ function CodeBlock({ token }: { token: Tokens.Code }) {
               "iconify h-4 w-4",
               isCopied
                 ? "lucide--check text-green-500"
-                : "lucide--copy text-muted-foreground"
+                : "lucide--copy text-muted-foreground",
             )}
           />
         </button>

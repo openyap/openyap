@@ -320,13 +320,18 @@ export const deleteChat = mutation({
       .query("message")
       .filter((q) => q.eq(q.field("chatId"), chatId))
       .collect();
-    await Promise.all(
-      messages.map((m) =>
-        ctx.runMutation(internal.functions.message.deleteMessage, {
-          messageId: m._id,
-        }),
-      ),
-    );
+
+    const messageIds = messages.map((m) => m._id);
+    if (messageIds.length > 0) {
+      await ctx.runMutation(
+        internal.functions.attachment.deleteAttachmentsByMessageIds,
+        {
+          messageIds,
+        },
+      );
+    }
+
+    await Promise.all(messages.map((m) => ctx.db.delete(m._id)));
 
     const chatMembers = await ctx.db
       .query("chatMember")
