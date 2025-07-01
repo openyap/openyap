@@ -132,10 +132,11 @@ export const models: readonly Model[] = [
   {
     id: 4,
     name: "Gemini 2.5 Flash",
-    modelId: "google/gemini-2.5-flash-preview-05-20",
+    modelId: "google/gemini-2.5-flash",
     provider: "openrouter",
     premium: false,
     reasoningEffort: false,
+    recentlyUpdated: true,
   },
   {
     id: 5,
