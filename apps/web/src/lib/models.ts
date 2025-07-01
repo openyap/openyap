@@ -6,6 +6,7 @@ export interface Model {
   readonly premium: boolean;
   readonly reasoningEffort: boolean;
   readonly isDefault?: boolean;
+  readonly recentlyUpdated?: boolean;
 }
 
 export const ReasoningEffort = {
@@ -126,6 +127,7 @@ export const models: readonly Model[] = [
     premium: false,
     reasoningEffort: false,
     isDefault: false,
+    recentlyUpdated: true,
   },
   {
     id: 4,
@@ -138,10 +140,11 @@ export const models: readonly Model[] = [
   {
     id: 5,
     name: "Gemini 2.5 Pro",
-    modelId: "google/gemini-2.5-pro-preview",
+    modelId: "google/gemini-2.5-pro",
     provider: "openrouter",
     premium: false,
     reasoningEffort: true,
+    recentlyUpdated: true,
   },
   {
     id: 6,
