@@ -17,6 +17,36 @@ export const ReasoningEffort = {
 export type EffortKey = keyof typeof ReasoningEffort;
 export type EffortLabel = (typeof ReasoningEffort)[EffortKey];
 
+export const COMPANY_ICONS = {
+  anthropic: "simple-icons:anthropic",
+  openai: "simple-icons:openai",
+  gemini: "simple-icons:googlegemini",
+} as const;
+
+export type CompanyKey = keyof typeof COMPANY_ICONS;
+
+const COMPANY_PATTERNS: Record<CompanyKey, readonly RegExp[]> = {
+  anthropic: [/claude/i, /anthropic/i],
+  openai: [/gpt/i, /openai/i, /^o4/i],
+  gemini: [/gemini/i],
+};
+
+export const getCompanyKey = (
+  modelOrName: Model | string
+): CompanyKey | undefined => {
+  const name = typeof modelOrName === "string" ? modelOrName : modelOrName.name;
+  return (Object.keys(COMPANY_PATTERNS) as CompanyKey[]).find((key) =>
+    COMPANY_PATTERNS[key].some((pattern) => pattern.test(name))
+  );
+};
+
+export const getCompanyIcon = (
+  modelOrName: Model | string
+): string | undefined => {
+  const key = getCompanyKey(modelOrName);
+  return key ? COMPANY_ICONS[key] : undefined;
+};
+
 export const getSystemPrompt = (model: Model, userName: string) => {
   const modelName = model.name;
 
