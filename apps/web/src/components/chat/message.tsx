@@ -1,24 +1,29 @@
 import { Icon } from "@iconify/react";
+import type { User } from "better-auth";
+import { useQuery } from "convex/react";
 import { marked } from "marked";
+import { motion } from "motion/react";
 import { memo, useMemo, useState } from "react";
+import { ProfileAvatar } from "~/components/auth/profile-avatar";
+import { AttachmentList } from "~/components/chat/attachment-preview";
 import { TokenBlock } from "~/components/chat/blocks";
 import type {
   ChatMessage,
   MessageReasoning,
   MessageStatus,
 } from "~/components/chat/types";
+import type { MessageId } from "~/components/chat/types";
 import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
+import { Button } from "~/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
-import { cn } from "~/lib/utils";
-import { motion } from "motion/react";
-import { Button } from "../ui/button";
 import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
-import { ProfileAvatar } from "../auth/profile-avatar";
-import type { User } from "better-auth";
+import { authClient } from "~/lib/auth/client";
+import { api } from "~/lib/db/server";
+import { cn } from "~/lib/utils";
 
 interface ReasoningCollapsibleProps {
   readonly reasoning: MessageReasoning;
@@ -136,6 +141,38 @@ const ReasoningCollapsible = memo(function ReasoningCollapsible({
   );
 });
 
+function MessageAttachments({ messageId }: { messageId: string }) {
+  const { data: session } = authClient.useSession();
+  const attachments = useQuery(
+    api.functions.attachment.getMessageAttachments,
+    session?.session.token
+      ? {
+          messageId: messageId as MessageId,
+          sessionToken: session.session.token,
+        }
+      : "skip",
+  );
+
+  if (!attachments || attachments.length === 0) {
+    return null;
+  }
+
+  const formattedAttachments = attachments.map((attachment) => ({
+    id: attachment._id,
+    type: attachment.type,
+    url: attachment.url,
+    name: attachment.name,
+    size: attachment.size,
+    mimeType: attachment.mimeType,
+  }));
+
+  return (
+    <div className="my-2">
+      <AttachmentList attachments={formattedAttachments} />
+    </div>
+  );
+}
+
 interface MessageProps {
   readonly data: ChatMessage;
   readonly user?: User;
@@ -145,7 +182,7 @@ export const Message = function Message({ data, user }: MessageProps) {
   const { isCopied, copy } = useClipboardCopy();
   const contentTokens = useMemo(
     () => marked.lexer(data.content),
-    [data.content]
+    [data.content],
   );
 
   const isUser = data.role === "user";
@@ -155,14 +192,14 @@ export const Message = function Message({ data, user }: MessageProps) {
   const error = "error" in data && data.error ? data.error : null;
 
   return (
-    <div className="max-w-full flex flex-col gap-y-2 group">
+    <div className="group flex max-w-full flex-col gap-y-2">
       <div
         className={cn(
-          "px-3 py-2 space-y-2",
+          "space-y-2 px-3 py-2",
           isUser &&
             "rounded-lg border border-border bg-sidebar-accent text-sidebar-accent-foreground",
           isAssistant && "text-foreground",
-          error && "border-red-500"
+          error && "border-red-500",
         )}
       >
         {isAssistant && (
@@ -171,7 +208,7 @@ export const Message = function Message({ data, user }: MessageProps) {
             status={data.status}
           />
         )}
-        <div className="flex gap-x-3 min-w-0">
+        <div className="flex min-w-0 gap-x-3">
           {isUser && (
             <ProfileAvatar
               image={user?.image ?? ""}
@@ -179,24 +216,25 @@ export const Message = function Message({ data, user }: MessageProps) {
               className="size-6"
             />
           )}
-          <div className="flex flex-col gap-y-0.5 min-w-0">
+          <div className="flex min-w-0 flex-col gap-y-0.5">
             <div className="flex items-center gap-x-1.5">
-              {isUser && <div className="text-xs text-gray-500">{name}</div>}
-              {isUser && <div className="text-xs text-gray-500">{date}</div>}
+              {isUser && <div className="text-gray-500 text-xs">{name}</div>}
+              {isUser && <div className="text-gray-500 text-xs">{date}</div>}
             </div>
-            <div className="whitespace-pre-wrap break-words min-w-0">
+            <div className="min-w-0 whitespace-pre-wrap break-words">
               {contentTokens.map((token) => (
                 <TokenBlock key={crypto.randomUUID()} token={token} />
               ))}
             </div>
+            <MessageAttachments messageId={data._id} />
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-x-2 min-h-[1.25rem] px-3">
-        <div className="text-red-500 text-xs flex-1 min-w-0 truncate">
+      <div className="flex min-h-[1.25rem] items-center justify-between gap-x-2 px-3">
+        <div className="min-w-0 flex-1 truncate text-red-500 text-xs">
           {error}
         </div>
-        <div className="flex items-center gap-x-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
+        <div className="flex items-center gap-x-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           <Button
             type="button"
             onMouseDown={() => copy(data.content)}

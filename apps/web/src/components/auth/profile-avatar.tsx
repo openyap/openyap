@@ -12,9 +12,7 @@ export function ProfileAvatar({ image, name, className }: ProfileAvatarProps) {
     <div>
       <Avatar className={cn(className)}>
         <AvatarImage src={image} />
-        <AvatarFallback>
-          {name.charAt(0).toUpperCase()}
-        </AvatarFallback>
+        <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
     </div>
   );
