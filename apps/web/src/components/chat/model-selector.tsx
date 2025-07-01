@@ -10,7 +10,7 @@ import {
 import { usePersisted } from "~/hooks/use-persisted";
 import { getCompanyIcon, getDefaultModel, models } from "~/lib/models";
 import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Gem } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -49,6 +49,17 @@ const ModelSelector = memo(function ModelSelector() {
             model.name
           );
 
+          const premiumGem = model.premium ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="pointer-events-auto">
+                  <Gem className="size-3 text-sky-400" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">Premium model</TooltipContent>
+            </Tooltip>
+          ) : null;
+
           const updatedSparkles = model.recentlyUpdated ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -64,11 +75,13 @@ const ModelSelector = memo(function ModelSelector() {
             <span className="flex items-center gap-2">
               <Icon icon={iconName} className="size-4 bg-transparent" />
               {nameElement}
+              {premiumGem}
               {updatedSparkles}
             </span>
           ) : (
             <span className="flex items-center gap-2">
               {nameElement}
+              {premiumGem}
               {updatedSparkles}
             </span>
           );
