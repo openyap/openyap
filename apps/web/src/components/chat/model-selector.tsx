@@ -9,6 +9,13 @@ import {
 } from "~/components/ui/select";
 import { usePersisted } from "~/hooks/use-persisted";
 import { getCompanyIcon, getDefaultModel, models } from "~/lib/models";
+import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
+import { Sparkles } from "lucide-react";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "~/components/ui/tooltip";
 
 export const MODEL_PERSIST_KEY = "selected-model";
 
@@ -34,16 +41,41 @@ const ModelSelector = memo(function ModelSelector() {
       <SelectContent>
         {models.map((model) => {
           const iconName = getCompanyIcon(model);
+          const nameElement = model.recentlyUpdated ? (
+            <AnimatedShinyText shimmerWidth={100}>
+              {model.name}
+            </AnimatedShinyText>
+          ) : (
+            model.name
+          );
+
+          const updatedSparkles = model.recentlyUpdated ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="pointer-events-auto">
+                  <Sparkles className="size-3 text-orange-400" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">Recently updated</TooltipContent>
+            </Tooltip>
+          ) : null;
+
+          const content = iconName ? (
+            <span className="flex items-center gap-2">
+              <Icon icon={iconName} className="size-4 bg-transparent" />
+              {nameElement}
+              {updatedSparkles}
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              {nameElement}
+              {updatedSparkles}
+            </span>
+          );
+
           return (
             <SelectItem key={model.id} value={model.id.toString()}>
-              {iconName ? (
-                <span className="flex items-center gap-2">
-                  <Icon icon={iconName} className="size-4 bg-transparent" />
-                  {model.name}
-                </span>
-              ) : (
-                model.name
-              )}
+              {content}
             </SelectItem>
           );
         })}
