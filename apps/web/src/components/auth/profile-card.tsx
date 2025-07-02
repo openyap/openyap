@@ -64,14 +64,13 @@ export function ProfileCard() {
   }
 
   return (
-    <div className="flex h-12 items-center justify-center rounded">
+    <div className="flex h-12 items-center justify-center rounded-md">
       <Button
-        type="button"
         onClick={handleGoogleLogin}
-        className="h-full w-full bg-white text-gray-900 hover:bg-gray-50"
+        className="h-full w-full"
         disabled={isPending}
       >
-        <DomainLogo domain="google.com" />
+        <DomainLogo domain="google.com" config={{ type: "symbol" }} />
         Continue with Google
       </Button>
       <CaptchaWidget
