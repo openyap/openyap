@@ -34,7 +34,7 @@ const COMPANY_PATTERNS: Record<CompanyKey, readonly RegExp[]> = {
 };
 
 export const getCompanyKey = (
-  modelOrName: Model | string
+  modelOrName: Model | string,
 ): CompanyKey | undefined => {
   if (typeof modelOrName !== "string") {
     return modelOrName.company;
@@ -42,12 +42,12 @@ export const getCompanyKey = (
 
   const name = modelOrName;
   return (Object.keys(COMPANY_PATTERNS) as CompanyKey[]).find((key) =>
-    COMPANY_PATTERNS[key].some((pattern) => pattern.test(name))
+    COMPANY_PATTERNS[key].some((pattern) => pattern.test(name)),
   );
 };
 
 export const getCompanyIcon = (
-  modelOrName: Model | string
+  modelOrName: Model | string,
 ): string | undefined => {
   const key = getCompanyKey(modelOrName);
   return key ? COMPANY_ICONS[key] : undefined;

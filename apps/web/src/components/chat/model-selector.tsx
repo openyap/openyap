@@ -1,5 +1,7 @@
-import { memo, useState } from "react";
 import { Icon } from "@iconify/react";
+import { Check, ChevronDown, Gem, Sparkles } from "lucide-react";
+import { memo, useState } from "react";
+import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
 import { Button } from "~/components/ui/button";
 import {
   Command,
@@ -14,15 +16,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { usePersisted } from "~/hooks/use-persisted";
-import { getCompanyIcon, getDefaultModel, models } from "~/lib/models";
-import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
-import { Sparkles, Gem, ChevronDown, Check } from "lucide-react";
 import {
   Tooltip,
-  TooltipTrigger,
   TooltipContent,
+  TooltipTrigger,
 } from "~/components/ui/tooltip";
+import { usePersisted } from "~/hooks/use-persisted";
+import { getCompanyIcon, getDefaultModel, models } from "~/lib/models";
 import { cn } from "~/lib/utils";
 
 export const MODEL_PERSIST_KEY = "selected-model";
@@ -88,7 +88,7 @@ const ModelSelector = memo(function ModelSelector() {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 justify-between gap-1 px-2 text-muted-foreground text-xs hover:text-foreground w-fit bg-transparent dark:bg-transparent border-none shadow-none"
+          className="h-8 w-fit justify-between gap-1 border-none bg-transparent px-2 text-muted-foreground text-xs shadow-none hover:text-foreground dark:bg-transparent"
         >
           {selectedModel ? renderModelContent(selectedModel) : "Select model"}
           <ChevronDown className="ml-2 h-3 w-3" />
@@ -123,7 +123,9 @@ const ModelSelector = memo(function ModelSelector() {
                   <Check
                     className={cn(
                       "ml-auto size-4",
-                      selectedModelId === model.id ? "opacity-100" : "opacity-0"
+                      selectedModelId === model.id
+                        ? "opacity-100"
+                        : "opacity-0",
                     )}
                   />
                 </CommandItem>
