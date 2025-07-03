@@ -1,11 +1,11 @@
 import { isRedirect, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { ArrowUpIcon, Square } from "lucide-react";
+import { ArrowUpIcon, Paperclip, Square } from "lucide-react";
 import { memo, useCallback, useEffect, useState } from "react";
 import { ChatOptions } from "~/components/chat/chat-options";
 import { FilePills } from "~/components/chat/file-pills";
 import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
-import { type AttachedFile, inputStore } from "~/components/chat/stores";
+import { inputStore } from "~/components/chat/stores";
 import { Button } from "~/components/ui/button";
 import {
   PromptInput,
@@ -13,9 +13,12 @@ import {
   PromptInputActions,
   PromptInputTextarea,
 } from "~/components/ui/prompt-input";
+import { useFileAttachments } from "~/hooks/use-file-attachments";
+import { useFileDrop } from "~/hooks/use-file-drop";
 import { usePersisted } from "~/hooks/use-persisted";
 import { api } from "~/lib/db/server";
 import { getDefaultModel, getModelById } from "~/lib/models";
+import { cn } from "~/lib/utils";
 
 interface ChatInputProps {
   chatId?: string;
@@ -40,60 +43,26 @@ const ChatInput = memo(function ChatInput({
     getDefaultModel().id,
   );
   const [input, setInput] = useState(inputStore.getState().input);
-  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>(
-    inputStore.getState().attachedFiles,
-  );
-  const [fileUrls, setFileUrls] = useState<Map<string, string>>(new Map());
+
+  // Use custom hooks
+  const {
+    attachedFiles,
+    fileUrls,
+    handleFilesSelected,
+    handleRemoveFileById,
+    clearFiles,
+  } = useFileAttachments();
+
+  const { isDragOver, isDragOverTarget, dropProps } = useFileDrop({
+    onDrop: handleFilesSelected,
+    disabled,
+  });
 
   useEffect(() => {
     const unsubscribe = inputStore.subscribe((state) => {
       setInput(state.input);
-      setAttachedFiles(state.attachedFiles);
     });
     return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    const newUrls = new Map<string, string>();
-
-    attachedFiles.forEach((file, index) => {
-      if (file.file.type.startsWith("image/")) {
-        const key = `file-${index}`;
-        const url = URL.createObjectURL(file.file);
-        newUrls.set(key, url);
-      }
-    });
-
-    setFileUrls((prevUrls) => {
-      prevUrls.forEach((url, key) => {
-        if (!newUrls.has(key)) {
-          URL.revokeObjectURL(url);
-        }
-      });
-      return newUrls;
-    });
-
-    return () => {
-      for (const url of newUrls.values()) {
-        URL.revokeObjectURL(url);
-      }
-    };
-  }, [attachedFiles]);
-
-  const handleFilesSelected = useCallback((files: File[]) => {
-    inputStore.getState().addFiles(files);
-  }, []);
-
-  const _handleRemoveFile = useCallback((index: number) => {
-    inputStore.getState().removeFile(index);
-  }, []);
-
-  const handleRemoveFileById = useCallback((fileId: string) => {
-    const attachedFiles = inputStore.getState().attachedFiles;
-    const index = attachedFiles.findIndex((_, i) => `file-${i}` === fileId);
-    if (index !== -1) {
-      inputStore.getState().removeFile(index);
-    }
   }, []);
 
   const send = useCallback(
@@ -167,7 +136,7 @@ const ChatInput = memo(function ChatInput({
 
       addUserMessage(text, []);
 
-      inputStore.getState().clearFiles();
+      clearFiles();
     },
     [
       chatId,
@@ -177,6 +146,7 @@ const ChatInput = memo(function ChatInput({
       addUserMessage,
       selectedModelId,
       attachedFiles,
+      clearFiles,
     ],
   );
 
@@ -185,8 +155,6 @@ const ChatInput = memo(function ChatInput({
     send(currentInput);
     setInput("");
     inputStore.getState().setInput("");
-    setAttachedFiles([]);
-    inputStore.getState().clearFiles();
   }, [send]);
 
   const isDisabled = useCallback(() => {
@@ -197,63 +165,86 @@ const ChatInput = memo(function ChatInput({
   }, [disabled, attachedFiles.length]);
 
   return (
-    <div className="mx-auto flex w-full max-w-full flex-col gap-2 overflow-hidden px-4 sm:max-w-2xl lg:max-w-4xl">
-      <PromptInput
-        value={input}
-        onValueChange={(val) => {
-          setInput(val);
-          inputStore.getState().setInput(val);
-        }}
-        isLoading={disabled}
-        onSubmit={handleSubmit}
-        className="w-full"
+    <div 
+      className="mx-auto flex w-full max-w-full flex-col gap-2 overflow-hidden px-4 sm:max-w-2xl lg:max-w-4xl"
+      onDrop={dropProps.onDrop}
+    >
+      <div 
+        className="relative w-full"
+        {...dropProps}
       >
-        <PromptInputTextarea placeholder="Ask anything" />
+        <PromptInput
+          value={input}
+          onValueChange={(val) => {
+            setInput(val);
+            inputStore.getState().setInput(val);
+          }}
+          isLoading={disabled}
+          onSubmit={handleSubmit}
+          className="w-full"
+        >
+          <PromptInputTextarea placeholder="Ask anything" />
 
-        <PromptInputActions className="flex items-center justify-between pt-2">
-          <ChatOptions
-            attachedFiles={attachedFiles}
-            onFilesSelected={handleFilesSelected}
+          <PromptInputActions className="flex items-center justify-between pt-2">
+            <ChatOptions
+              attachedFiles={attachedFiles}
+              onFilesSelected={handleFilesSelected}
+            />
+
+            <PromptInputAction
+              tooltip={disabled ? "Stop generation" : "Send message"}
+              side="top"
+            >
+              {disabled ? (
+                <Button
+                  variant="default"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={onStop}
+                >
+                  <Square className="h-4 w-4 fill-background" />
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={handleSubmit}
+                  disabled={isDisabled()}
+                >
+                  <ArrowUpIcon className="h-4 w-4" />
+                </Button>
+              )}
+            </PromptInputAction>
+          </PromptInputActions>
+          <FilePills
+            files={attachedFiles.map((file, index) => ({
+              id: `file-${index}`,
+              name: file.file.name,
+              size: file.file.size,
+              type: file.file.type,
+              url: fileUrls.get(`file-${index}`),
+            }))}
+            onRemove={handleRemoveFileById}
+            className="mt-2 border-input border-t px-2 py-2"
           />
-
-          <PromptInputAction
-            tooltip={disabled ? "Stop generation" : "Send message"}
-            side="top"
-          >
-            {disabled ? (
-              <Button
-                variant="default"
-                size="icon"
-                className="h-8 w-8"
-                onClick={onStop}
-              >
-                <Square className="h-4 w-4 fill-background" />
-              </Button>
-            ) : (
-              <Button
-                variant="default"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={handleSubmit}
-                disabled={isDisabled()}
-              >
-                <ArrowUpIcon className="h-4 w-4" />
-              </Button>
+        </PromptInput>
+        
+        {isDragOver && (
+          <div 
+            className={cn(
+              "pointer-events-none absolute inset-0 z-10 rounded-md bg-background border-1 border-dashed border-primary",
             )}
-          </PromptInputAction>
-        </PromptInputActions>
-        <FilePills
-          files={attachedFiles.map((file, index) => ({
-            id: `file-${index}`,
-            name: file.file.name,
-            size: file.file.size,
-            type: file.file.type,
-            url: fileUrls.get(`file-${index}`),
-          }))}
-          onRemove={handleRemoveFileById}
-          className="mt-2 border-input border-t px-2 py-2"
-        />
-      </PromptInput>
+          >
+            <div className={cn("w-full h-full rounded-md flex items-center justify-center", isDragOverTarget ? "bg-primary/30" : "bg-primary/20")}>
+              <div className="flex items-center gap-x-2">
+                <Paperclip className="h-5 w-5 text-primary" />
+                <p className="font-medium text-primary text-sm">Drop files here to add to chat</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 });
