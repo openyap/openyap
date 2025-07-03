@@ -1,4 +1,4 @@
-import { Plus, Upload } from "lucide-react";
+import { Paperclip, Plus } from "lucide-react";
 import { motion } from "motion/react";
 import { useRef, useState } from "react";
 import type { AttachedFile } from "~/components/chat/stores";
@@ -41,7 +41,6 @@ export function FileAttachmentButton({
   attachedFiles = [],
 }: FileAttachmentButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,24 +52,6 @@ export function FileAttachmentButton({
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    if (e.dataTransfer.files) {
-      const files = Array.from(e.dataTransfer.files);
-      onFilesSelected(files);
-    }
-  };
 
   const openFileDialog = () => {
     fileInputRef.current?.click();
@@ -111,47 +92,18 @@ export function FileAttachmentButton({
             </motion.div>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-3" align="start">
+        <PopoverContent className="w-80 p-2" align="start" side="top">
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium">Attach Files</h4>
-              {hasAttachments && (
-                <span className="text-muted-foreground text-xs">
-                  {attachedFiles.length} file
-                  {attachedFiles.length > 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
-
-            {/* Upload Area */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={cn(
-                "cursor-pointer rounded-md border-2 border-dashed p-4 text-center transition-colors",
-                isDragOver
-                  ? "border-primary bg-primary/5"
-                  : "border-muted-foreground/25",
-                disabled && "cursor-not-allowed opacity-50",
-              )}
-              onClick={!disabled ? openFileDialog : undefined}
-              onKeyDown={(e) => {
-                if (!disabled && e.key === "Enter") {
-                  e.preventDefault();
-                  openFileDialog();
-                }
-              }}
-              tabIndex={disabled ? -1 : 0}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={openFileDialog}
+              disabled={disabled}
+              className="flex items-center gap-2 w-full justify-start"
             >
-              <Upload className="mx-auto mb-2 h-5 w-5 text-muted-foreground" />
-              <p className="text-muted-foreground text-xs">
-                Drop files here or click to select
-              </p>
-              <p className="mt-1 text-muted-foreground/70 text-xs">
-                Images, PDFs, documents
-              </p>
-            </div>
+              <Paperclip className="h-4 w-4" />
+              Upload a file
+            </Button>
           </div>
         </PopoverContent>
       </Popover>
