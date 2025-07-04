@@ -61,7 +61,7 @@ export function ChatView() {
     async function sendFirstMessage() {
       const firstMessage = localStorage.getItem("firstMessage");
       const firstMessageAttachments = localStorage.getItem(
-        "firstMessageAttachments",
+        "firstMessageAttachments"
       );
 
       if (
@@ -86,7 +86,7 @@ export function ChatView() {
             }) => {
               const buffer = await attachedFile.file.arrayBuffer();
               const base64 = btoa(
-                String.fromCharCode(...new Uint8Array(buffer)),
+                String.fromCharCode(...new Uint8Array(buffer))
               );
               return {
                 name: attachedFile.file.name,
@@ -94,13 +94,13 @@ export function ChatView() {
                 type: attachedFile.file.type,
                 data: base64,
               };
-            },
+            }
           );
 
           const attachmentData = await Promise.all(attachmentPromises);
           sessionStorage.setItem(
             "pendingAttachments",
-            JSON.stringify(attachmentData),
+            JSON.stringify(attachmentData)
           );
         }
 
@@ -161,7 +161,7 @@ export function ChatView() {
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 bg-background pb-4">
+      <div className="sticky bottom-0 z-10 px-4">
         <div className="relative">
           <div className="-top-16 -translate-x-1/2 absolute left-1/2 z-20 transform">
             <Button
