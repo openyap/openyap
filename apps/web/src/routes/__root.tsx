@@ -60,8 +60,8 @@ function RootComponent() {
 function RootDocument({ children }: { readonly children: React.ReactNode }) {
   useEffect(() => {
     scan({
-      enabled: false,
-      showToolbar: false,
+      enabled: true,
+      showToolbar: true,
     });
   }, []);
 
