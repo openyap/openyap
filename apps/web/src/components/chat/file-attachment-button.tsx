@@ -8,6 +8,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 
 interface FileAttachmentButtonProps {
@@ -52,7 +57,6 @@ export function FileAttachmentButton({
     }
   };
 
-
   const openFileDialog = () => {
     fileInputRef.current?.click();
   };
@@ -72,26 +76,33 @@ export function FileAttachmentButton({
       />
 
       <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "relative h-8 w-8 p-0 text-muted-foreground hover:text-foreground",
-              hasAttachments && "text-primary hover:text-primary",
-              className,
-            )}
-            disabled={disabled}
-          >
-            <motion.div
-              animate={{ rotate: isOpen ? 45 : 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="absolute inset-0 flex items-center justify-center"
-            >
-              <Plus className="h-4 w-4" />
-            </motion.div>
-          </Button>
-        </PopoverTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "relative h-8 w-8 p-0 text-muted-foreground hover:text-foreground",
+                  hasAttachments && "text-primary hover:text-primary",
+                  className
+                )}
+                disabled={disabled}
+              >
+                <motion.div
+                  animate={{ rotate: isOpen ? 45 : 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <Plus className="h-4 w-4" />
+                </motion.div>
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Add photos or files</p>
+          </TooltipContent>
+        </Tooltip>
         <PopoverContent className="w-80 p-2" align="start" side="top">
           <div className="space-y-3">
             <Button
