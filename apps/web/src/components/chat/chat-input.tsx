@@ -40,7 +40,7 @@ const ChatInput = memo(function ChatInput({
 
   const { value: selectedModelId } = usePersisted<number>(
     MODEL_PERSIST_KEY,
-    getDefaultModel().id,
+    getDefaultModel().id
   );
   const [input, setInput] = useState(inputStore.getState().input);
 
@@ -77,7 +77,7 @@ const ChatInput = memo(function ChatInput({
           if (attachedFiles.length > 0) {
             localStorage.setItem(
               "firstMessageAttachments",
-              JSON.stringify(attachedFiles),
+              JSON.stringify(attachedFiles)
             );
           }
 
@@ -108,7 +108,7 @@ const ChatInput = memo(function ChatInput({
         console.log(
           "[ChatInput] Processing attachments:",
           attachedFiles.length,
-          attachedFiles,
+          attachedFiles
         );
         const attachmentPromises = attachedFiles.map(async (attachedFile) => {
           const buffer = await attachedFile.file.arrayBuffer();
@@ -124,11 +124,11 @@ const ChatInput = memo(function ChatInput({
         const attachmentData = await Promise.all(attachmentPromises);
         console.log(
           "[ChatInput] Storing attachments in sessionStorage:",
-          attachmentData,
+          attachmentData
         );
         sessionStorage.setItem(
           "pendingAttachments",
-          JSON.stringify(attachmentData),
+          JSON.stringify(attachmentData)
         );
       } else {
         console.log("[ChatInput] No attachments to process");
@@ -147,7 +147,7 @@ const ChatInput = memo(function ChatInput({
       selectedModelId,
       attachedFiles,
       clearFiles,
-    ],
+    ]
   );
 
   const handleSubmit = useCallback(() => {
@@ -165,13 +165,14 @@ const ChatInput = memo(function ChatInput({
   }, [disabled, attachedFiles.length]);
 
   return (
-    <div 
-      className="mx-auto flex w-full max-w-full flex-col gap-2 overflow-hidden px-4 sm:max-w-2xl lg:max-w-4xl"
+    <div
+      className="mx-auto flex w-full max-w-3xl flex-col overflow-hidden"
       onDrop={dropProps.onDrop}
     >
-      <div 
+      <div
         className="relative w-full"
         {...dropProps}
+        style={{ boxShadow: "inset 0 -20px 0 0 var(--background)" }}
       >
         <PromptInput
           value={input}
@@ -229,22 +230,30 @@ const ChatInput = memo(function ChatInput({
             className="mt-2 border-input border-t px-2 py-2"
           />
         </PromptInput>
-        
+
         {isDragOver && (
-          <div 
+          <div
             className={cn(
-              "pointer-events-none absolute inset-0 z-10 rounded-md bg-background border-1 border-dashed border-primary",
+              "pointer-events-none absolute inset-0 z-10 rounded-md bg-background border-1 border-dashed border-primary"
             )}
           >
-            <div className={cn("w-full h-full rounded-md flex items-center justify-center", isDragOverTarget ? "bg-primary/30" : "bg-primary/20")}>
+            <div
+              className={cn(
+                "w-full h-full rounded-md flex items-center justify-center",
+                isDragOverTarget ? "bg-primary/30" : "bg-primary/20"
+              )}
+            >
               <div className="flex items-center gap-x-2">
                 <Paperclip className="h-5 w-5 text-primary" />
-                <p className="font-medium text-primary text-sm">Drop files here to add to chat</p>
+                <p className="font-medium text-primary text-sm">
+                  Drop files here to add to chat
+                </p>
               </div>
             </div>
           </div>
         )}
       </div>
+      <div className="h-4 bg-background" />
     </div>
   );
 });
