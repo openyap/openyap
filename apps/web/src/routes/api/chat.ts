@@ -15,6 +15,7 @@ import { auth } from "~/lib/auth/server";
 import { api, convexServer } from "~/lib/db/server";
 import { getDefaultModel, getModelById, getSystemPrompt } from "~/lib/models";
 import { openrouter } from "~/lib/openrouter";
+import { webSearch } from "~/lib/ai/webSearch";
 
 // TODO: update messages with as much fields as possible
 
@@ -126,7 +127,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           chatId,
           content: lastMessage.content,
           sessionToken,
-        },
+        }
       );
 
       // Transform messages with attachment content for AI model
@@ -134,10 +135,10 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         // Check if attachments are already uploaded (have IDs) or new base64 data
         const existingAttachmentIds = attachments.filter(
           (att: string | object) =>
-            typeof att === "string" && att.startsWith("k"),
+            typeof att === "string" && att.startsWith("k")
         ) as string[];
         const newAttachments = attachments.filter(
-          (att: string | object) => typeof att === "object" && "data" in att,
+          (att: string | object) => typeof att === "object" && "data" in att
         ) as { name: string; size: number; type: string; data: string }[];
 
         // Fetch existing attachments data if any
@@ -149,13 +150,13 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                 {
                   attachmentId: attachmentId as AttachmentId,
                   sessionToken,
-                },
+                }
               );
             } catch (error) {
               console.error("Error fetching attachment:", error);
               return null;
             }
-          }),
+          })
         );
 
         // Combine all attachments for message transformation
@@ -228,7 +229,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                       api.functions.attachment.generateUploadUrl,
                       {
                         sessionToken,
-                      },
+                      }
                     );
 
                     // Convert base64 to blob
@@ -262,7 +263,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                         size: attachment.size,
                         mimeType: attachment.type,
                         sessionToken,
-                      },
+                      }
                     );
 
                     return attachmentId as string;
@@ -270,12 +271,12 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                     console.error("Attachment upload error:", error);
                     return null;
                   }
-                },
+                }
               );
 
               const uploadedAttachmentIds = await Promise.all(uploadPromises);
               const successfulUploads = uploadedAttachmentIds.filter(
-                (id): id is string => id !== null,
+                (id): id is string => id !== null
               );
 
               // Combine existing and new attachment IDs for updating the message
@@ -292,9 +293,9 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                     messageId: userMessageId as MessageId,
                     sessionToken,
                     attachments: allAttachmentIds.map(
-                      (id) => id as AttachmentId,
+                      (id) => id as AttachmentId
                     ),
-                  },
+                  }
                 );
               }
             } catch (error) {
@@ -320,16 +321,12 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       "Model ID: ",
       modelId,
       "Search: ",
-      search,
+      search
     );
 
     if (reasoningEffort) {
       console.log("[Chat API] Reasoning Effort:", reasoningEffort);
     }
-
-    const appendedModelId = search ? `${modelId}:online` : modelId;
-
-    console.log("[Chat API] Appended Model ID: ", appendedModelId);
 
     const providerOptions =
       reasoningEffort && selectedModel.reasoningEffort
@@ -339,13 +336,17 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       console.log("[Chat API] Provider Options:", providerOptions);
     }
 
+    const tools = search ? { webSearch } : undefined;
+
     try {
       const result = streamText({
-        model: openrouter.chat(appendedModelId),
+        model: openrouter.chat(modelId),
         system: getSystemPrompt(selectedModel, session.user.name),
         messages: transformedMessages,
         abortSignal: request.signal,
         ...(providerOptions ? { providerOptions } : {}),
+        tools: tools,
+        maxSteps: 2,
       });
 
       const messageId = await createAiMessage({
@@ -406,7 +407,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               isReasoning = true;
               reasoningBuffer.text += part.textDelta;
               const steps = splitReasoningSteps(reasoningBuffer.text).map(
-                (step) => ({ text: step }),
+                (step) => ({ text: step })
               );
               reasoningBuffer.details = steps;
               reasoningBuffer.duration += Date.now() - lastReasoningUpdate;
@@ -418,7 +419,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             }
 
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
+              (step) => ({ text: step })
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -447,10 +448,10 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
           if (isAborted) {
             console.log(
-              "[Chat API] Stream finished, but client aborted. Marking as aborted.",
+              "[Chat API] Stream finished, but client aborted. Marking as aborted."
             );
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
+              (step) => ({ text: step })
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -484,7 +485,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           }
 
           const steps = splitReasoningSteps(reasoningBuffer.text).map(
-            (step) => ({ text: step }),
+            (step) => ({ text: step })
           );
           const completedReasoning =
             reasoningBuffer.text.length > 0
@@ -517,7 +518,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         } catch (error) {
           if ((error as Error).name === "AbortError") {
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
+              (step) => ({ text: step })
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
