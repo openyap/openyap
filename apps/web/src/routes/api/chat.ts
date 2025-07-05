@@ -346,7 +346,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         abortSignal: request.signal,
         ...(providerOptions ? { providerOptions } : {}),
         tools: tools,
-        maxSteps: 2,
+        maxSteps: 3,
       });
 
       const messageId = await createAiMessage({
