@@ -8,6 +8,7 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: Schema.standardSchemaV1(Schema.NonEmptyString),
     GOOGLE_CLIENT_SECRET: Schema.standardSchemaV1(Schema.NonEmptyString),
     OPENROUTER_API_KEY: Schema.standardSchemaV1(Schema.NonEmptyString),
+    EXA_API_KEY: Schema.standardSchemaV1(Schema.NonEmptyString),
     TURNSTILE_SECRET_KEY: Schema.standardSchemaV1(Schema.NonEmptyString),
   },
   client: {
@@ -22,6 +23,7 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    EXA_API_KEY: process.env.EXA_API_KEY,
     TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
     VITE_BRANDFETCH_API_KEY: import.meta.env.VITE_BRANDFETCH_API_KEY,
     VITE_CONVEX_URL: import.meta.env.VITE_CONVEX_URL,
