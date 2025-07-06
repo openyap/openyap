@@ -91,7 +91,6 @@ export default defineSchema({
       }),
     ),
     tools: v.optional(v.array(v.any())),
-    sources: v.optional(v.array(v.any())),
 
     // A complete log of all generation attempts for this message.
     history: v.optional(
@@ -128,14 +127,11 @@ export default defineSchema({
           status: v.string(),
           error: v.optional(v.string()),
           tools: v.optional(v.array(v.any())),
-          sources: v.optional(v.array(v.any())),
           createdAt: v.string(),
         }),
       ),
     ),
 
-    // Web search/RAG results (if any)
-    webSearchResults: v.optional(v.any()),
     // Array of attachment IDs (message-level attachments)
     attachments: v.optional(v.array(v.id("attachment"))),
     // Vector embedding for semantic search (e.g., 1536-dim OpenAI embedding) TODO: add vector index

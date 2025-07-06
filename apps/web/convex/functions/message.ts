@@ -229,7 +229,6 @@ export const createMessage = internalMutation({
       }),
     ),
     tools: v.optional(v.array(v.any())),
-    sources: v.optional(v.array(v.any())),
     history: v.optional(
       v.array(
         v.object({
@@ -255,11 +254,9 @@ export const createMessage = internalMutation({
           status: v.string(),
           error: v.optional(v.string()),
           tools: v.optional(v.array(v.any())),
-          sources: v.optional(v.array(v.any())),
         }),
       ),
     ),
-    webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
     embedding: v.optional(v.array(v.number())),
   },
@@ -311,7 +308,6 @@ export const updateMessage = internalMutation({
       }),
     ),
     tools: v.optional(v.array(v.any())),
-    sources: v.optional(v.array(v.any())),
     historyEntry: v.optional(
       v.object({
         version: v.number(),
@@ -336,10 +332,8 @@ export const updateMessage = internalMutation({
         status: v.optional(v.string()),
         error: v.optional(v.string()),
         tools: v.optional(v.array(v.any())),
-        sources: v.optional(v.array(v.any())),
       }),
     ),
-    webSearchResults: v.optional(v.any()),
     attachments: v.optional(v.array(v.id("attachment"))),
     embedding: v.optional(v.array(v.number())),
   },
@@ -369,8 +363,6 @@ export const updateMessage = internalMutation({
       "error" as const,
       "usage" as const,
       "tools" as const,
-      "sources" as const,
-      "webSearchResults" as const,
       "attachments" as const,
       "embedding" as const,
     ];
