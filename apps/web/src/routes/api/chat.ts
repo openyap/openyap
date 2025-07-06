@@ -337,16 +337,17 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
     }
 
     const tools = search ? { webSearch } : undefined;
+    const maxSteps = search ? 3 : 1;
 
     try {
       const result = streamText({
         model: openrouter.chat(modelId),
-        system: getSystemPrompt(selectedModel, session.user.name),
+        system: getSystemPrompt(selectedModel, session.user.name, search),
         messages: transformedMessages,
         abortSignal: request.signal,
         ...(providerOptions ? { providerOptions } : {}),
         tools: tools,
-        maxSteps: 3,
+        maxSteps: maxSteps,
       });
 
       const messageId = await createAiMessage({
