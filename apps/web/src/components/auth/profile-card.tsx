@@ -6,6 +6,7 @@ import { ProfileAvatar } from "~/components/auth/profile-avatar";
 import { DomainLogo } from "~/components/domains";
 import { Button } from "~/components/ui/button";
 import { authClient, getClientIP } from "~/lib/auth/client";
+import { logger } from "~/lib/logger";
 
 export function ProfileCard() {
   const session = authClient.useSession();
@@ -15,18 +16,23 @@ export function ProfileCard() {
   const handleGoogleLogin = async () => {
     startTransition(async () => {
       const ipAddress = await getClientIP();
-      const { error } = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/",
-        fetchOptions: {
-          headers: {
-            "x-captcha-response": captchaToken,
-            "x-captcha-user-remote-ip": ipAddress ?? "",
+      try {
+        const { error } = await authClient.signIn.social({
+          provider: "google",
+          callbackURL: "/",
+          fetchOptions: {
+            headers: {
+              "x-captcha-response": captchaToken,
+              "x-captcha-user-remote-ip": ipAddress ?? "",
+            },
           },
-        },
-      });
-      if (error) {
-        console.error(error.message || "Failed to sign in with Google");
+        });
+        if (error) {
+          logger.error(`Google OAuth sign-in failed: ${error.message || "Unknown error"}`);
+          return;
+        }
+             } catch (error: unknown) {
+         logger.error(`Google OAuth request failed: ${error instanceof Error ? error.message : "Network or configuration error"}`);
         return;
       }
     });
@@ -37,7 +43,7 @@ export function ProfileCard() {
   };
 
   const handleCaptchaError = (error: string) => {
-    console.error(error);
+    logger.error(`CAPTCHA validation failed: ${error}`);
   };
 
   if (session.isPending) {

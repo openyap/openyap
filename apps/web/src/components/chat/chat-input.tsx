@@ -19,6 +19,8 @@ import { usePersisted } from "~/hooks/use-persisted";
 import { api } from "~/lib/db/server";
 import { getDefaultModel, getModelById } from "~/lib/models";
 import { cn } from "~/lib/utils";
+import { ConvexError } from "convex/values";
+import { logger } from "~/lib/logger";
 
 interface ChatInputProps {
   chatId?: string;
@@ -91,7 +93,7 @@ const ChatInput = memo(function ChatInput({
             model: model?.modelId,
           });
 
-          console.log("[ChatView] New Chat ID: ", newChatId);
+          logger.info(`Chat created successfully: ${newChatId}`);
 
           await navigate({
             to: "/chat/$chatId",
@@ -105,11 +107,10 @@ const ChatInput = memo(function ChatInput({
       }
 
       if (attachedFiles.length > 0) {
-        console.log(
-          "[ChatInput] Processing attachments:",
-          attachedFiles.length,
-          attachedFiles
+        logger.info(
+          `Processing ${attachedFiles.length} file attachment(s) for chat: ${chatId || 'new'}`
         );
+
         const attachmentPromises = attachedFiles.map(async (attachedFile) => {
           const buffer = await attachedFile.file.arrayBuffer();
           const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
@@ -122,17 +123,20 @@ const ChatInput = memo(function ChatInput({
         });
 
         const attachmentData = await Promise.all(attachmentPromises);
-        console.log(
-          "[ChatInput] Storing attachments in sessionStorage:",
-          attachmentData
+        logger.info(
+          `Stored ${attachmentData.length} attachment(s) in session storage for chat processing`
         );
         sessionStorage.setItem(
           "pendingAttachments",
           JSON.stringify(attachmentData)
         );
       } else {
-        console.log("[ChatInput] No attachments to process");
+        logger.debug("No attachments to process for message");
       }
+
+      logger.info(
+        `Sending message to chat ${chatId} with ${attachedFiles.length} attachment(s)`
+      );
 
       addUserMessage(text, []);
 

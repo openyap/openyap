@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { logger } from "~/lib/logger";
 
 async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
     return true;
   } catch (error) {
-    console.error(error);
+    logger.error(`Clipboard write operation failed: ${String(error)}`);
     return false;
   }
 }

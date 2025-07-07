@@ -20,6 +20,7 @@ import {
   getDefaultModel,
   getModelById,
 } from "~/lib/models";
+import { logger } from "~/lib/logger";
 
 export function useChat(chatId: string | undefined) {
   const { data: session } = authClient.useSession();
@@ -68,9 +69,9 @@ export function useChat(chatId: string | undefined) {
 
       // Get pending attachments if any
       const pendingAttachments = sessionStorage.getItem("pendingAttachments");
-      console.log(
-        "[useChat] Retrieved pending attachments:",
-        pendingAttachments,
+      const attachmentCount = pendingAttachments ? JSON.parse(pendingAttachments).length : 0;
+      logger.info(
+        `Sending message to chat ${chatId} (model: ${selectedModel?.name}, search: ${searchEnabled}, attachments: ${attachmentCount})`
       );
 
       try {

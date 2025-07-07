@@ -16,6 +16,7 @@ import { api, convexServer } from "~/lib/db/server";
 import { getDefaultModel, getModelById, getSystemPrompt } from "~/lib/models";
 import { openrouter } from "~/lib/openrouter";
 import { webSearch } from "~/lib/ai/webSearch";
+import { logger } from "~/lib/logger";
 
 // TODO: update messages with as much fields as possible
 
@@ -153,7 +154,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                 }
               );
             } catch (error) {
-              console.error("Error fetching attachment:", error);
+              logger.error(`Failed to fetch attachment ${attachmentId} from database: ${error}`);
               return null;
             }
           })
@@ -268,7 +269,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
                     return attachmentId as string;
                   } catch (error) {
-                    console.error("Attachment upload error:", error);
+                    logger.error(`Failed to upload attachment "${attachment.name}" (${attachment.type}): ${error}`);
                     return null;
                   }
                 }
@@ -299,7 +300,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                 );
               }
             } catch (error) {
-              console.error("Background attachment processing error:", error);
+              logger.error(`Failed to process attachments in background: ${error}`);
             }
           })();
         }
@@ -315,26 +316,12 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
     const { provider, modelId } = selectedModel;
 
-    console.log(
-      "[Chat API] Streaming Chat ID: ",
-      chatId,
-      "Model ID: ",
-      modelId,
-      "Search: ",
-      search
-    );
-
-    if (reasoningEffort) {
-      console.log("[Chat API] Reasoning Effort:", reasoningEffort);
-    }
+    logger.info(`Starting chat stream: ${chatId} (model: ${selectedModel.name}, search: ${search}${reasoningEffort ? `, reasoning: ${reasoningEffort}` : ''})`);
 
     const providerOptions =
       reasoningEffort && selectedModel.reasoningEffort
         ? { openrouter: { reasoning: { effort: reasoningEffort } } }
         : undefined;
-    if (providerOptions) {
-      console.log("[Chat API] Provider Options:", providerOptions);
-    }
 
     const tools = search ? { webSearch } : undefined;
     const maxSteps = search ? 3 : 1;
@@ -370,7 +357,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             sessionToken,
           });
         } catch (err) {
-          console.warn("[Chat API] Failed to update chat model:", err);
+          logger.warn(`Failed to update chat model metadata: ${err}`);
         }
       })();
 
@@ -448,9 +435,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           }
 
           if (isAborted) {
-            console.log(
-              "[Chat API] Stream finished, but client aborted. Marking as aborted."
-            );
+            logger.info(`Chat stream aborted by client: ${chatId}`);
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
               (step) => ({ text: step })
             );
@@ -550,7 +535,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               },
             });
           } else {
-            console.error("Error updating AI message in background:", error);
+            logger.error(`Failed to update AI message during streaming: ${error}`);
           }
         }
       })();
@@ -559,7 +544,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         sendReasoning: true,
       });
     } catch (error) {
-      console.error("Error streaming chat:", error);
+      logger.error(`Chat streaming failed for ${chatId}: ${error}`);
       return new Response("Error streaming chat", { status: 500 });
     }
   },
