@@ -1,3 +1,5 @@
+export type InputModality = "text" | "image";
+
 export interface Model {
   readonly id: number;
   readonly name: string;
@@ -6,6 +8,7 @@ export interface Model {
   readonly company: CompanyKey;
   readonly premium: boolean;
   readonly reasoningEffort: boolean;
+  readonly inputModalities: readonly InputModality[];
   readonly isDefault?: boolean;
   readonly recentlyUpdated?: boolean;
 }
@@ -129,6 +132,11 @@ export const getModelsByProvider = (provider: string): readonly Model[] =>
 export const isValidModelId = (id: number): boolean =>
   models.some((model) => model.id === id);
 
+export const supportsModality = (
+  model: Model,
+  modality: InputModality,
+): boolean => model.inputModalities.includes(modality);
+
 export const models: readonly Model[] = [
   {
     id: 1,
@@ -138,6 +146,7 @@ export const models: readonly Model[] = [
     company: "google",
     premium: false,
     reasoningEffort: false,
+    inputModalities: ["text", "image"],
     isDefault: true,
   },
   {
@@ -148,6 +157,7 @@ export const models: readonly Model[] = [
     company: "google",
     premium: false,
     reasoningEffort: false,
+    inputModalities: ["text", "image"],
   },
   {
     id: 3,
@@ -157,6 +167,7 @@ export const models: readonly Model[] = [
     company: "google",
     premium: false,
     reasoningEffort: false,
+    inputModalities: ["text", "image"],
     isDefault: false,
     recentlyUpdated: true,
   },
@@ -168,6 +179,7 @@ export const models: readonly Model[] = [
     company: "google",
     premium: false,
     reasoningEffort: false,
+    inputModalities: ["text", "image"],
     recentlyUpdated: true,
   },
   {
@@ -178,6 +190,7 @@ export const models: readonly Model[] = [
     company: "google",
     premium: false,
     reasoningEffort: true,
+    inputModalities: ["text", "image"],
     recentlyUpdated: true,
   },
   {
@@ -188,6 +201,7 @@ export const models: readonly Model[] = [
     company: "anthropic",
     premium: true,
     reasoningEffort: false,
+    inputModalities: ["text", "image"],
   },
   {
     id: 7,
@@ -197,6 +211,7 @@ export const models: readonly Model[] = [
     company: "openai",
     premium: false,
     reasoningEffort: false,
+    inputModalities: ["text", "image"],
   },
   {
     id: 8,
@@ -206,5 +221,6 @@ export const models: readonly Model[] = [
     company: "openai",
     premium: false,
     reasoningEffort: true,
+    inputModalities: ["text"],
   },
 ] as const;

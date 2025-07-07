@@ -68,19 +68,14 @@ const ChatInput = memo(function ChatInput({
   }, []);
 
   const send = useCallback(
-    async (input: string) => {
-      const text = input.trim();
+    async (text: string) => {
       if (!text && attachedFiles.length === 0) return;
 
       if (!chatId) {
         try {
           localStorage.setItem("firstMessage", text || "");
-
           if (attachedFiles.length > 0) {
-            localStorage.setItem(
-              "firstMessageAttachments",
-              JSON.stringify(attachedFiles),
-            );
+            inputStore.getState().setFiles(attachedFiles.map((af) => af.file));
           }
 
           const model = getModelById(selectedModelId);
@@ -155,11 +150,15 @@ const ChatInput = memo(function ChatInput({
   );
 
   const handleSubmit = useCallback(() => {
-    const currentInput = inputStore.getState().input;
+    const currentInput = inputStore.getState().input.trim();
+    if (!currentInput && attachedFiles.length === 0) {
+      return;
+    }
+
     send(currentInput);
     setInput("");
     inputStore.getState().setInput("");
-  }, [send]);
+  }, [send, attachedFiles.length]);
 
   const isDisabled = useCallback(() => {
     return (

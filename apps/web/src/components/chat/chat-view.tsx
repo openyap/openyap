@@ -5,6 +5,7 @@ import { AnimatePresence } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
 import { MemoizedMessage, Message } from "~/components/chat/message";
+import { inputStore } from "~/components/chat/stores";
 import { ChatStatus } from "~/components/chat/types";
 import { Button } from "~/components/ui/button";
 import { useChat } from "~/hooks/use-chat";
@@ -60,52 +61,20 @@ export function ChatView() {
   useEffect(() => {
     async function sendFirstMessage() {
       const firstMessage = localStorage.getItem("firstMessage");
-      const firstMessageAttachments = localStorage.getItem(
-        "firstMessageAttachments",
-      );
+      const firstMessageAttachments = inputStore
+        .getState()
+        .getPendingAttachments();
 
       if (
         chatId &&
         isConvexId<"chat">(chatId) &&
-        (firstMessage !== null || firstMessageAttachments)
+        (firstMessage !== null || firstMessageAttachments.length > 0)
       ) {
-        // Handle first message attachments
-        if (firstMessageAttachments) {
-          localStorage.removeItem("firstMessageAttachments");
-          const attachedFiles = JSON.parse(firstMessageAttachments);
-
-          // Convert attached files to base64 format for API
-          const attachmentPromises = attachedFiles.map(
-            async (attachedFile: {
-              file: {
-                name: string;
-                size: number;
-                type: string;
-                arrayBuffer: () => Promise<ArrayBuffer>;
-              };
-            }) => {
-              const buffer = await attachedFile.file.arrayBuffer();
-              const base64 = btoa(
-                String.fromCharCode(...new Uint8Array(buffer)),
-              );
-              return {
-                name: attachedFile.file.name,
-                size: attachedFile.file.size,
-                type: attachedFile.file.type,
-                data: base64,
-              };
-            },
-          );
-
-          const attachmentData = await Promise.all(attachmentPromises);
-          sessionStorage.setItem(
-            "pendingAttachments",
-            JSON.stringify(attachmentData),
-          );
-        }
-
         if (firstMessage !== null) {
           localStorage.removeItem("firstMessage");
+        }
+        if (firstMessageAttachments.length > 0) {
+          inputStore.getState().clearFiles();
         }
 
         const titleMessage = firstMessage || "Shared an attachment";
@@ -114,7 +83,7 @@ export function ChatView() {
           chatId,
           sessionToken: session?.session.token ?? "skip",
         });
-        await append({ content: firstMessage || "" });
+        await append({ content: firstMessage || "", attachments: firstMessageAttachments });
       }
     }
     sendFirstMessage();
