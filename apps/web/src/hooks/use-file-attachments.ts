@@ -45,7 +45,7 @@ export function useFileAttachments() {
   }, [attachedFiles]);
 
   const handleFilesSelected = useCallback((files: File[]) => {
-    inputStore.getState().addFiles(files);
+    inputStore.getState().setFiles(files);
   }, []);
 
   const handleRemoveFileById = useCallback((fileId: string) => {

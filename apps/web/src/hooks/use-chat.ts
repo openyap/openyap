@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { SEARCH_TOGGLE_KEY } from "~/components/chat/chat-toggles";
 import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { REASONING_EFFORT_PERSIST_KEY } from "~/components/chat/reasoning-effort-selector";
+import type { SerializedAttachedFile } from "~/components/chat/stores";
 import {
   type ChatMessage,
   ChatStatus,
@@ -55,7 +56,7 @@ export function useChat(chatId: string | undefined) {
   }, [getChatMessages, status]);
 
   const append = useCallback(
-    async ({ content }: { content: string }) => {
+    async ({ content, attachments }: { content: string; attachments?: SerializedAttachedFile[] }) => {
       if (!isConvexId<"chat">(chatId)) {
         return;
       }
@@ -67,11 +68,7 @@ export function useChat(chatId: string | undefined) {
 
       const selectedModel = getModelById(selectedModelId);
 
-      // Get pending attachments if any
-      const pendingAttachments = sessionStorage.getItem("pendingAttachments");
-      const attachmentCount = pendingAttachments
-        ? JSON.parse(pendingAttachments).length
-        : 0;
+      const attachmentCount = attachments?.length ?? 0;
       logger.info(
         `Sending message to chat ${chatId} (model: ${selectedModel?.name}, search: ${searchEnabled}, attachments: ${attachmentCount})`,
       );
@@ -89,9 +86,7 @@ export function useChat(chatId: string | undefined) {
               selectedModel && !!selectedModel.reasoningEffort
                 ? reasoningEffort
                 : undefined,
-            attachments: pendingAttachments
-              ? JSON.parse(pendingAttachments)
-              : [],
+            attachments
           }),
         });
 
@@ -100,9 +95,6 @@ export function useChat(chatId: string | undefined) {
         }
 
         resetSearchToggle();
-
-        // Clear pending attachments after successful request
-        sessionStorage.removeItem("pendingAttachments");
 
         let contentBuffer = "";
         const reasoningBuffer: MessageReasoning = {
