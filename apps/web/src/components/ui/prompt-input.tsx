@@ -77,7 +77,7 @@ function PromptInput({
         <div
           className={cn(
             "rounded-md border border-input bg-background p-2 shadow-xs",
-            className
+            className,
           )}
         >
           {children}
@@ -128,7 +128,7 @@ function PromptInputTextarea({
       onKeyDown={handleKeyDown}
       className={cn(
         "min-h-[44px] w-full resize-none border-none bg-transparent text-primary shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent",
-        className
+        className,
       )}
       rows={1}
       disabled={disabled}

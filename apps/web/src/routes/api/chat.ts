@@ -11,12 +11,12 @@ import type {
   MessageUsage,
 } from "~/components/chat/types";
 import { splitReasoningSteps } from "~/lib/ai/reasoning";
+import { webSearch } from "~/lib/ai/webSearch";
 import { auth } from "~/lib/auth/server";
 import { api, convexServer } from "~/lib/db/server";
+import { logger } from "~/lib/logger";
 import { getDefaultModel, getModelById, getSystemPrompt } from "~/lib/models";
 import { openrouter } from "~/lib/openrouter";
-import { webSearch } from "~/lib/ai/webSearch";
-import { logger } from "~/lib/logger";
 
 // TODO: update messages with as much fields as possible
 
@@ -128,7 +128,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           chatId,
           content: lastMessage.content,
           sessionToken,
-        }
+        },
       );
 
       // Transform messages with attachment content for AI model
@@ -136,10 +136,10 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         // Check if attachments are already uploaded (have IDs) or new base64 data
         const existingAttachmentIds = attachments.filter(
           (att: string | object) =>
-            typeof att === "string" && att.startsWith("k")
+            typeof att === "string" && att.startsWith("k"),
         ) as string[];
         const newAttachments = attachments.filter(
-          (att: string | object) => typeof att === "object" && "data" in att
+          (att: string | object) => typeof att === "object" && "data" in att,
         ) as { name: string; size: number; type: string; data: string }[];
 
         // Fetch existing attachments data if any
@@ -151,13 +151,15 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                 {
                   attachmentId: attachmentId as AttachmentId,
                   sessionToken,
-                }
+                },
               );
             } catch (error) {
-              logger.error(`Failed to fetch attachment ${attachmentId} from database: ${error}`);
+              logger.error(
+                `Failed to fetch attachment ${attachmentId} from database: ${error}`,
+              );
               return null;
             }
-          })
+          }),
         );
 
         // Combine all attachments for message transformation
@@ -230,7 +232,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                       api.functions.attachment.generateUploadUrl,
                       {
                         sessionToken,
-                      }
+                      },
                     );
 
                     // Convert base64 to blob
@@ -264,20 +266,22 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                         size: attachment.size,
                         mimeType: attachment.type,
                         sessionToken,
-                      }
+                      },
                     );
 
                     return attachmentId as string;
                   } catch (error) {
-                    logger.error(`Failed to upload attachment "${attachment.name}" (${attachment.type}): ${error}`);
+                    logger.error(
+                      `Failed to upload attachment "${attachment.name}" (${attachment.type}): ${error}`,
+                    );
                     return null;
                   }
-                }
+                },
               );
 
               const uploadedAttachmentIds = await Promise.all(uploadPromises);
               const successfulUploads = uploadedAttachmentIds.filter(
-                (id): id is string => id !== null
+                (id): id is string => id !== null,
               );
 
               // Combine existing and new attachment IDs for updating the message
@@ -294,13 +298,15 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
                     messageId: userMessageId as MessageId,
                     sessionToken,
                     attachments: allAttachmentIds.map(
-                      (id) => id as AttachmentId
+                      (id) => id as AttachmentId,
                     ),
-                  }
+                  },
                 );
               }
             } catch (error) {
-              logger.error(`Failed to process attachments in background: ${error}`);
+              logger.error(
+                `Failed to process attachments in background: ${error}`,
+              );
             }
           })();
         }
@@ -316,7 +322,9 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
     const { provider, modelId } = selectedModel;
 
-    logger.info(`Starting chat stream: ${chatId} (model: ${selectedModel.name}, search: ${search}${reasoningEffort ? `, reasoning: ${reasoningEffort}` : ''})`);
+    logger.info(
+      `Starting chat stream: ${chatId} (model: ${selectedModel.name}, search: ${search}${reasoningEffort ? `, reasoning: ${reasoningEffort}` : ""})`,
+    );
 
     const providerOptions =
       reasoningEffort && selectedModel.reasoningEffort
@@ -395,7 +403,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               isReasoning = true;
               reasoningBuffer.text += part.textDelta;
               const steps = splitReasoningSteps(reasoningBuffer.text).map(
-                (step) => ({ text: step })
+                (step) => ({ text: step }),
               );
               reasoningBuffer.details = steps;
               reasoningBuffer.duration += Date.now() - lastReasoningUpdate;
@@ -407,7 +415,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             }
 
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step })
+              (step) => ({ text: step }),
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -437,7 +445,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           if (isAborted) {
             logger.info(`Chat stream aborted by client: ${chatId}`);
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step })
+              (step) => ({ text: step }),
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -471,7 +479,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           }
 
           const steps = splitReasoningSteps(reasoningBuffer.text).map(
-            (step) => ({ text: step })
+            (step) => ({ text: step }),
           );
           const completedReasoning =
             reasoningBuffer.text.length > 0
@@ -504,7 +512,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         } catch (error) {
           if ((error as Error).name === "AbortError") {
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step })
+              (step) => ({ text: step }),
             );
             const completedReasoning =
               reasoningBuffer.text.length > 0
@@ -535,7 +543,9 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               },
             });
           } else {
-            logger.error(`Failed to update AI message during streaming: ${error}`);
+            logger.error(
+              `Failed to update AI message during streaming: ${error}`,
+            );
           }
         }
       })();

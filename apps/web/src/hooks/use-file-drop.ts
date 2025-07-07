@@ -5,7 +5,10 @@ interface UseFileDropOptions {
   disabled?: boolean;
 }
 
-export function useFileDrop({ onDrop, disabled = false }: UseFileDropOptions = {}) {
+export function useFileDrop({
+  onDrop,
+  disabled = false,
+}: UseFileDropOptions = {}) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDragOverTarget, setIsDragOverTarget] = useState(false);
   const dragCounter = useRef(0);
@@ -60,12 +63,16 @@ export function useFileDrop({ onDrop, disabled = false }: UseFileDropOptions = {
       e.stopPropagation();
       setIsDragOverTarget(false);
 
-      if (!disabled && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      if (
+        !disabled &&
+        e.dataTransfer.files &&
+        e.dataTransfer.files.length > 0
+      ) {
         const files = Array.from(e.dataTransfer.files);
         onDrop?.(files);
       }
     },
-    [onDrop, disabled]
+    [onDrop, disabled],
   );
 
   const handleDragEnter = useCallback(
@@ -75,7 +82,7 @@ export function useFileDrop({ onDrop, disabled = false }: UseFileDropOptions = {
       e.stopPropagation();
       setIsDragOverTarget(true);
     },
-    [disabled]
+    [disabled],
   );
 
   const handleDragLeave = useCallback(
@@ -89,11 +96,16 @@ export function useFileDrop({ onDrop, disabled = false }: UseFileDropOptions = {
       const x = e.clientX;
       const y = e.clientY;
 
-      if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+      if (
+        x < rect.left ||
+        x >= rect.right ||
+        y < rect.top ||
+        y >= rect.bottom
+      ) {
         setIsDragOverTarget(false);
       }
     },
-    [disabled]
+    [disabled],
   );
 
   return {

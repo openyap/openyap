@@ -33,12 +33,12 @@ const ReasoningEffortSelector = memo(function ReasoningEffortSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const { value: selectedModelId } = usePersisted<number>(
     MODEL_PERSIST_KEY,
-    getDefaultModel().id
+    getDefaultModel().id,
   );
   const { value: selectedEffort, set: setSelectedEffort } =
     usePersisted<EffortLabel>(
       REASONING_EFFORT_PERSIST_KEY,
-      ReasoningEffort.LOW
+      ReasoningEffort.LOW,
     );
 
   const selectedModel = getModelById(selectedModelId);
@@ -48,7 +48,7 @@ const ReasoningEffortSelector = memo(function ReasoningEffortSelector() {
       setSelectedEffort(effort);
       setIsOpen(false);
     },
-    [setSelectedEffort]
+    [setSelectedEffort],
   );
 
   if (!selectedModel || !selectedModel.reasoningEffort) return null;
@@ -80,7 +80,7 @@ const ReasoningEffortSelector = memo(function ReasoningEffortSelector() {
                 size="sm"
                 className={cn(
                   "h-8 justify-between px-2 text-xs hover:bg-accent hover:text-accent-foreground",
-                  selectedEffort === effort && "bg-accent"
+                  selectedEffort === effort && "bg-accent",
                 )}
                 onClick={() => handleEffortSelect(effort)}
               >

@@ -34,7 +34,7 @@ const COMPANY_PATTERNS: Record<CompanyKey, readonly RegExp[]> = {
 };
 
 export const getCompanyKey = (
-  modelOrName: Model | string
+  modelOrName: Model | string,
 ): CompanyKey | undefined => {
   if (typeof modelOrName !== "string") {
     return modelOrName.company;
@@ -42,12 +42,12 @@ export const getCompanyKey = (
 
   const name = modelOrName;
   return (Object.keys(COMPANY_PATTERNS) as CompanyKey[]).find((key) =>
-    COMPANY_PATTERNS[key].some((pattern) => pattern.test(name))
+    COMPANY_PATTERNS[key].some((pattern) => pattern.test(name)),
   );
 };
 
 export const getCompanyIcon = (
-  modelOrName: Model | string
+  modelOrName: Model | string,
 ): string | undefined => {
   const key = getCompanyKey(modelOrName);
   return key ? COMPANY_ICONS[key] : undefined;
@@ -56,7 +56,7 @@ export const getCompanyIcon = (
 export const getSystemPrompt = (
   model: Model,
   userName: string,
-  searchEnabled?: boolean
+  searchEnabled?: boolean,
 ) => {
   const modelName = model.name;
 
@@ -86,7 +86,7 @@ export const getSystemPrompt = (
       "- You may call webSearch at most ONCE per response.",
       "- After receiving the JSON result, immediately answer the user. Do NOT call any tool again.",
       "- If you are at least 70 % confident you already know the answer, skip the tool.",
-      "- If uncertain after reading the result, apologise briefly and answer with your best estimate."
+      "- If uncertain after reading the result, apologise briefly and answer with your best estimate.",
     );
   }
 
