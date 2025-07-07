@@ -3,6 +3,7 @@ import { Effect } from "effect";
 import { pipe } from "effect/Function";
 import { z } from "zod";
 import { exa } from "~/lib/exa";
+import { logger } from "~/lib/logger";
 
 const DEFAULT_NUM_RESULTS = 3;
 const DEFAULT_LIVECRAWL = "always" as const;
@@ -22,7 +23,7 @@ export const webSearch = tool({
     })
     .strict(),
   execute: async ({ query }): Promise<SearchResult[]> => {
-    console.log(`[Chat API][Web Search] searching: ${query}`);
+    logger.info(`Executing web search: "${query}"`);
 
     const searchEffect = Effect.tryPromise({
       try: () =>
