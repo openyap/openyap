@@ -10,8 +10,8 @@ import {
 } from "~/components/ui/popover";
 import {
   Tooltip,
-  TooltipTrigger,
   TooltipContent,
+  TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 
@@ -85,7 +85,7 @@ export function FileAttachmentButton({
                 className={cn(
                   "relative h-8 w-8 p-0 text-muted-foreground hover:text-foreground",
                   hasAttachments && "text-primary hover:text-primary",
-                  className
+                  className,
                 )}
                 disabled={disabled}
               >
@@ -110,7 +110,7 @@ export function FileAttachmentButton({
               size="sm"
               onClick={openFileDialog}
               disabled={disabled}
-              className="flex items-center gap-2 w-full justify-start"
+              className="flex w-full items-center justify-start gap-2"
             >
               <Paperclip className="h-4 w-4" />
               Upload a file

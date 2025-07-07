@@ -42,8 +42,8 @@ export const webSearch = tool({
           url: r.url ?? "",
           content: (r.text ?? "").slice(0, 1000),
           publishedDate: r.publishedDate ?? undefined,
-        }))
-      )
+        })),
+      ),
     );
 
     return Effect.runPromise(transformEffect);

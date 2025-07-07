@@ -4,7 +4,7 @@ import { inputStore } from "~/components/chat/stores";
 
 export function useFileAttachments() {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>(
-    inputStore.getState().attachedFiles
+    inputStore.getState().attachedFiles,
   );
   const [fileUrls, setFileUrls] = useState<Map<string, string>>(new Map());
 

@@ -28,11 +28,15 @@ export function ProfileCard() {
           },
         });
         if (error) {
-          logger.error(`Google OAuth sign-in failed: ${error.message || "Unknown error"}`);
+          logger.error(
+            `Google OAuth sign-in failed: ${error.message || "Unknown error"}`,
+          );
           return;
         }
-             } catch (error: unknown) {
-         logger.error(`Google OAuth request failed: ${error instanceof Error ? error.message : "Network or configuration error"}`);
+      } catch (error: unknown) {
+        logger.error(
+          `Google OAuth request failed: ${error instanceof Error ? error.message : "Network or configuration error"}`,
+        );
         return;
       }
     });

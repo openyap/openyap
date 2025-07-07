@@ -1,5 +1,6 @@
 import { isRedirect, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
+import { ConvexError } from "convex/values";
 import { ArrowUpIcon, Paperclip, Square } from "lucide-react";
 import { memo, useCallback, useEffect, useState } from "react";
 import { ChatOptions } from "~/components/chat/chat-options";
@@ -17,10 +18,9 @@ import { useFileAttachments } from "~/hooks/use-file-attachments";
 import { useFileDrop } from "~/hooks/use-file-drop";
 import { usePersisted } from "~/hooks/use-persisted";
 import { api } from "~/lib/db/server";
+import { logger } from "~/lib/logger";
 import { getDefaultModel, getModelById } from "~/lib/models";
 import { cn } from "~/lib/utils";
-import { ConvexError } from "convex/values";
-import { logger } from "~/lib/logger";
 
 interface ChatInputProps {
   chatId?: string;
@@ -42,7 +42,7 @@ const ChatInput = memo(function ChatInput({
 
   const { value: selectedModelId } = usePersisted<number>(
     MODEL_PERSIST_KEY,
-    getDefaultModel().id
+    getDefaultModel().id,
   );
   const [input, setInput] = useState(inputStore.getState().input);
 
@@ -79,7 +79,7 @@ const ChatInput = memo(function ChatInput({
           if (attachedFiles.length > 0) {
             localStorage.setItem(
               "firstMessageAttachments",
-              JSON.stringify(attachedFiles)
+              JSON.stringify(attachedFiles),
             );
           }
 
@@ -108,7 +108,7 @@ const ChatInput = memo(function ChatInput({
 
       if (attachedFiles.length > 0) {
         logger.info(
-          `Processing ${attachedFiles.length} file attachment(s) for chat: ${chatId || 'new'}`
+          `Processing ${attachedFiles.length} file attachment(s) for chat: ${chatId || "new"}`,
         );
 
         const attachmentPromises = attachedFiles.map(async (attachedFile) => {
@@ -124,18 +124,18 @@ const ChatInput = memo(function ChatInput({
 
         const attachmentData = await Promise.all(attachmentPromises);
         logger.info(
-          `Stored ${attachmentData.length} attachment(s) in session storage for chat processing`
+          `Stored ${attachmentData.length} attachment(s) in session storage for chat processing`,
         );
         sessionStorage.setItem(
           "pendingAttachments",
-          JSON.stringify(attachmentData)
+          JSON.stringify(attachmentData),
         );
       } else {
         logger.debug("No attachments to process for message");
       }
 
       logger.info(
-        `Sending message to chat ${chatId} with ${attachedFiles.length} attachment(s)`
+        `Sending message to chat ${chatId} with ${attachedFiles.length} attachment(s)`,
       );
 
       addUserMessage(text, []);
@@ -151,7 +151,7 @@ const ChatInput = memo(function ChatInput({
       selectedModelId,
       attachedFiles,
       clearFiles,
-    ]
+    ],
   );
 
   const handleSubmit = useCallback(() => {
@@ -238,13 +238,13 @@ const ChatInput = memo(function ChatInput({
         {isDragOver && (
           <div
             className={cn(
-              "pointer-events-none absolute inset-0 z-10 rounded-md bg-background border-1 border-dashed border-primary"
+              "pointer-events-none absolute inset-0 z-10 rounded-md border-1 border-primary border-dashed bg-background",
             )}
           >
             <div
               className={cn(
-                "w-full h-full rounded-md flex items-center justify-center",
-                isDragOverTarget ? "bg-primary/30" : "bg-primary/20"
+                "flex h-full w-full items-center justify-center rounded-md",
+                isDragOverTarget ? "bg-primary/30" : "bg-primary/20",
               )}
             >
               <div className="flex items-center gap-x-2">
