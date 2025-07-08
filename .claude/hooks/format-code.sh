@@ -3,7 +3,9 @@
 # Code Formatter Hook
 # Automatically formats code after file edits using Biome
 
-SESSION_TRACKER="$HOME/Documents/startup/openyap/openyap/.claude/hooks/session-tracker.sh"
+# Get the project root directory (where .git is located)
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+SESSION_TRACKER="$PROJECT_ROOT/.claude/hooks/session-tracker.sh"
 
 # Read the tool input from stdin
 TOOL_INPUT=$(cat)
@@ -39,20 +41,20 @@ if [ "$SHOULD_FORMAT" = true ]; then
     sleep 0.1
     
     # Change to the project root
-    cd "$HOME/Documents/startup/openyap/openyap" || exit
+    cd "$PROJECT_ROOT" || exit
     
     # Run Biome format on the specific file
     echo "Running Biome formatter on $FILE_PATH..." >&2
     
     # Get relative path from project root for Biome
-    RELATIVE_PATH=${FILE_PATH#"$HOME/Documents/startup/openyap/openyap/"}
+    RELATIVE_PATH=${FILE_PATH#"$PROJECT_ROOT/"}
     
     # Run the formatter from project root
     pnpm biome format --write "$RELATIVE_PATH" 2>&1 >&2
     
     # Log the formatting action
     TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-    LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/formatting.log"
+    LOG_FILE="$PROJECT_ROOT/.claude/logs/formatting.log"
     mkdir -p "$(dirname "$LOG_FILE")"
     echo "[$TIMESTAMP] Formatted: $FILE_PATH" >> "$LOG_FILE"
 fi

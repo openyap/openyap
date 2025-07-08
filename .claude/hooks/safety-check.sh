@@ -60,7 +60,8 @@ if [ "$TOOL_NAME" = "Bash" ]; then
     if [[ "$COMMAND" =~ (rm|mv|cp).*(/etc/|/var/|/usr/bin/|/usr/sbin/) ]]; then
         echo "WARNING: Operation on system directory detected!" >&2
         TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/safety-warnings.log"
+        PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+        LOG_FILE="$PROJECT_ROOT/.claude/logs/safety-warnings.log"
         mkdir -p "$(dirname "$LOG_FILE")"
         echo "[$TIMESTAMP] System directory operation: $COMMAND" >> "$LOG_FILE"
     fi
@@ -70,7 +71,8 @@ if [ "$TOOL_NAME" = "Bash" ]; then
         echo "WARNING: Git operation on protected branch detected. Proceed with caution!" >&2
         # Log the warning
         TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/safety-warnings.log"
+        PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+        LOG_FILE="$PROJECT_ROOT/.claude/logs/safety-warnings.log"
         mkdir -p "$(dirname "$LOG_FILE")"
         echo "[$TIMESTAMP] Git operation on protected branch: $COMMAND" >> "$LOG_FILE"
     fi
@@ -79,7 +81,8 @@ if [ "$TOOL_NAME" = "Bash" ]; then
     if [[ "$COMMAND" =~ ^sudo\ |\ sudo\  ]]; then
         echo "WARNING: Sudo command detected. This requires elevated privileges!" >&2
         TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/safety-warnings.log"
+        PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+        LOG_FILE="$PROJECT_ROOT/.claude/logs/safety-warnings.log"
         echo "[$TIMESTAMP] Sudo command: $COMMAND" >> "$LOG_FILE"
     fi
     
@@ -87,7 +90,8 @@ if [ "$TOOL_NAME" = "Bash" ]; then
     if [[ "$COMMAND" =~ npm\ install\ -g|pip\ install\ --global|brew\ install ]]; then
         echo "INFO: System-wide installation detected" >&2
         TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/safety-warnings.log"
+        PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+        LOG_FILE="$PROJECT_ROOT/.claude/logs/safety-warnings.log"
         echo "[$TIMESTAMP] System installation: $COMMAND" >> "$LOG_FILE"
     fi
     
@@ -95,7 +99,8 @@ if [ "$TOOL_NAME" = "Bash" ]; then
     if [[ "$COMMAND" =~ curl.*-o.*\||wget.*-O.*\||nc\ -l ]]; then
         echo "WARNING: Potentially risky network operation detected!" >&2
         TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/safety-warnings.log"
+        PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+        LOG_FILE="$PROJECT_ROOT/.claude/logs/safety-warnings.log"
         echo "[$TIMESTAMP] Network operation: $COMMAND" >> "$LOG_FILE"
     fi
     

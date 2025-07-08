@@ -3,9 +3,11 @@
 # Bash Command Logger Hook
 # Logs all bash commands executed by Claude Code with session tracking
 
-LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/bash-commands.log"
+# Get the project root directory (where .git is located)
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+LOG_FILE="$PROJECT_ROOT/.claude/logs/bash-commands.log"
 TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-SESSION_TRACKER="$HOME/Documents/startup/openyap/openyap/.claude/hooks/session-tracker.sh"
+SESSION_TRACKER="$PROJECT_ROOT/.claude/hooks/session-tracker.sh"
 
 # Ensure log file exists
 mkdir -p "$(dirname "$LOG_FILE")"
@@ -30,7 +32,7 @@ if [ "$TOOL_NAME" = "Bash" ]; then
     echo "----------------------------------------" >> "$LOG_FILE"
     
     # Also log to a JSON file for easier parsing
-    JSON_LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/bash-commands.json"
+    JSON_LOG_FILE="$PROJECT_ROOT/.claude/logs/bash-commands.json"
     
     # Create JSON entry
     JSON_ENTRY=$(jq -n \

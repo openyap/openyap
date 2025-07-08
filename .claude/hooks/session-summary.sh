@@ -3,9 +3,11 @@
 # Session Summary Hook
 # Generates a summary of all changes made during the session
 
-SUMMARY_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/session-summary.log"
+# Get the project root directory (where .git is located)
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+SUMMARY_FILE="$PROJECT_ROOT/.claude/logs/session-summary.log"
 TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-SESSION_TRACKER="$HOME/Documents/startup/openyap/openyap/.claude/hooks/session-tracker.sh"
+SESSION_TRACKER="$PROJECT_ROOT/.claude/hooks/session-tracker.sh"
 
 # Ensure log directory exists
 mkdir -p "$(dirname "$SUMMARY_FILE")"
@@ -18,7 +20,7 @@ bash "$SESSION_TRACKER" end
 SESSION_DATA=$(bash "$SESSION_TRACKER" get-data)
 
 # Change to project directory
-cd "$HOME/Documents/startup/openyap/openyap" || exit
+cd "$PROJECT_ROOT" || exit
 
 # Start summary
 echo "========================================" >> "$SUMMARY_FILE"
@@ -50,7 +52,7 @@ fi
 
 # Summary of bash commands executed (if log exists)
 COMMAND_COUNT="0"
-BASH_LOG="$HOME/Documents/startup/openyap/openyap/.claude/logs/bash-commands.log"
+BASH_LOG="$PROJECT_ROOT/.claude/logs/bash-commands.log"
 if [ -f "$BASH_LOG" ]; then
     # Count today's commands
     TODAY=$(date -u +"%Y-%m-%d")
@@ -60,7 +62,7 @@ fi
 
 # Check for lint issues
 LINT_FAILS="0"
-LINT_LOG="$HOME/Documents/startup/openyap/openyap/.claude/logs/lint-results.log"
+LINT_LOG="$PROJECT_ROOT/.claude/logs/lint-results.log"
 if [ -f "$LINT_LOG" ]; then
     TODAY=$(date -u +"%Y-%m-%d")
     LINT_FAILS=$(grep "^\[$TODAY.*FAIL:" "$LINT_LOG" 2>/dev/null | wc -l | tr -d ' ')
@@ -71,7 +73,7 @@ fi
 
 # Safety warnings
 WARNING_COUNT="0"
-SAFETY_LOG="$HOME/Documents/startup/openyap/openyap/.claude/logs/safety-warnings.log"
+SAFETY_LOG="$PROJECT_ROOT/.claude/logs/safety-warnings.log"
 if [ -f "$SAFETY_LOG" ]; then
     TODAY=$(date -u +"%Y-%m-%d")
     WARNING_COUNT=$(grep -c "^\[$TODAY" "$SAFETY_LOG" 2>/dev/null || echo "0")
@@ -81,7 +83,7 @@ if [ -f "$SAFETY_LOG" ]; then
 fi
 
 # Create a JSON summary for programmatic access
-JSON_SUMMARY="$HOME/Documents/startup/openyap/openyap/.claude/logs/session-summary.json"
+JSON_SUMMARY="$PROJECT_ROOT/.claude/logs/session-summary.json"
 JSON_ENTRY=$(jq -n \
     --arg ts "$TIMESTAMP" \
     --arg modified "$MODIFIED_COUNT" \

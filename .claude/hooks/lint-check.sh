@@ -29,14 +29,17 @@ if [ "$SHOULD_LINT" = true ]; then
     # Wait a moment for the file to be written
     sleep 0.2
     
+    # Get the project root directory (where .git is located)
+    PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+    
     # Change to the project root
-    cd "$HOME/Documents/startup/openyap/openyap" || exit
+    cd "$PROJECT_ROOT" || exit
     
     # Run Biome lint check on the specific file
     echo "Running Biome lint check on $FILE_PATH..." >&2
     
     # Get relative path from project root for Biome
-    RELATIVE_PATH=${FILE_PATH#"$HOME/Documents/startup/openyap/openyap/"}
+    RELATIVE_PATH=${FILE_PATH#"$PROJECT_ROOT/"}
     
     # Capture lint output
     LINT_OUTPUT=$(pnpm biome check "$RELATIVE_PATH" 2>&1)
@@ -44,7 +47,7 @@ if [ "$SHOULD_LINT" = true ]; then
     
     # Log the result
     TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-    LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/lint-results.log"
+    LOG_FILE="$PROJECT_ROOT/.claude/logs/lint-results.log"
     mkdir -p "$(dirname "$LOG_FILE")"
     
     if [ $LINT_EXIT_CODE -eq 0 ]; then
@@ -57,7 +60,7 @@ if [ "$SHOULD_LINT" = true ]; then
         echo "$LINT_OUTPUT" >&2
         
         # Also log to JSON for easier parsing
-        JSON_LOG_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/lint-issues.json"
+        JSON_LOG_FILE="$PROJECT_ROOT/.claude/logs/lint-issues.json"
         JSON_ENTRY=$(jq -n \
             --arg ts "$TIMESTAMP" \
             --arg file "$FILE_PATH" \

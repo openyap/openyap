@@ -3,8 +3,10 @@
 # Performance Monitor Hook
 # Tracks command execution time and system resource usage
 
-PERF_LOG="$HOME/Documents/startup/openyap/openyap/.claude/logs/performance.log"
-PERF_JSON="$HOME/Documents/startup/openyap/openyap/.claude/logs/performance.json"
+# Get the project root directory (where .git is located)
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+PERF_LOG="$PROJECT_ROOT/.claude/logs/performance.log"
+PERF_JSON="$PROJECT_ROOT/.claude/logs/performance.json"
 
 # Ensure log directory exists
 mkdir -p "$(dirname "$PERF_LOG")"
@@ -149,7 +151,7 @@ if [ -n "$JSON_ENTRY" ]; then
 fi
 
 # Weekly performance summary (run on first execution of each week)
-WEEK_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/last-summary-week"
+WEEK_FILE="$PROJECT_ROOT/.claude/logs/last-summary-week"
 CURRENT_WEEK=$(date +%Y%U)
 
 if [ ! -f "$WEEK_FILE" ] || [ "$(cat "$WEEK_FILE" 2>/dev/null)" != "$CURRENT_WEEK" ]; then
@@ -157,7 +159,7 @@ if [ ! -f "$WEEK_FILE" ] || [ "$(cat "$WEEK_FILE" 2>/dev/null)" != "$CURRENT_WEE
     
     # Generate weekly summary
     if [ -f "$PERF_JSON" ]; then
-        WEEKLY_SUMMARY="$HOME/Documents/startup/openyap/openyap/.claude/logs/weekly-performance.log"
+        WEEKLY_SUMMARY="$PROJECT_ROOT/.claude/logs/weekly-performance.log"
         TOTAL_OPERATIONS=$(jq 'length' "$PERF_JSON" 2>/dev/null || echo "0")
         HIGH_COMPLEXITY=$(jq '[.[] | select(.complexity == "high")] | length' "$PERF_JSON" 2>/dev/null || echo "0")
         
