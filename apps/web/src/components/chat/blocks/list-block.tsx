@@ -1,5 +1,6 @@
 import type { Tokens } from "marked";
-import { TokenBlock } from "./token-block";
+import { TokenBlock } from "~/components/chat/blocks/token-block";
+import { getTokenKey } from "~/lib/utils";
 
 type ListItemBlockProps = {
   token: Tokens.ListItem;
@@ -8,8 +9,8 @@ type ListItemBlockProps = {
 function ListItemBlock({ token }: ListItemBlockProps) {
   return (
     <li className="my-1">
-      {token.tokens.map((subToken) => (
-        <TokenBlock key={subToken.raw} token={subToken} />
+      {token.tokens.map((subToken, index) => (
+        <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
       ))}
     </li>
   );
@@ -27,8 +28,8 @@ export function ListBlock({ token }: ListBlockProps) {
 
   return (
     <ListTag className={className}>
-      {token.items.map((item) => (
-        <ListItemBlock key={item.raw} token={item} />
+      {token.items.map((item, index) => (
+        <ListItemBlock key={getTokenKey(item, index)} token={item} />
       ))}
     </ListTag>
   );

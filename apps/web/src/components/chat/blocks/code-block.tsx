@@ -19,6 +19,34 @@ import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
 import { UI_CONSTANTS } from "~/lib/constants";
 import { cn } from "~/lib/utils";
 
+// TODO: Add more languages, or make a library for this
+/*
+function langIcon(lang: string) {
+  if (lang === "javascript") return "vscode-icons:file-type-js";
+  if (lang === "typescript") return "vscode-icons:file-type-typescript";
+  if (lang === "rust") return "vscode-icons:file-type-rust";
+  if (lang === "python") return "vscode-icons:file-type-python";
+  if (lang === "cpp") return "vscode-icons:file-type-cpp";
+  if (lang === "c") return "vscode-icons:file-type-c";
+  if (lang === "kotlin") return "vscode-icons:file-type-kotlin";
+  if (lang === "haskell") return "vscode-icons:file-type-haskell";
+  if (lang === "ruby") return "vscode-icons:file-type-ruby";
+  if (lang === "swift") return "vscode-icons:file-type-swift";
+  if (lang === "java") return "vscode-icons:file-type-java";
+  if (lang === "go") return "vscode-icons:file-type-go";
+  if (lang === "csharp") return "vscode-icons:file-type-csharp";
+  if (lang === "jsx" || lang === "tsx") return "vscode-icons:file-type-reactjs";
+  if (lang === "sql") return "vscode-icons:file-type-sql";
+  if (lang === "bash") return "vscode-icons:file-type-shell";
+  if (lang === "html") return "vscode-icons:file-type-html";
+  if (lang === "css") return "vscode-icons:file-type-css2";
+  if (lang === "json") return "vscode-icons:file-type-json-official";
+  if (lang === "php") return "vscode-icons:file-type-php";
+
+  return "";
+}
+*/
+
 type CodeBlockProps = {
   token: Tokens.Code;
 };

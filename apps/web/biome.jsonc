@@ -54,7 +54,7 @@
       "suspicious": {
         "noExplicitAny": "warn",
         "noAssignInExpressions": "off",
-        "noArrayIndexKey": "off",
+        "noArrayIndexKey": "warn",
         "noShadowRestrictedNames": "off"
       },
       "style": {

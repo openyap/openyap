@@ -1,9 +1,13 @@
 import { Globe } from "lucide-react";
 import { memo, useCallback } from "react";
 import { Toggle } from "~/components/ui/toggle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { usePersisted } from "~/hooks/use-persisted";
 import { cn } from "~/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export const SEARCH_TOGGLE_KEY = "search-toggle";
 

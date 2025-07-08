@@ -1,5 +1,6 @@
 import type { Tokens } from "marked";
-import { TokenBlock } from "./token-block";
+import { TokenBlock } from "~/components/chat/blocks/token-block";
+import { getTokenKey } from "~/lib/utils";
 
 type LinkBlockProps = {
   token: Tokens.Link;
@@ -14,8 +15,8 @@ export function LinkBlock({ token }: LinkBlockProps) {
       target="_blank"
       rel="noopener noreferrer"
     >
-      {token.tokens.map((subToken) => (
-        <TokenBlock key={subToken.raw} token={subToken} />
+      {token.tokens.map((subToken, index) => (
+        <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
       ))}
     </a>
   );

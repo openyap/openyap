@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { Pin, PinOff, X } from "lucide-react";
 import { Moon, Sun } from "lucide-react";
+import { ProfileCard } from "~/components/auth/profile-card";
 import { useTheme } from "~/components/theme-provider";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/seperator";
@@ -25,7 +26,6 @@ import {
 import { useChatsList } from "~/hooks/use-chats-list";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
-import { ProfileCard } from "./auth/profile-card";
 
 export function AppSidebar() {
   const { data: session } = authClient.useSession();

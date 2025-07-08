@@ -11,6 +11,7 @@ import {
   ChatErrorBoundary,
   MessageErrorBoundary,
 } from "~/components/error-boundary";
+import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
 import { Button } from "~/components/ui/button";
 import { useChat } from "~/hooks/use-chat";
 import { useChatsList } from "~/hooks/use-chats-list";
@@ -19,7 +20,6 @@ import { STORAGE_KEYS } from "~/lib/constants";
 import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
 import { models } from "~/lib/models";
-import { AnimatedShinyText } from "../ui/animated-shiny-text";
 
 export function ChatView() {
   const { data: session } = authClient.useSession();
