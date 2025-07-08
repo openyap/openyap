@@ -3,7 +3,9 @@
 # Todo Tracker Hook
 # Captures TodoWrite tool usage and logs todos to session tracker
 
-SESSION_TRACKER="$HOME/Documents/startup/openyap/openyap/.claude/hooks/session-tracker.sh"
+# Get the project root directory (where .git is located)
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+SESSION_TRACKER="$PROJECT_ROOT/.claude/hooks/session-tracker.sh"
 
 # Read the tool input from stdin
 TOOL_INPUT=$(cat)

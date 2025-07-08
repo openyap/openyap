@@ -3,8 +3,10 @@
 # Session Tracker Utility
 # Manages Claude Code session tracking with unique IDs
 
-SESSION_FILE="$HOME/Documents/startup/openyap/openyap/.claude/logs/current-session.txt"
-SESSION_LOG="$HOME/Documents/startup/openyap/openyap/.claude/logs/sessions.json"
+# Get the project root directory (where .git is located)
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+SESSION_FILE="$PROJECT_ROOT/.claude/logs/current-session.txt"
+SESSION_LOG="$PROJECT_ROOT/.claude/logs/sessions.json"
 
 # Ensure log directory exists
 mkdir -p "$(dirname "$SESSION_FILE")"

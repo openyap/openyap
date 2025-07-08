@@ -1,6 +1,7 @@
 .turbo
 .DS_Store
 .claude/logs
+.claude/.discord-webhook
 node_modules
 package-lock.json
 yarn.lock

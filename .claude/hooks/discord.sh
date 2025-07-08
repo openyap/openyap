@@ -3,18 +3,20 @@
 # Configuration
 CLAUDE_ICON_URL="https://cdn.brandfetch.io/idW5s392j1/w/338/h/338/theme/dark/icon.png?c=1dxbfHSJFAPEGdCLU4o5B"
 
-DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/1391971047087276124/oyZXHSCrFwPOopbxLp8jWB_XsZtHXfLNKCtWxuV5f4Cz3n4Uv8ZW8xCg4C6wEoyVVZG8"
+# Load Discord webhook URL from config file or environment
+# Get the project root directory (where .git is located)
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+WEBHOOK_CONFIG="$PROJECT_ROOT/.claude/.discord-webhook"
 
-# Load Discord webhook URL from environment or config file, fallback to hardcoded
 if [ -n "$DISCORD_WEBHOOK_URL" ]; then
     # Use environment variable if set
     WEBHOOK_URL="$DISCORD_WEBHOOK_URL"
-elif [ -f "$HOME/.claude-discord-webhook" ]; then
-    # Use config file if exists
-    WEBHOOK_URL=$(cat "$HOME/.claude-discord-webhook")
+elif [ -f "$WEBHOOK_CONFIG" ]; then
+    # Use config file
+    WEBHOOK_URL=$(cat "$WEBHOOK_CONFIG")
 else
-    # Fallback to hardcoded webhook
-    WEBHOOK_URL="$DISCORD_WEBHOOK_URL"
+    echo "Discord webhook not configured. Create .claude/.discord-webhook file" >&2
+    exit 0  # Exit gracefully if not configured
 fi
 
 # Get git info
@@ -91,8 +93,8 @@ TODO_COUNT=0
 if [ "$SESSION_DATA" != "{}" ]; then
     COMMAND_COUNT=$(echo "$SESSION_DATA" | jq '.commands | length' 2>/dev/null || echo "0")
     if [ "$COMMAND_COUNT" -gt 0 ]; then
-        # Get last 5 commands with proper line breaks (reduced from 10)
-        RECENT_COMMANDS=$(echo "$SESSION_DATA" | jq -r '.commands | .[(-5):] | map("• " + .command) | join("\n")' 2>/dev/null || echo "")
+        # Get last 3 commands with proper line breaks
+        RECENT_COMMANDS=$(echo "$SESSION_DATA" | jq -r '.commands | .[(-3):] | map("• " + .command) | join("\n")' 2>/dev/null || echo "")
     fi
     
     # Get session summary
@@ -101,26 +103,38 @@ if [ "$SESSION_DATA" != "{}" ]; then
     # Get todos
     TODO_COUNT=$(echo "$SESSION_DATA" | jq '.todos | length' 2>/dev/null || echo "0")
     if [ "$TODO_COUNT" -gt 0 ]; then
-        # Get last 5 todos with status
-        SESSION_TODOS=$(echo "$SESSION_DATA" | jq -r '.todos | .[(-5):] | map("• " + .content + " (" + .status + ")") | join("\n")' 2>/dev/null || echo "")
+        # Get last 3 todos with status
+        SESSION_TODOS=$(echo "$SESSION_DATA" | jq -r '.todos | .[(-3):] | map("• " + .content + " (" + .status + ")") | join("\n")' 2>/dev/null || echo "")
     fi
 fi
 
 # Get files changed in this session
 MODIFIED_FILES=""
-FILES_COUNT=0
+TOTAL_EDITS=0
+UNIQUE_FILES_COUNT=0
+
 if [ "$SESSION_DATA" != "{}" ]; then
-    FILES_COUNT=$(echo "$SESSION_DATA" | jq '.filesChanged | length' 2>/dev/null || echo "0")
-    if [ "$FILES_COUNT" -gt 0 ]; then
-        # Get unique files (in case same file was edited multiple times) with proper line breaks
-        # Convert absolute paths to relative paths from repo root
-        REPO_ROOT="$HOME/Documents/startup/openyap/openyap"
-        MODIFIED_FILES=$(echo "$SESSION_DATA" | jq -r --arg repo_root "$REPO_ROOT" '.filesChanged | map(.file) | unique | map(if startswith($repo_root + "/") then .[$repo_root | length + 1:] else . end) | map("• `" + . + "`") | join("\n")' 2>/dev/null || echo "")
+    TOTAL_EDITS=$(echo "$SESSION_DATA" | jq '.filesChanged | length' 2>/dev/null || echo "0")
+    UNIQUE_FILES_COUNT=$(echo "$SESSION_DATA" | jq '.filesChanged | map(.file) | unique | length' 2>/dev/null || echo "0")
+    
+    if [ "$UNIQUE_FILES_COUNT" -gt 0 ]; then
+        # Get unique files with edit counts, convert to relative paths, and limit to last 5 files
+        MODIFIED_FILES=$(echo "$SESSION_DATA" | jq -r --arg repo_root "$PROJECT_ROOT" '
+            .filesChanged | 
+            group_by(.file) | 
+            map({file: .[0].file, count: length}) |
+            .[(-5):] | 
+            map(
+                .file as $f | 
+                (.file | if startswith($repo_root + "/") then .[$repo_root | length + 1:] else . end) as $rel |
+                "• **" + (.count | tostring) + "×** `" + $rel + "`"
+            ) | 
+            join("\n")' 2>/dev/null || echo "")
     fi
 fi
 
-# Override MODIFIED_COUNT with session data
-MODIFIED_COUNT="$FILES_COUNT"
+# Use unique files count for display
+MODIFIED_COUNT="$UNIQUE_FILES_COUNT"
 
 # Determine activity type and emoji based on what happened
 ACTIVITY="Development"
