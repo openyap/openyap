@@ -1,0 +1,75 @@
+{
+	"hooks": {
+		"PreToolUse": [
+			{
+				"matcher": "Bash",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/bash-logger.sh"
+					},
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/safety-check.sh"
+					},
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/performance-monitor.sh"
+					}
+				]
+			},
+			{
+				"matcher": "Edit|MultiEdit|Write|Read|Grep|Glob",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/performance-monitor.sh"
+					}
+				]
+			},
+			{
+				"matcher": "TodoWrite",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/todo-tracker.sh"
+					}
+				]
+			}
+		],
+		"PostToolUse": [
+			{
+				"matcher": "Edit|MultiEdit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/format-code.sh"
+					},
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/lint-check.sh"
+					},
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/discord.sh"
+					}
+				]
+			}
+		],
+		"Stop": [
+			{
+				"matcher": "",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/session-summary.sh"
+					},
+					{
+						"type": "command",
+						"command": "bash .claude/hooks/discord.sh"
+					}
+				]
+			}
+		]
+	}
+}

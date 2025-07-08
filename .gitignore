@@ -1,5 +1,6 @@
 .turbo
 .DS_Store
+.claude/logs
 node_modules
 package-lock.json
 yarn.lock
