@@ -1,5 +1,6 @@
 import type { Tokens } from "marked";
-import { TokenBlock } from "./token-block";
+import { TokenBlock } from "~/components/chat/blocks/token-block";
+import { getTokenKey } from "~/lib/utils";
 
 type TableBlockProps = {
   token: Tokens.Table;
@@ -11,28 +12,37 @@ export function TableBlock({ token }: TableBlockProps) {
       <table className="min-w-full border-collapse border border-border">
         <thead>
           <tr className="bg-muted/50">
-            {token.header.map((headerCell) => (
+            {token.header.map((headerCell, colIndex) => (
               <th
-                key={crypto.randomUUID()}
+                key={`header-${colIndex}-${headerCell.text || JSON.stringify(headerCell)}`}
                 className="border border-border px-4 py-2 text-left font-medium"
               >
-                {headerCell.tokens.map((subToken) => (
-                  <TokenBlock key={subToken.raw} token={subToken} />
+                {headerCell.tokens.map((subToken, tokenIndex) => (
+                  <TokenBlock
+                    key={getTokenKey(subToken, tokenIndex)}
+                    token={subToken}
+                  />
                 ))}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {token.rows.map((row) => (
-            <tr key={crypto.randomUUID()} className="even:bg-muted/25">
-              {row.map((cell) => (
+          {token.rows.map((row, rowIndex) => (
+            <tr
+              key={`row-${rowIndex}-${row.map((c) => c.text || JSON.stringify(c)).join("")}`}
+              className="even:bg-muted/25"
+            >
+              {row.map((cell, colIndex) => (
                 <td
-                  key={crypto.randomUUID()}
+                  key={`row-${rowIndex}-col-${colIndex}-${cell.text || JSON.stringify(cell)}`}
                   className="border border-border px-4 py-2"
                 >
-                  {cell.tokens.map((subToken) => (
-                    <TokenBlock key={subToken.raw} token={subToken} />
+                  {cell.tokens.map((subToken, tokenIndex) => (
+                    <TokenBlock
+                      key={getTokenKey(subToken, tokenIndex)}
+                      token={subToken}
+                    />
                   ))}
                 </td>
               ))}

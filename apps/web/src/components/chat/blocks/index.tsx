@@ -1,7 +1,7 @@
 // Re-export all block components
 
-export { TokenBlock } from "./token-block";
-export { MemoizedCodeBlock } from "./code-block";
+export { TokenBlock } from "~/components/chat/blocks/token-block";
+export { MemoizedCodeBlock } from "~/components/chat/blocks/code-block";
 export {
   BlockquoteBlock,
   BrBlock,
@@ -13,9 +13,9 @@ export {
   HrBlock,
   StrongBlock,
   TextBlock,
-} from "./simple-blocks";
-export { ImageBlock } from "./image-block";
-export { LinkBlock } from "./link-block";
-export { ListBlock } from "./list-block";
-export { ParagraphBlock } from "./paragraph-block";
-export { TableBlock } from "./table-block";
+} from "~/components/chat/blocks/simple-blocks";
+export { ImageBlock } from "~/components/chat/blocks/image-block";
+export { LinkBlock } from "~/components/chat/blocks/link-block";
+export { ListBlock } from "~/components/chat/blocks/list-block";
+export { ParagraphBlock } from "~/components/chat/blocks/paragraph-block";
+export { TableBlock } from "~/components/chat/blocks/table-block";

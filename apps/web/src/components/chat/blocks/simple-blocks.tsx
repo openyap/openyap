@@ -2,7 +2,8 @@
 
 import type { Tokens } from "marked";
 import { createElement } from "react";
-import { TokenBlock } from "./token-block";
+import { TokenBlock } from "~/components/chat/blocks/token-block";
+import { getTokenKey } from "~/lib/utils";
 
 type BlockquoteBlockProps = {
   token: Tokens.Blockquote;
@@ -11,8 +12,8 @@ type BlockquoteBlockProps = {
 export function BlockquoteBlock({ token }: BlockquoteBlockProps) {
   return (
     <blockquote className="my-4 border-primary border-l-4 pl-4 text-muted-foreground italic">
-      {token.tokens.map((subToken) => (
-        <TokenBlock key={subToken.raw} token={subToken} />
+      {token.tokens.map((subToken, index) => (
+        <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
       ))}
     </blockquote>
   );
@@ -45,8 +46,8 @@ type DelBlockProps = {
 export function DelBlock({ token }: DelBlockProps) {
   return (
     <del>
-      {token.tokens.map((subToken) => (
-        <TokenBlock key={subToken.raw} token={subToken} />
+      {token.tokens.map((subToken, index) => (
+        <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
       ))}
     </del>
   );
@@ -59,8 +60,8 @@ type EmBlockProps = {
 export function EmBlock({ token }: EmBlockProps) {
   return (
     <em>
-      {token.tokens.map((subToken) => (
-        <TokenBlock key={subToken.raw} token={subToken} />
+      {token.tokens.map((subToken, index) => (
+        <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
       ))}
     </em>
   );
@@ -94,8 +95,8 @@ export function HeadingBlock({ token }: HeadingBlockProps) {
   return createElement(
     headingTag,
     { className },
-    token.tokens.map((subToken) => (
-      <TokenBlock key={subToken.raw} token={subToken} />
+    token.tokens.map((subToken, index) => (
+      <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
     )),
   );
 }
@@ -115,8 +116,8 @@ type StrongBlockProps = {
 export function StrongBlock({ token }: StrongBlockProps) {
   return (
     <strong>
-      {token.tokens.map((subToken) => (
-        <TokenBlock key={subToken.raw} token={subToken} />
+      {token.tokens.map((subToken, index) => (
+        <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
       ))}
     </strong>
   );

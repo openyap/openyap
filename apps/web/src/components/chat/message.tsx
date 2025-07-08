@@ -23,6 +23,7 @@ import {
 import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
+import { getTokenKey } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 
 interface ReasoningCollapsibleProps {
@@ -109,7 +110,7 @@ const ReasoningCollapsible = memo(function ReasoningCollapsible({
           {reasoning.details.map((detail) => {
             const tokens = marked.lexer(detail.text);
             return (
-              <div key={crypto.randomUUID()} className="flex gap-x-2">
+              <div key={detail.text.slice(0, 100)} className="flex gap-x-2">
                 <div className="flex w-4 shrink-0 flex-col items-center">
                   <div className="flex h-5 items-center justify-center">
                     <div className="h-[6px] w-[6px] rounded-full bg-gray-300" />
@@ -117,8 +118,11 @@ const ReasoningCollapsible = memo(function ReasoningCollapsible({
                   <div className="w-[1px] flex-grow bg-gray-300" />
                 </div>
                 <div className="flex-grow">
-                  {tokens.map((token) => (
-                    <TokenBlock key={crypto.randomUUID()} token={token} />
+                  {tokens.map((token, tokenIndex) => (
+                    <TokenBlock
+                      key={getTokenKey(token, tokenIndex)}
+                      token={token}
+                    />
                   ))}
                 </div>
               </div>
@@ -222,8 +226,8 @@ export const Message = function Message({ data, user }: MessageProps) {
               {isUser && <div className="text-gray-500 text-xs">{date}</div>}
             </div>
             <div className="min-w-0 whitespace-pre-wrap break-words">
-              {contentTokens.map((token) => (
-                <TokenBlock key={crypto.randomUUID()} token={token} />
+              {contentTokens.map((token, index) => (
+                <TokenBlock key={getTokenKey(token, index)} token={token} />
               ))}
             </div>
             <MessageAttachments messageId={data._id} />

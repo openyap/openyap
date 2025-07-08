@@ -1,11 +1,11 @@
 // Main token block component that routes to specific block components
 
 import type { Token, Tokens } from "marked";
-import { MemoizedCodeBlock } from "./code-block";
-import { ImageBlock } from "./image-block";
-import { LinkBlock } from "./link-block";
-import { ListBlock } from "./list-block";
-import { ParagraphBlock } from "./paragraph-block";
+import { MemoizedCodeBlock } from "~/components/chat/blocks/code-block";
+import { ImageBlock } from "~/components/chat/blocks/image-block";
+import { LinkBlock } from "~/components/chat/blocks/link-block";
+import { ListBlock } from "~/components/chat/blocks/list-block";
+import { ParagraphBlock } from "~/components/chat/blocks/paragraph-block";
 import {
   BlockquoteBlock,
   BrBlock,
@@ -17,12 +17,8 @@ import {
   HrBlock,
   StrongBlock,
   TextBlock,
-} from "./simple-blocks";
-import { TableBlock } from "./table-block";
-
-function randomKey() {
-  return crypto.randomUUID();
-}
+} from "~/components/chat/blocks/simple-blocks";
+import { TableBlock } from "~/components/chat/blocks/table-block";
 
 type TokenBlockProps = {
   token: Token;
@@ -31,50 +27,38 @@ type TokenBlockProps = {
 export function TokenBlock({ token }: TokenBlockProps) {
   switch (token.type) {
     case "blockquote":
-      return (
-        <BlockquoteBlock key={randomKey()} token={token as Tokens.Blockquote} />
-      );
+      return <BlockquoteBlock token={token as Tokens.Blockquote} />;
     case "br":
-      return <BrBlock key={randomKey()} token={token as Tokens.Br} />;
+      return <BrBlock token={token as Tokens.Br} />;
     case "code":
-      return (
-        <MemoizedCodeBlock key={randomKey()} token={token as Tokens.Code} />
-      );
+      return <MemoizedCodeBlock token={token as Tokens.Code} />;
     case "codespan":
-      return (
-        <CodeSpanBlock key={randomKey()} token={token as Tokens.Codespan} />
-      );
+      return <CodeSpanBlock token={token as Tokens.Codespan} />;
     case "del":
-      return <DelBlock key={randomKey()} token={token as Tokens.Del} />;
+      return <DelBlock token={token as Tokens.Del} />;
     case "em":
-      return <EmBlock key={randomKey()} token={token as Tokens.Em} />;
+      return <EmBlock token={token as Tokens.Em} />;
     case "escape":
-      return <EscapeBlock key={randomKey()} token={token as Tokens.Escape} />;
+      return <EscapeBlock token={token as Tokens.Escape} />;
     case "heading":
-      return <HeadingBlock key={randomKey()} token={token as Tokens.Heading} />;
+      return <HeadingBlock token={token as Tokens.Heading} />;
     case "hr":
-      return <HrBlock key={randomKey()} token={token as Tokens.Hr} />;
+      return <HrBlock token={token as Tokens.Hr} />;
     case "image":
-      return <ImageBlock key={randomKey()} token={token as Tokens.Image} />;
+      return <ImageBlock token={token as Tokens.Image} />;
     case "link":
-      return <LinkBlock key={randomKey()} token={token as Tokens.Link} />;
+      return <LinkBlock token={token as Tokens.Link} />;
     case "list":
-      return <ListBlock key={randomKey()} token={token as Tokens.List} />;
+      return <ListBlock token={token as Tokens.List} />;
     case "paragraph":
-      return (
-        <ParagraphBlock key={randomKey()} token={token as Tokens.Paragraph} />
-      );
+      return <ParagraphBlock token={token as Tokens.Paragraph} />;
     case "strong":
-      return <StrongBlock key={randomKey()} token={token as Tokens.Strong} />;
+      return <StrongBlock token={token as Tokens.Strong} />;
     case "table":
-      return <TableBlock key={randomKey()} token={token as Tokens.Table} />;
+      return <TableBlock token={token as Tokens.Table} />;
     case "text":
-      return <TextBlock key={randomKey()} token={token as Tokens.Text} />;
+      return <TextBlock token={token as Tokens.Text} />;
     default:
-      return (
-        <span key={randomKey()} className="text-foreground">
-          {token.raw}
-        </span>
-      );
+      return <span className="text-foreground">{token.raw}</span>;
   }
 }
