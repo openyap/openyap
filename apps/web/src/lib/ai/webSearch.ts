@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { Effect } from "effect";
 import { pipe } from "effect/Function";
 import { z } from "zod";
+import { UI_CONSTANTS } from "~/lib/constants";
 import { exa } from "~/lib/exa";
 import { logger } from "~/lib/logger";
 
@@ -19,7 +20,11 @@ export const webSearch = tool({
   description: "Search the web for up-to-date information",
   parameters: z
     .object({
-      query: z.string().min(1).max(100).describe("The search query"),
+      query: z
+        .string()
+        .min(1)
+        .max(UI_CONSTANTS.TITLE_LIMITS.MAX_LENGTH)
+        .describe("The search query"),
     })
     .strict(),
   execute: async ({ query }): Promise<SearchResult[]> => {
@@ -40,7 +45,10 @@ export const webSearch = tool({
         results.map<SearchResult>((r) => ({
           title: r.title ?? "",
           url: r.url ?? "",
-          content: (r.text ?? "").slice(0, 1000),
+          content: (r.text ?? "").slice(
+            0,
+            UI_CONSTANTS.POLLING_INTERVALS.SLOW_UPDATE,
+          ),
           publishedDate: r.publishedDate ?? undefined,
         })),
       ),

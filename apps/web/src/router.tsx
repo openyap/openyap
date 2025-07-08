@@ -10,6 +10,7 @@ import { routerWithQueryClient } from "@tanstack/react-router-with-query";
 import { ConvexProvider } from "convex/react";
 
 import { env } from "~/env";
+import { CACHE_CONSTANTS, RETRY_CONSTANTS } from "~/lib/constants";
 import { NotFound } from "./components/not-found";
 import { routeTree } from "./routeTree.gen";
 
@@ -23,13 +24,17 @@ export function createRouter() {
       queries: {
         queryKeyHashFn: convexQueryClient.hashFn(),
         queryFn: convexQueryClient.queryFn(),
-        staleTime: 1000 * 60 * 60 * 24,
-        gcTime: 1000 * 60 * 60 * 24,
+        staleTime: CACHE_CONSTANTS.DURATIONS.ONE_DAY,
+        gcTime: CACHE_CONSTANTS.DURATIONS.ONE_DAY,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
         retry: 3,
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        retryDelay: (attemptIndex) =>
+          Math.min(
+            RETRY_CONSTANTS.BASE_DELAY * 2 ** attemptIndex,
+            RETRY_CONSTANTS.MAX_DELAY,
+          ),
       },
     },
   });
@@ -54,7 +59,7 @@ export function createRouter() {
             client={queryClient}
             persistOptions={{
               persister,
-              maxAge: 1000 * 60 * 60 * 24,
+              maxAge: CACHE_CONSTANTS.DURATIONS.ONE_DAY,
               dehydrateOptions: {
                 shouldDehydrateQuery: (q) => {
                   const key = q.queryKey[0];

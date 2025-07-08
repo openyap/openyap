@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import { SEARCH_TOGGLE_KEY } from "~/components/chat/chat-toggles";
 import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
 import { REASONING_EFFORT_PERSIST_KEY } from "~/components/chat/reasoning-effort-selector";
-import type { SerializedAttachedFile } from "~/components/chat/stores";
 import {
   type ChatMessage,
   ChatStatus,
@@ -15,6 +14,7 @@ import { splitReasoningSteps } from "~/lib/ai/reasoning";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
+import type { SerializedFile } from "~/lib/file-utils";
 import { logger } from "~/lib/logger";
 import {
   type EffortLabel,
@@ -56,7 +56,10 @@ export function useChat(chatId: string | undefined) {
   }, [getChatMessages, status]);
 
   const append = useCallback(
-    async ({ content, attachments }: { content: string; attachments?: SerializedAttachedFile[] }) => {
+    async ({
+      content,
+      attachments,
+    }: { content: string; attachments?: SerializedFile[] }) => {
       if (!isConvexId<"chat">(chatId)) {
         return;
       }
@@ -86,7 +89,7 @@ export function useChat(chatId: string | undefined) {
               selectedModel && !!selectedModel.reasoningEffort
                 ? reasoningEffort
                 : undefined,
-            attachments
+            attachments,
           }),
         });
 

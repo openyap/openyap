@@ -22,10 +22,11 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { usePersisted } from "~/hooks/use-persisted";
+import { STORAGE_KEYS, UI_CONSTANTS } from "~/lib/constants";
 import { getCompanyIcon, getDefaultModel, models } from "~/lib/models";
 import { cn } from "~/lib/utils";
 
-export const MODEL_PERSIST_KEY = "selected-model";
+export const MODEL_PERSIST_KEY = STORAGE_KEYS.MODEL_SELECTION;
 
 const ModelSelector = memo(function ModelSelector() {
   const { value: selectedModelId, set: setSelectedModelId } =
@@ -39,7 +40,9 @@ const ModelSelector = memo(function ModelSelector() {
     const iconName = getCompanyIcon(model);
 
     const nameElement = model.recentlyUpdated ? (
-      <AnimatedShinyText shimmerWidth={100}>{model.name}</AnimatedShinyText>
+      <AnimatedShinyText shimmerWidth={UI_CONSTANTS.TITLE_LIMITS.MAX_LENGTH}>
+        {model.name}
+      </AnimatedShinyText>
     ) : (
       model.name
     );

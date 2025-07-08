@@ -13,6 +13,7 @@ import type {
 import { splitReasoningSteps } from "~/lib/ai/reasoning";
 import { webSearch } from "~/lib/ai/webSearch";
 import { auth } from "~/lib/auth/server";
+import { API_CONSTANTS, UI_CONSTANTS } from "~/lib/constants";
 import { api, convexServer } from "~/lib/db/server";
 import { logger } from "~/lib/logger";
 import { getDefaultModel, getModelById, getSystemPrompt } from "~/lib/models";
@@ -353,7 +354,9 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       });
 
       if (!messageId) {
-        return new Response("Failed to create AI message", { status: 500 });
+        return new Response("Failed to create AI message", {
+          status: API_CONSTANTS.STATUS_CODES.INTERNAL_SERVER_ERROR,
+        });
       }
 
       (async () => {
@@ -381,7 +384,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         let usage: MessageUsage;
         let isAborted = false;
         let lastUpdate = Date.now();
-        const UPDATE_INTERVAL = 300;
+        const UPDATE_INTERVAL = UI_CONSTANTS.POLLING_INTERVALS.UPDATE_INTERVAL;
 
         try {
           for await (const part of result.fullStream) {
@@ -555,7 +558,9 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
       });
     } catch (error) {
       logger.error(`Chat streaming failed for ${chatId}: ${error}`);
-      return new Response("Error streaming chat", { status: 500 });
+      return new Response("Error streaming chat", {
+        status: API_CONSTANTS.STATUS_CODES.INTERNAL_SERVER_ERROR,
+      });
     }
   },
 });
