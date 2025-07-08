@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import type { AttachedFile } from "~/components/chat/stores";
 import { inputStore } from "~/components/chat/stores";
+import type { AttachedFile } from "~/lib/file-utils";
 
 export function useFileAttachments() {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>(

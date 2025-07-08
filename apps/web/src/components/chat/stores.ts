@@ -1,25 +1,16 @@
 import { persist } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
+import { STORAGE_KEYS } from "~/lib/constants";
+import {
+  type AttachedFile,
+  type SerializedFile,
+  clearStoredFiles,
+  loadFilesFromStorage,
+  saveFilesToStorage,
+  updateStoredFiles,
+} from "~/lib/file-utils";
 
-// TODO: move modelId to chat metadata
-
-export interface AttachedFile {
-  file: File;
-  progress?: number;
-  error?: string;
-  attachmentId?: string;
-}
-
-export interface SerializedAttachedFile {
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-  data: string; // base64 encoded
-  progress?: number;
-  error?: string;
-  attachmentId?: string;
-}
+// TODO: move modelId to chat metadata - this should be stored per chat in Convex
 
 type InputStore = {
   input: string;
@@ -30,7 +21,7 @@ type InputStore = {
   setFiles: (files: File[]) => void;
   removeFile: (index: number) => void;
   clearFiles: () => void;
-  getPendingAttachments: () => SerializedAttachedFile[];
+  getPendingAttachments: () => SerializedFile[];
 };
 
 export const inputStore = createStore(
@@ -46,29 +37,11 @@ export const inputStore = createStore(
           file,
           progress: 0,
         }));
-        set((state) => {
-          // Sync to sessionStorage
-          const serializedFiles = newFiles.map(async (af: AttachedFile) => {
-            const arrayBuffer = await af.file.arrayBuffer();
-            const uint8Array = new Uint8Array(arrayBuffer);
-            const data = btoa(String.fromCharCode(...uint8Array));
-
-            return {
-              name: af.file.name,
-              size: af.file.size,
-              type: af.file.type,
-              lastModified: af.file.lastModified,
-              data,
-              progress: af.progress,
-              error: af.error,
-              attachmentId: af.attachmentId,
-            };
-          });
-
-          Promise.all(serializedFiles).then((files) => {
-            sessionStorage.setItem("pendingAttachments", JSON.stringify(files));
-          });
-
+        set(() => {
+          // Use FileService for consistent storage handling
+          saveFilesToStorage(files.map((f) => f)).catch((error) =>
+            console.error("Failed to save files:", error),
+          );
           return { attachedFiles: newFiles };
         });
       },
@@ -78,50 +51,24 @@ export const inputStore = createStore(
             (_, i) => i !== index,
           );
 
-          // Sync to sessionStorage
-          if (updatedFiles.length > 0) {
-            const serializedFiles = updatedFiles.map(
-              async (af: AttachedFile) => {
-                const arrayBuffer = await af.file.arrayBuffer();
-                const uint8Array = new Uint8Array(arrayBuffer);
-                const data = btoa(String.fromCharCode(...uint8Array));
-
-                return {
-                  name: af.file.name,
-                  size: af.file.size,
-                  type: af.file.type,
-                  lastModified: af.file.lastModified,
-                  data,
-                  progress: af.progress,
-                  error: af.error,
-                  attachmentId: af.attachmentId,
-                };
-              },
-            );
-
-            Promise.all(serializedFiles).then((files) => {
-              sessionStorage.setItem(
-                "pendingAttachments",
-                JSON.stringify(files),
-              );
-            });
-          } else {
-            sessionStorage.removeItem("pendingAttachments");
-          }
+          // Use FileService for consistent storage handling
+          updateStoredFiles(
+            state.attachedFiles.map((af) => af.file),
+            index,
+          ).catch((error) => console.error("Failed to update files:", error));
 
           return { attachedFiles: updatedFiles };
         }),
       clearFiles: () => {
-        sessionStorage.removeItem("pendingAttachments");
+        clearStoredFiles();
         set({ attachedFiles: [] });
       },
       getPendingAttachments: () => {
-        const serialized = sessionStorage.getItem("pendingAttachments");
-        return serialized ? JSON.parse(serialized) : [];
+        return loadFilesFromStorage();
       },
     }),
     {
-      name: "input-store",
+      name: STORAGE_KEYS.INPUT_STORE,
       // Don't persist files as they contain File objects which can't be serialized
       partialize: (state) => ({
         input: state.input,

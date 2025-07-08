@@ -4,7 +4,7 @@ import type {
   LanguageModelV1FinishReason,
   LanguageModelV1Source,
 } from "@ai-sdk/provider";
-import type { ToolCall, ToolResult } from "@ai-sdk/provider-utils";
+import type { ToolCall, ToolResult } from "~/lib/ai/types";
 import type { JSONValue } from "~/lib/types";
 
 export type DataStreamString =
@@ -70,12 +70,7 @@ const messageAnnotationsStreamPart: DataStreamPart<
   },
 };
 
-const toolCallStreamPart: DataStreamPart<
-  "9",
-  "tool_call",
-  // biome-ignore lint/suspicious/noExplicitAny:  type is truly unknown
-  ToolCall<string, any>
-> = {
+const toolCallStreamPart: DataStreamPart<"9", "tool_call", ToolCall> = {
   code: "9",
   name: "tool_call",
   parse: (value: JSONValue) => {
@@ -96,18 +91,12 @@ const toolCallStreamPart: DataStreamPart<
 
     return {
       type: "tool_call",
-      // biome-ignore lint/suspicious/noExplicitAny:  type is truly unknown
-      value: value as unknown as ToolCall<string, any>,
+      value: value as ToolCall,
     };
   },
 };
 
-const toolResultStreamPart: DataStreamPart<
-  "a",
-  "tool_result",
-  // biome-ignore lint/suspicious/noExplicitAny:  type is truly unknown
-  Omit<ToolResult<string, any, any>, "args" | "toolName">
-> = {
+const toolResultStreamPart: DataStreamPart<"a", "tool_result", ToolResult> = {
   code: "a",
   name: "tool_result",
   parse: (value: JSONValue) => {
@@ -125,11 +114,7 @@ const toolResultStreamPart: DataStreamPart<
 
     return {
       type: "tool_result",
-      value: value as unknown as Omit<
-        // biome-ignore lint/suspicious/noExplicitAny:  type is truly unknown
-        ToolResult<string, any, any>,
-        "args" | "toolName"
-      >,
+      value: value as ToolResult,
     };
   },
 };
