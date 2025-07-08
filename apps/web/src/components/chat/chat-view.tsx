@@ -61,7 +61,6 @@ export function ChatView() {
     }
   }, [chatId, chatsList.data, setSelectedModelId]);
 
-  // TODO: fix first message attachments
   // Send first message hook
   useEffect(() => {
     async function sendFirstMessage() {

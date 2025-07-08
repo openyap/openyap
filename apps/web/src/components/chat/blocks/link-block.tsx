@@ -10,10 +10,10 @@ export function LinkBlock({ token }: LinkBlockProps) {
   return (
     <a
       href={token.href}
-      title={token.title || ""}
       className="text-primary underline hover:text-primary/80"
       target="_blank"
       rel="noopener noreferrer"
+      {...(token.title && { title: token.title })}
     >
       {token.tokens.map((subToken, index) => (
         <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />

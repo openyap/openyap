@@ -6,15 +6,15 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/bash-logger.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/bash-logger.sh"
 					},
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/safety-check.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/safety-check.sh"
 					},
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/performance-monitor.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/performance-monitor.sh"
 					}
 				]
 			},
@@ -23,7 +23,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/performance-monitor.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/performance-monitor.sh"
 					}
 				]
 			},
@@ -32,7 +32,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/todo-tracker.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/todo-tracker.sh"
 					}
 				]
 			}
@@ -43,15 +43,15 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/format-code.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/format-code.sh"
 					},
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/lint-check.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/lint-check.sh"
 					},
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/discord.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/discord.sh"
 					}
 				]
 			}
@@ -62,11 +62,11 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/session-summary.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/session-summary.sh"
 					},
 					{
 						"type": "command",
-						"command": "bash .claude/hooks/discord.sh"
+						"command": "bash $(git rev-parse --show-toplevel)/.claude/hooks/discord.sh"
 					}
 				]
 			}
