@@ -17,142 +17,146 @@ import { models } from "~/lib/models";
 import { AnimatedShinyText } from "../ui/animated-shiny-text";
 
 export function ChatView() {
-  const { data: session } = authClient.useSession();
-  const params = useParams({ strict: false }) as { chatId?: string };
-  const chatId = params?.chatId;
-  const chatsList = useChatsList();
-  const { messages, status, append, stop, setSelectedModelId } =
-    useChat(chatId);
-  const generateChatTitle = useMutation(api.functions.chat.generateChatTitle);
-  const bottomRef = useRef<HTMLDivElement>(null);
+	const { data: session } = authClient.useSession();
+	const params = useParams({ strict: false }) as { chatId?: string };
+	const chatId = params?.chatId;
+	const chatsList = useChatsList();
+	const { messages, status, append, stop, setSelectedModelId } =
+		useChat(chatId);
+	const generateChatTitle = useMutation(api.functions.chat.generateChatTitle);
+	const bottomRef = useRef<HTMLDivElement>(null);
 
-  const [showScrollButton, setShowScrollButton] = useState(false);
+	const [showScrollButton, setShowScrollButton] = useState(false);
 
-  useEffect(() => {
-    const element = bottomRef.current;
+	useEffect(() => {
+		const element = bottomRef.current;
 
-    if (!element) return;
+		if (!element) return;
 
-    const observer = new IntersectionObserver(([entry]) => {
-      setShowScrollButton(!entry.isIntersecting);
-    });
+		const observer = new IntersectionObserver(([entry]) => {
+			setShowScrollButton(!entry.isIntersecting);
+		});
 
-    observer.observe(element);
+		observer.observe(element);
 
-    return () => observer.disconnect();
-  }, []);
+		return () => observer.disconnect();
+	}, []);
 
-  // Restore model sync hook
-  useEffect(() => {
-    if (!chatId || !chatsList.data) return;
-    const chat = (
-      chatsList.data as Array<{ _id: string; model?: string }>
-    ).find((c) => c._id === chatId);
-    if (chat?.model) {
-      const model = models.find((m) => m.modelId === chat.model);
-      if (model) {
-        setSelectedModelId((prev) => (prev === model.id ? prev : model.id));
-      }
-    }
-  }, [chatId, chatsList.data, setSelectedModelId]);
+	// Restore model sync hook
+	useEffect(() => {
+		if (!chatId || !chatsList.data) return;
+		const chat = (
+			chatsList.data as Array<{ _id: string; model?: string }>
+		).find((c) => c._id === chatId);
+		if (chat?.model) {
+			const model = models.find((m) => m.modelId === chat.model);
+			if (model) {
+				setSelectedModelId((prev) => (prev === model.id ? prev : model.id));
+			}
+		}
+	}, [chatId, chatsList.data, setSelectedModelId]);
 
-  // TODO: fix first message attachments
-  // Send first message hook
-  useEffect(() => {
-    async function sendFirstMessage() {
-      const firstMessage = localStorage.getItem("firstMessage");
-      const firstMessageAttachments = inputStore
-        .getState()
-        .getPendingAttachments();
+	// TODO: fix first message attachments
+	// Send first message hook
+	useEffect(() => {
+		async function sendFirstMessage() {
+			const firstMessage = localStorage.getItem("firstMessage");
+			const firstMessageAttachments = inputStore
+				.getState()
+				.getPendingAttachments();
 
-      if (
-        chatId &&
-        isConvexId<"chat">(chatId) &&
-        (firstMessage !== null || firstMessageAttachments.length > 0)
-      ) {
-        if (firstMessage !== null) {
-          localStorage.removeItem("firstMessage");
-        }
-        if (firstMessageAttachments.length > 0) {
-          inputStore.getState().clearFiles();
-        }
+			if (
+				chatId &&
+				isConvexId<"chat">(chatId) &&
+				(firstMessage !== null || firstMessageAttachments.length > 0)
+			) {
+				if (firstMessage !== null) {
+					localStorage.removeItem("firstMessage");
+				}
+				if (firstMessageAttachments.length > 0) {
+					inputStore.getState().clearFiles();
+				}
 
-        const titleMessage = firstMessage || "Shared an attachment";
-        await generateChatTitle({
-          message: titleMessage,
-          chatId,
-          sessionToken: session?.session.token ?? "skip",
-        });
-        await append({ content: firstMessage || "", attachments: firstMessageAttachments });
-      }
-    }
-    sendFirstMessage();
-  }, [chatId, session?.session.token, append, generateChatTitle]);
+				const titleMessage = firstMessage || "Shared an attachment";
+				await generateChatTitle({
+					message: titleMessage,
+					chatId,
+					sessionToken: session?.session.token ?? "skip",
+				});
+				await append({
+					content: firstMessage || "",
+					attachments: firstMessageAttachments,
+				});
+			}
+		}
+		sendFirstMessage();
+	}, [chatId, session?.session.token, append, generateChatTitle]);
 
-  const isEmpty = !chatId || messages.length === 0;
+	const isEmpty = !chatId || messages.length === 0;
 
-  return (
-    <div className="flex h-full flex-col bg-background">
-      <div className="mt-5 mb-16 flex-1 p-4">
-        <div className="mx-auto h-full max-w-3xl space-y-3">
-          {isEmpty ? (
-            <div className="flex h-full items-center justify-center text-foreground">
-              <h1 className="text-2xl">Where should we begin?</h1>
-            </div>
-          ) : (
-            <AnimatePresence initial={false}>
-              {messages.map((m, index) => {
-                if (
-                  status === ChatStatus.LOADING &&
-                  index === messages.length - 1 &&
-                  m.status !== "finished"
-                )
-                  return null;
+	return (
+		<div className="flex h-full flex-col bg-background">
+			<div className="mt-5 mb-16 flex-1 p-4">
+				<div className="mx-auto h-full max-w-3xl space-y-3">
+					{isEmpty ? (
+						<div className="flex h-full items-center justify-center text-foreground">
+							<h1 className="text-2xl">Where should we begin?</h1>
+						</div>
+					) : (
+						<AnimatePresence initial={false}>
+							{messages.map((m, index) => {
+								if (
+									status === ChatStatus.LOADING &&
+									index === messages.length - 1 &&
+									m.status !== "finished"
+								)
+									return null;
 
-                if (
-                  status === ChatStatus.STREAMING &&
-                  index === messages.length - 1
-                )
-                  return <Message key={m._id} data={m} user={session?.user} />;
+								if (
+									status === ChatStatus.STREAMING &&
+									index === messages.length - 1
+								)
+									return <Message key={m._id} data={m} user={session?.user} />;
 
-                return (
-                  <MemoizedMessage key={m._id} data={m} user={session?.user} />
-                );
-              })}
-            </AnimatePresence>
-          )}
-          {status === ChatStatus.LOADING && (
-            <div className="px-3 pt-2">
-              <AnimatedShinyText>Loading</AnimatedShinyText>
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-      </div>
+								return (
+									<MemoizedMessage key={m._id} data={m} user={session?.user} />
+								);
+							})}
+						</AnimatePresence>
+					)}
+					{status === ChatStatus.LOADING && (
+						<div className="px-3 pt-2">
+							<AnimatedShinyText>Loading</AnimatedShinyText>
+						</div>
+					)}
+					<div ref={bottomRef} />
+				</div>
+			</div>
 
-      <div className="sticky bottom-0 z-10 px-4">
-        <div className="relative">
-          <div className="-top-16 -translate-x-1/2 absolute left-1/2 z-20 transform">
-            <Button
-              variant="secondary"
-              size="icon"
-              className={`transition-all duration-300 ${showScrollButton ? "opacity-100" : "pointer-events-none opacity-0"} hover:bg-primary hover:text-primary-foreground`}
-              onClick={() =>
-                bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <ArrowDown className="size-4" />
-            </Button>
-          </div>
-          <ChatInput
-            chatId={chatId}
-            sessionToken={session?.session.token ?? "skip"}
-            disabled={status === "streaming"}
-            addUserMessage={(message) => append({ content: message })}
-            onStop={stop}
-          />
-        </div>
-      </div>
-    </div>
-  );
+			<div className="sticky bottom-0 z-10">
+				<div className="relative px-4">
+					<div className="-top-16 -translate-x-1/2 absolute left-1/2 z-20 transform">
+						<Button
+							variant="secondary"
+							size="icon"
+							className={`transition-all duration-300 ${showScrollButton ? "opacity-100" : "pointer-events-none opacity-0"} hover:bg-primary hover:text-primary-foreground`}
+							onClick={() =>
+								bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+							}
+						>
+							<ArrowDown className="size-4" />
+						</Button>
+					</div>
+					<ChatInput
+						chatId={chatId}
+						sessionToken={session?.session.token ?? "skip"}
+						disabled={status === "streaming"}
+						addUserMessage={(message) => append({ content: message })}
+						onStop={stop}
+					/>
+				</div>
+				<div className="h-4 bg-background" />
+			</div>
+		</div>
+	);
 }

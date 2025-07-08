@@ -174,14 +174,13 @@ const ChatInput = memo(function ChatInput({
 
 	return (
 		<div
-			className="mx-auto flex w-full max-w-3xl flex-col overflow-hidden"
+			className="relative mx-auto flex w-full max-w-3xl flex-col overflow-hidden"
 			onDrop={dropProps.onDrop}
 		>
 			<div
-				className="relative w-full"
-				{...dropProps}
-				style={{ boxShadow: "inset 0 -20px 0 0 var(--background)" }}
-			>
+				className="absolute inset-x-0 bottom-0 -z-10 bg-background rounded-t-md h-1/2"
+			/>
+			<div className="relative w-full" {...dropProps}>
 				<PromptInput
 					value={input}
 					onValueChange={(val) => {
@@ -261,7 +260,6 @@ const ChatInput = memo(function ChatInput({
 					</div>
 				)}
 			</div>
-			<div className="h-4 bg-background" />
 		</div>
 	);
 });
