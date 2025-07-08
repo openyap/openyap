@@ -10,8 +10,6 @@ import {
   updateStoredFiles,
 } from "~/lib/file-utils";
 
-// TODO: move modelId to chat metadata - this should be stored per chat in Convex
-
 type InputStore = {
   input: string;
   disabled: boolean;

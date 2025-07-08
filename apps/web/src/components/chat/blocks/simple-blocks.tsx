@@ -11,7 +11,7 @@ type BlockquoteBlockProps = {
 
 export function BlockquoteBlock({ token }: BlockquoteBlockProps) {
   return (
-    <blockquote className="my-4 border-primary border-l-4 pl-4 text-muted-foreground italic">
+    <blockquote className="my-1 border-primary border-l-4 pl-4 text-muted-foreground italic">
       {token.tokens.map((subToken, index) => (
         <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
       ))}
@@ -106,7 +106,7 @@ type HrBlockProps = {
 };
 
 export function HrBlock({ token: _token }: HrBlockProps) {
-  return <hr className="my-6 border-border" />;
+  return <hr className="my-1 border-border" />;
 }
 
 type StrongBlockProps = {
@@ -128,5 +128,15 @@ type TextBlockProps = {
 };
 
 export function TextBlock({ token }: TextBlockProps) {
+  if (token.tokens && token.tokens.length > 0) {
+    return (
+      <span className="text-foreground">
+        {token.tokens.map((subToken, index) => (
+          <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
+        ))}
+      </span>
+    );
+  }
+
   return <span className="text-foreground">{token.text}</span>;
 }

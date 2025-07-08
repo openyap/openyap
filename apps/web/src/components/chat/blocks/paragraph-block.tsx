@@ -8,7 +8,7 @@ type ParagraphBlockProps = {
 
 export function ParagraphBlock({ token }: ParagraphBlockProps) {
   return (
-    <p className="my-3 text-foreground leading-relaxed">
+    <p className="my-1 text-foreground leading-relaxed">
       {token.tokens.map((subToken, index) => (
         <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
       ))}
