@@ -71,7 +71,7 @@ export function AppSidebar() {
                     navigate({ to: "/" });
                   }}
                   tooltip="New Chat"
-                  className="bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
+                  className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
                 >
                   <Plus className="h-4 w-4" />
                   <span>New Chat</span>
