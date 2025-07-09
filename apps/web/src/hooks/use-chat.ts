@@ -106,6 +106,8 @@ export function useChat(chatId: string | undefined) {
           duration: 0,
           reasoningEffort: reasoningEffort,
         };
+        // This is used to avoid duplicate reasoning parts
+        let lastReasoningPart = "";
 
         await processDataStream({
           stream: response.body,
@@ -125,7 +127,10 @@ export function useChat(chatId: string | undefined) {
           },
           onReasoningPart(value) {
             setStatus(ChatStatus.STREAMING);
-            reasoningBuffer.text += value;
+            if (value !== lastReasoningPart) {
+              reasoningBuffer.text += value;
+              lastReasoningPart = value;
+            }
 
             const steps = splitReasoningSteps(reasoningBuffer.text).map(
               (step) => ({ text: step }),
