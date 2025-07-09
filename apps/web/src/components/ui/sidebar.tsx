@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { useIsMobile } from "~/hooks/use-mobile";
+import { useResponsiveSidebar } from "~/hooks/use-responsive-sidebar";
 import { cn } from "~/lib/utils";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
@@ -54,7 +55,7 @@ function useSidebar() {
 }
 
 function SidebarProvider({
-  defaultOpen = true,
+  defaultOpen,
   open: openProp,
   onOpenChange: setOpenProp,
   className,
@@ -68,32 +69,29 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = React.useState(false);
+  
+  const { open: responsiveOpen, setOpen: setResponsiveOpen } = useResponsiveSidebar(defaultOpen);
 
-  // This is the internal state of the sidebar.
-  // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(defaultOpen);
-  const open = openProp ?? _open;
+  const open = openProp ?? responsiveOpen;
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
       const openState = typeof value === "function" ? value(open) : value;
       if (setOpenProp) {
         setOpenProp(openState);
       } else {
-        _setOpen(openState);
+        setResponsiveOpen(openState);
       }
 
       // This sets the cookie to keep the sidebar state.
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
-    [setOpenProp, open],
+    [setOpenProp, open, setResponsiveOpen],
   );
 
-  // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
   }, [isMobile, setOpen]);
 
-  // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
@@ -109,15 +107,12 @@ function SidebarProvider({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggleSidebar]);
 
-  // Close desktop sidebar when switching to mobile to prevent CSS conflicts
   React.useEffect(() => {
     if (isMobile && open) {
       setOpen(false);
     }
   }, [isMobile, open, setOpen]);
 
-  // We add a state so that we can do data-state="expanded" or "collapsed".
-  // This makes it easier to style the sidebar with Tailwind classes.
   const state = open ? "expanded" : "collapsed";
 
   const contextValue = React.useMemo<SidebarContextProps>(
@@ -255,7 +250,7 @@ function Sidebar({
           className={cn(
             "flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm",
             state === "collapsed" &&
-              "cursor-pointer transition-colors duration-200 hover:bg-sidebar-accent",
+              "bg-background cursor-e-resize transition-colors duration-200 hover:bg-sidebar",
           )}
           onClick={state === "collapsed" ? toggleSidebar : undefined}
           role={state === "collapsed" ? "button" : undefined}

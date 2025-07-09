@@ -1,5 +1,7 @@
 @import "tailwindcss" source("./");
 @import "tw-animate-css";
+
+@plugin "tailwind-scrollbar";
 @plugin "@iconify/tailwind4" {
   prefixes: lucide, vscode-icons;
 }
@@ -32,7 +34,6 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 1.5rem;
-  scrollbar-gutter: stable;
 }
 
 .dark {
@@ -100,6 +101,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --breakpoint-md: 51rem;
+
   --animate-shiny-text: shiny-text 4s infinite;
   @keyframes shiny-text {
     0% {
@@ -142,4 +145,8 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.439 0 0);
   }
+}
+
+@utility no-scrollbar {
+  @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
 }

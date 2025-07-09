@@ -177,7 +177,7 @@ const ChatInput = memo(function ChatInput({
 
   return (
     <div
-      className="relative mx-auto flex w-full max-w-3xl flex-col overflow-hidden"
+      className="relative mx-auto flex w-full max-w-[752px] flex-col overflow-hidden"
       onDrop={dropProps.onDrop}
     >
       <div className="-z-10 absolute inset-x-0 bottom-0 h-1/2 rounded-t-md bg-background" />
