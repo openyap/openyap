@@ -40,6 +40,7 @@ export function useChat(chatId: string | undefined) {
   const [status, setStatus] = useState<ChatStatus>(ChatStatus.IDLE);
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(chatId);
 
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
@@ -49,11 +50,25 @@ export function useChat(chatId: string | undefined) {
       : "skip",
   );
 
+  // Handle chat switching
   useEffect(() => {
-    if (getChatMessages && status !== ChatStatus.STREAMING) {
+    if (chatId !== currentChatId) {
+      if (abortController) {
+        abortController.abort();
+        setAbortController(null);
+      }
+      setMessages([]);
+      setStatus(ChatStatus.IDLE);
+      setCurrentChatId(chatId);
+    }
+  }, [chatId, currentChatId, abortController]);
+
+  // Update messages when query data changes
+  useEffect(() => {
+    if (getChatMessages && status !== ChatStatus.STREAMING && chatId === currentChatId) {
       setMessages(getChatMessages);
     }
-  }, [getChatMessages, status]);
+  }, [getChatMessages, status, chatId, currentChatId]);
 
   const append = useCallback(
     async ({
@@ -106,100 +121,115 @@ export function useChat(chatId: string | undefined) {
           duration: 0,
           reasoningEffort: reasoningEffort,
         };
-        // This is used to avoid duplicate reasoning parts
         let lastReasoningPart = "";
 
         await processDataStream({
           stream: response.body,
           onTextPart(value) {
-            setStatus(ChatStatus.STREAMING);
-            contentBuffer += value;
+            // Only update if we're still on the same chat
+            if (chatId === currentChatId) {
+              setStatus(ChatStatus.STREAMING);
+              contentBuffer += value;
 
-            setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMessage = newMessages[newMessages.length - 1];
-              if (lastMessage) {
-                lastMessage.content = contentBuffer;
-                lastMessage.status = "generating";
-              }
-              return newMessages;
-            });
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                const lastMessage = newMessages[newMessages.length - 1];
+                if (lastMessage) {
+                  lastMessage.content = contentBuffer;
+                  lastMessage.status = "generating";
+                }
+                return newMessages;
+              });
+            }
           },
           onReasoningPart(value) {
-            setStatus(ChatStatus.STREAMING);
-            if (value !== lastReasoningPart) {
-              reasoningBuffer.text += value;
-              lastReasoningPart = value;
-            }
-
-            const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
-            );
-            const completedReasoning =
-              reasoningBuffer.text.length > 0
-                ? {
-                    text: reasoningBuffer.text,
-                    details: steps,
-                    duration: reasoningBuffer.duration,
-                    reasoningEffort: reasoningEffort,
-                  }
-                : undefined;
-
-            setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMessage = newMessages[newMessages.length - 1];
-              if (lastMessage) {
-                lastMessage.content = contentBuffer;
-                lastMessage.reasoning = completedReasoning;
-                lastMessage.status = "reasoning";
+            // Only update if we're still on the same chat
+            if (chatId === currentChatId) {
+              setStatus(ChatStatus.STREAMING);
+              if (value !== lastReasoningPart) {
+                reasoningBuffer.text += value;
+                lastReasoningPart = value;
               }
-              return newMessages;
-            });
+
+              const steps = splitReasoningSteps(reasoningBuffer.text).map(
+                (step) => ({ text: step }),
+              );
+              const completedReasoning =
+                reasoningBuffer.text.length > 0
+                  ? {
+                      text: reasoningBuffer.text,
+                      details: steps,
+                      duration: reasoningBuffer.duration,
+                      reasoningEffort: reasoningEffort,
+                    }
+                  : undefined;
+
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                const lastMessage = newMessages[newMessages.length - 1];
+                if (lastMessage) {
+                  lastMessage.content = contentBuffer;
+                  lastMessage.reasoning = completedReasoning;
+                  lastMessage.status = "reasoning";
+                }
+                return newMessages;
+              });
+            }
           },
           onFinishMessagePart() {
-            const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
-            );
-            const completedReasoning =
-              reasoningBuffer.text.length > 0
-                ? {
-                    text: reasoningBuffer.text,
-                    details: steps,
-                    duration: reasoningBuffer.duration,
-                    reasoningEffort: reasoningEffort,
-                  }
-                : undefined;
+            // Only update if we're still on the same chat
+            if (chatId === currentChatId) {
+              const steps = splitReasoningSteps(reasoningBuffer.text).map(
+                (step) => ({ text: step }),
+              );
+              const completedReasoning =
+                reasoningBuffer.text.length > 0
+                  ? {
+                      text: reasoningBuffer.text,
+                      details: steps,
+                      duration: reasoningBuffer.duration,
+                      reasoningEffort: reasoningEffort,
+                    }
+                  : undefined;
 
-            setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMessage = newMessages[newMessages.length - 1];
-              if (lastMessage) {
-                lastMessage.content = contentBuffer;
-                lastMessage.reasoning = completedReasoning;
-                lastMessage.status = "finished";
-              }
-              return newMessages;
-            });
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                const lastMessage = newMessages[newMessages.length - 1];
+                if (lastMessage) {
+                  lastMessage.content = contentBuffer;
+                  lastMessage.reasoning = completedReasoning;
+                  lastMessage.status = "finished";
+                }
+                return newMessages;
+              });
+            }
           },
         });
       } catch (error) {
         if ((error as Error).name === "AbortError") {
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage) {
-              lastMessage.status = "aborted";
-            }
-            return newMessages;
-          });
+          // Only update if we're still on the same chat
+          if (chatId === currentChatId) {
+            setMessages((prev) => {
+              const newMessages = [...prev];
+              const lastMessage = newMessages[newMessages.length - 1];
+              if (lastMessage) {
+                lastMessage.status = "aborted";
+              }
+              return newMessages;
+            });
+          }
         }
       } finally {
-        setStatus(ChatStatus.IDLE);
+        // Only update status if we're still on the same chat
+        if (chatId === currentChatId) {
+          setStatus(ChatStatus.IDLE);
+        }
         setAbortController(null);
       }
     },
     [
       chatId,
+      currentChatId,
       selectedModelId,
       messages,
       searchEnabled,
