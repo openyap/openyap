@@ -30,21 +30,41 @@ export function ChatView() {
     useChat(chatId);
   const generateChatTitle = useMutation(api.functions.chat.generateChatTitle);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   useEffect(() => {
-    const element = bottomRef.current;
+    const container = messagesContainerRef.current;
+    if (!container) return;
 
-    if (!element) return;
+    const checkScrollPosition = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+      setShowScrollButton(!isAtBottom);
+    };
 
-    const observer = new IntersectionObserver(([entry]) => {
-      setShowScrollButton(!entry.isIntersecting);
+    const handleScroll = () => {
+      checkScrollPosition();
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    
+    const observer = new MutationObserver(() => {
+      setTimeout(checkScrollPosition, 0);
     });
+    
+    observer.observe(container, { 
+      childList: true, 
+      subtree: true 
+    });
+    
+    checkScrollPosition();
 
-    observer.observe(element);
-
-    return () => observer.disconnect();
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      observer.disconnect();
+    };
   }, []);
 
   // Restore model sync hook
@@ -96,17 +116,29 @@ export function ChatView() {
     sendFirstMessage();
   }, [chatId, session?.session.token, append, generateChatTitle]);
 
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
+  };
+
   const isEmpty = !chatId || (messages.length === 0 && !isLoadingMessages);
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      <div className="mt-5 mb-16 flex-1 p-4">
-        <div className="mx-auto h-full max-w-3xl space-y-3">
-          {isEmpty ? (
-            <div className="flex h-full items-center justify-center text-foreground">
-              <h1 className="text-2xl">Where should we begin?</h1>
-            </div>
-          ) : (
+    <div className="flex h-screen flex-col bg-background">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 min-h-0 overflow-y-auto p-4 scrollbar scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-border/80 scrollbar-w-2"
+      >
+        {isEmpty ? (
+          <div className="flex h-full items-center justify-center text-foreground">
+            <h1 className="text-2xl">Where should we begin?</h1>
+          </div>
+        ) : (
+          <div className="mx-auto max-w-[752px] space-y-3 pt-5">
             <AnimatePresence initial={false}>
               {messages.map((m, index) => {
                 if (
@@ -133,26 +165,24 @@ export function ChatView() {
                 );
               })}
             </AnimatePresence>
-          )}
-          {status === ChatStatus.LOADING && (
-            <div className="px-3 pt-2">
-              <AnimatedShinyText>Loading</AnimatedShinyText>
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
+            {status === ChatStatus.LOADING && (
+              <div className="px-3 pt-2">
+                <AnimatedShinyText>Loading</AnimatedShinyText>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+        )}
       </div>
 
-      <div className="sticky bottom-0 z-10">
+      <div className="sticky bottom-0 z-10 bg-background">
         <div className="relative px-4">
           <div className="-top-16 -translate-x-1/2 absolute left-1/2 z-20 transform">
             <Button
               variant="secondary"
               size="icon"
               className={`transition-all duration-300 ${showScrollButton ? "opacity-100" : "pointer-events-none opacity-0"} hover:bg-primary hover:text-primary-foreground`}
-              onClick={() =>
-                bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-              }
+              onClick={scrollToBottom}
             >
               <ArrowDown className="size-4" />
             </Button>
