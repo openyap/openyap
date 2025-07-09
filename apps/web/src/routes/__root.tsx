@@ -60,8 +60,7 @@ function RootComponent() {
 function RootDocument({ children }: { readonly children: React.ReactNode }) {
   useEffect(() => {
     scan({
-      enabled: true,
-      showToolbar: true,
+      enabled: process.env.NODE_ENV === "development",
     });
   }, []);
 
