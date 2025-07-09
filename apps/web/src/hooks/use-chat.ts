@@ -257,6 +257,7 @@ export function useChat(chatId: string | undefined) {
 
   return {
     messages,
+    isLoadingMessages: !getChatMessages,
     status,
     append,
     stop,

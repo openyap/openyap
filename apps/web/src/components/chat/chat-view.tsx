@@ -26,7 +26,7 @@ export function ChatView() {
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
   const chatsList = useChatsList();
-  const { messages, status, append, stop, setSelectedModelId } =
+  const { messages, status, append, stop, setSelectedModelId, isLoadingMessages } =
     useChat(chatId);
   const generateChatTitle = useMutation(api.functions.chat.generateChatTitle);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -96,7 +96,7 @@ export function ChatView() {
     sendFirstMessage();
   }, [chatId, session?.session.token, append, generateChatTitle]);
 
-  const isEmpty = !chatId || messages.length === 0;
+  const isEmpty = !chatId || (messages.length === 0 && !isLoadingMessages);
 
   return (
     <div className="flex h-full flex-col bg-background">
