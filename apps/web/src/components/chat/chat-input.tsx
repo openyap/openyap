@@ -18,6 +18,7 @@ import { useFileDrop } from "~/hooks/use-file-drop";
 import { usePersisted } from "~/hooks/use-persisted";
 import { STORAGE_KEYS } from "~/lib/constants";
 import { api } from "~/lib/db/server";
+import type { SerializedFile } from "~/lib/file-utils";
 import { logger } from "~/lib/logger";
 import { getDefaultModel, getModelById, supportsModality } from "~/lib/models";
 import { cn } from "~/lib/utils";
@@ -26,7 +27,7 @@ interface ChatInputProps {
   chatId?: string;
   sessionToken: string;
   disabled: boolean;
-  addUserMessage: (message: string, attachments?: string[]) => void;
+  addUserMessage: (message: string, attachments?: SerializedFile[]) => void;
   onStop: () => void;
 }
 
@@ -59,6 +60,7 @@ const ChatInput = memo(function ChatInput({
     handleRemoveFileById,
     clearFiles,
   } = useFileAttachments();
+  const getPendingAttachments = inputStore.getState().getPendingAttachments;
 
   const { isDragOver, isDragOverTarget, dropProps } = useFileDrop({
     onDrop: handleFilesSelected,
@@ -138,7 +140,7 @@ const ChatInput = memo(function ChatInput({
         `Sending message to chat ${chatId} with ${attachedFiles.length} attachment(s)`,
       );
 
-      addUserMessage(text, []);
+      addUserMessage(text, getPendingAttachments());
 
       clearFiles();
     },
@@ -151,6 +153,7 @@ const ChatInput = memo(function ChatInput({
       selectedModelId,
       attachedFiles,
       clearFiles,
+      getPendingAttachments,
     ],
   );
 

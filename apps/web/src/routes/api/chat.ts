@@ -19,8 +19,56 @@ import { logger } from "~/lib/logger";
 import { getDefaultModel, getModelById, getSystemPrompt } from "~/lib/models";
 import { openrouter } from "~/lib/openrouter";
 
-// TODO: update messages with as much fields as possible
+// Types for better type safety
+type AttachmentData = {
+  name: string;
+  size: number;
+  type: string;
+  data: string;
+};
 
+type ProcessedAttachment = {
+  type: string;
+  name: string;
+  mimeType: string;
+  url: string;
+  extractedText?: string;
+};
+
+type AttachmentFromDb = {
+  type: string;
+  name: string;
+  mimeType?: string;
+  url: string;
+  extractedText?: string;
+};
+
+type MessageContent = {
+  type: string;
+  text?: string;
+  image?: string;
+};
+
+type StreamingState = {
+  contentBuffer: string;
+  reasoningBuffer: {
+    text: string;
+    details: { text: string }[];
+    duration: number;
+    reasoningEffort?: string;
+  };
+  lastReasoningDelta: string;
+  lastReasoningUpdate: number;
+  usage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  isAborted: boolean;
+  lastUpdate: number;
+};
+
+// Database operations
 const createAiMessage = async ({
   chatId,
   sessionToken,
@@ -95,6 +143,189 @@ const getMessageStatus = async ({
   });
 };
 
+// Attachment processing utilities
+const separateAttachments = (attachments: (string | object)[]) => {
+  const existingAttachmentIds = attachments.filter(
+    (att) => typeof att === "string" && att.startsWith("k"),
+  ) as string[];
+  const newAttachments = attachments.filter(
+    (att) => typeof att === "object" && att !== null && "data" in att,
+  ) as AttachmentData[];
+  return { existingAttachmentIds, newAttachments };
+};
+
+const fetchExistingAttachments = async (
+  existingAttachmentIds: string[],
+  sessionToken: string,
+) => {
+  return await Promise.all(
+    existingAttachmentIds.map(async (attachmentId) => {
+      try {
+        return await convexServer.query(
+          api.functions.attachment.getAttachment,
+          {
+            attachmentId: attachmentId as AttachmentId,
+            sessionToken,
+          },
+        );
+      } catch (error) {
+        logger.error(
+          `Failed to fetch attachment ${attachmentId} from database: ${error}`,
+        );
+        return null;
+      }
+    }),
+  );
+};
+
+const processAttachmentsForAI = (
+  existingAttachmentsData: (AttachmentFromDb | null)[],
+  newAttachments: AttachmentData[],
+): ProcessedAttachment[] => {
+  return [
+    ...existingAttachmentsData
+      .filter((att): att is AttachmentFromDb => att !== null)
+      .map((att) => ({
+        type: att.type,
+        name: att.name,
+        mimeType: att.mimeType || "application/octet-stream",
+        url: att.url,
+        extractedText: att.extractedText,
+      })),
+    ...newAttachments.map((att) => ({
+      type: att.type.startsWith("image/") ? "image" : "document",
+      name: att.name,
+      mimeType: att.type,
+      url: `data:${att.type};base64,${att.data}`,
+      extractedText: undefined,
+    })),
+  ];
+};
+
+const transformMessageWithAttachments = (
+  lastMessage: { content: string; [key: string]: unknown },
+  allAttachmentsForAI: ProcessedAttachment[],
+) => {
+  const messageContent: MessageContent[] = [];
+
+  // Add text content if it exists
+  if (lastMessage.content.trim()) {
+    messageContent.push({ type: "text", text: lastMessage.content });
+  }
+
+  for (const attachment of allAttachmentsForAI) {
+    if (attachment.type === "image") {
+      messageContent.push({
+        type: "image",
+        image: attachment.url,
+      });
+    } else if (attachment.type === "pdf" || attachment.type === "document") {
+      // For text-based documents, include as text reference
+      messageContent.push({
+        type: "text",
+        text: `[File: ${attachment.name} (${attachment.mimeType})]${
+          attachment.extractedText
+            ? `\n\nContent:\n${attachment.extractedText}`
+            : ""
+        }`,
+      });
+    }
+  }
+
+  return messageContent;
+};
+
+const convertBase64ToBlob = (base64Data: string, mimeType: string): Blob => {
+  const binary = atob(base64Data);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mimeType });
+};
+
+const uploadSingleAttachment = async (
+  attachment: AttachmentData,
+  userMessageId: MessageId,
+  sessionToken: string,
+): Promise<string | null> => {
+  try {
+    // Generate upload URL
+    const uploadUrl = await convexServer.mutation(
+      api.functions.attachment.generateUploadUrl,
+      { sessionToken },
+    );
+
+    // Convert base64 to blob
+    const blob = convertBase64ToBlob(attachment.data, attachment.type);
+
+    // Upload to Convex storage
+    const uploadResult = await fetch(uploadUrl, {
+      method: "POST",
+      headers: { "Content-Type": attachment.type },
+      body: blob,
+    });
+
+    if (!uploadResult.ok) {
+      throw new Error("Upload failed");
+    }
+
+    const { storageId } = await uploadResult.json();
+
+    // Create attachment record
+    const attachmentId = await convexServer.mutation(
+      api.functions.attachment.createAttachment,
+      {
+        storageId,
+        messageId: userMessageId,
+        name: attachment.name,
+        size: attachment.size,
+        mimeType: attachment.type,
+        sessionToken,
+      },
+    );
+
+    return attachmentId as string;
+  } catch (error) {
+    logger.error(
+      `Failed to upload attachment "${attachment.name}" (${attachment.type}): ${error}`,
+    );
+    return null;
+  }
+};
+
+const processAttachmentsInBackground = async (
+  newAttachments: AttachmentData[],
+  userMessageId: MessageId,
+  existingAttachmentIds: string[],
+  sessionToken: string,
+) => {
+  try {
+    const uploadPromises = newAttachments.map((attachment) =>
+      uploadSingleAttachment(attachment, userMessageId, sessionToken),
+    );
+
+    const uploadedAttachmentIds = await Promise.all(uploadPromises);
+    const successfulUploads = uploadedAttachmentIds.filter(
+      (id): id is string => id !== null,
+    );
+
+    // Combine existing and new attachment IDs for updating the message
+    const allAttachmentIds = [...existingAttachmentIds, ...successfulUploads];
+
+    // Update message with all attachment IDs
+    if (allAttachmentIds.length > 0) {
+      await convexServer.mutation(api.functions.message.updateUserMessage, {
+        messageId: userMessageId,
+        sessionToken,
+        attachments: allAttachmentIds.map((id) => id as AttachmentId),
+      });
+    }
+  } catch (error) {
+    logger.error(`Failed to process attachments in background: ${error}`);
+  }
+};
+
 export const ServerRoute = createServerFileRoute("/api/chat").methods({
   GET: ({ request: _ }) => {
     return new Response("What do you think chat?");
@@ -134,77 +365,27 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
       // Transform messages with attachment content for AI model
       if (attachments.length > 0) {
-        // Check if attachments are already uploaded (have IDs) or new base64 data
-        const existingAttachmentIds = attachments.filter(
-          (att: string | object) =>
-            typeof att === "string" && att.startsWith("k"),
-        ) as string[];
-        const newAttachments = attachments.filter(
-          (att: string | object) => typeof att === "object" && "data" in att,
-        ) as { name: string; size: number; type: string; data: string }[];
+        const { existingAttachmentIds, newAttachments } =
+          separateAttachments(attachments);
 
         // Fetch existing attachments data if any
-        const existingAttachmentsData = await Promise.all(
-          existingAttachmentIds.map(async (attachmentId) => {
-            try {
-              return await convexServer.query(
-                api.functions.attachment.getAttachment,
-                {
-                  attachmentId: attachmentId as AttachmentId,
-                  sessionToken,
-                },
-              );
-            } catch (error) {
-              logger.error(
-                `Failed to fetch attachment ${attachmentId} from database: ${error}`,
-              );
-              return null;
-            }
-          }),
+        const existingAttachmentsData = await fetchExistingAttachments(
+          existingAttachmentIds,
+          sessionToken,
         );
 
         // Combine all attachments for message transformation
-        const allAttachmentsForAI = [
-          ...existingAttachmentsData.filter((att) => att !== null),
-          ...newAttachments.map((att) => ({
-            type: att.type.startsWith("image/") ? "image" : "document",
-            name: att.name,
-            mimeType: att.type,
-            url: `data:${att.type};base64,${att.data}`,
-            extractedText: undefined,
-          })),
-        ];
+        const allAttachmentsForAI = processAttachmentsForAI(
+          existingAttachmentsData,
+          newAttachments,
+        );
 
         // Transform last message to include attachments for AI
         if (allAttachmentsForAI.length > 0) {
-          const messageContent: Array<{
-            type: string;
-            text?: string;
-            image?: string;
-          }> = [];
-
-          // Add text content if it exists
-          if (lastMessage.content.trim()) {
-            messageContent.push({ type: "text", text: lastMessage.content });
-          }
-
-          for (const attachment of allAttachmentsForAI) {
-            if (attachment && attachment.type === "image") {
-              messageContent.push({
-                type: "image",
-                image: attachment.url,
-              });
-            } else if (
-              attachment &&
-              (attachment.type === "pdf" || attachment.type === "document")
-            ) {
-              // For text-based documents, include as text reference
-              messageContent.push({
-                type: "text",
-                text: `[File: ${attachment.name} (${attachment.mimeType})]${attachment.extractedText ? `\n\nContent:\n${attachment.extractedText}` : ""}`,
-              });
-            }
-          }
+          const messageContent = transformMessageWithAttachments(
+            lastMessage,
+            allAttachmentsForAI,
+          );
 
           // Update transformedMessages with multimodal content
           transformedMessages = [
@@ -219,96 +400,12 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         // Process attachments in background (fire-and-forget) - only for new attachments
         if (newAttachments.length > 0 && userMessageId) {
           (async () => {
-            try {
-              const uploadPromises = newAttachments.map(
-                async (attachment: {
-                  name: string;
-                  size: number;
-                  type: string;
-                  data: string;
-                }) => {
-                  try {
-                    // Generate upload URL
-                    const uploadUrl = await convexServer.mutation(
-                      api.functions.attachment.generateUploadUrl,
-                      {
-                        sessionToken,
-                      },
-                    );
-
-                    // Convert base64 to blob
-                    const binary = atob(attachment.data);
-                    const bytes = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) {
-                      bytes[i] = binary.charCodeAt(i);
-                    }
-                    const blob = new Blob([bytes], { type: attachment.type });
-
-                    // Upload to Convex storage
-                    const uploadResult = await fetch(uploadUrl, {
-                      method: "POST",
-                      headers: { "Content-Type": attachment.type },
-                      body: blob,
-                    });
-
-                    if (!uploadResult.ok) {
-                      throw new Error("Upload failed");
-                    }
-
-                    const { storageId } = await uploadResult.json();
-
-                    // Create attachment record
-                    const attachmentId = await convexServer.mutation(
-                      api.functions.attachment.createAttachment,
-                      {
-                        storageId,
-                        messageId: userMessageId as MessageId,
-                        name: attachment.name,
-                        size: attachment.size,
-                        mimeType: attachment.type,
-                        sessionToken,
-                      },
-                    );
-
-                    return attachmentId as string;
-                  } catch (error) {
-                    logger.error(
-                      `Failed to upload attachment "${attachment.name}" (${attachment.type}): ${error}`,
-                    );
-                    return null;
-                  }
-                },
-              );
-
-              const uploadedAttachmentIds = await Promise.all(uploadPromises);
-              const successfulUploads = uploadedAttachmentIds.filter(
-                (id): id is string => id !== null,
-              );
-
-              // Combine existing and new attachment IDs for updating the message
-              const allAttachmentIds = [
-                ...existingAttachmentIds,
-                ...successfulUploads,
-              ];
-
-              // Update message with all attachment IDs
-              if (allAttachmentIds.length > 0) {
-                await convexServer.mutation(
-                  api.functions.message.updateUserMessage,
-                  {
-                    messageId: userMessageId as MessageId,
-                    sessionToken,
-                    attachments: allAttachmentIds.map(
-                      (id) => id as AttachmentId,
-                    ),
-                  },
-                );
-              }
-            } catch (error) {
-              logger.error(
-                `Failed to process attachments in background: ${error}`,
-              );
-            }
+            await processAttachmentsInBackground(
+              newAttachments,
+              userMessageId,
+              existingAttachmentIds,
+              sessionToken,
+            );
           })();
         }
       }
@@ -372,191 +469,17 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         }
       })();
 
+      // Start streaming processing in the background
       (async () => {
-        let contentBuffer = "";
-        const reasoningBuffer: MessageReasoning = {
-          text: "",
-          details: [],
-          duration: 0,
+        await processStreamingResponse(
+          result,
+          messageId,
+          sessionToken,
           reasoningEffort,
-        };
-        // This is used to avoid duplicate reasoning parts
-        let lastReasoningDelta = "";
-        let lastReasoningUpdate = Date.now();
-        let usage: MessageUsage;
-        let isAborted = false;
-        let lastUpdate = Date.now();
-        const UPDATE_INTERVAL = UI_CONSTANTS.POLLING_INTERVALS.UPDATE_INTERVAL;
-
-        try {
-          for await (const part of result.fullStream) {
-            const messageStatus = await getMessageStatus({
-              messageId,
-              sessionToken,
-            });
-            if (messageStatus === "aborted") {
-              isAborted = true;
-              break;
-            }
-
-            let isReasoning = false;
-
-            if (part.type === "text-delta") {
-              contentBuffer += part.textDelta;
-            }
-            if (
-              part.type === "reasoning" &&
-              part.textDelta !== lastReasoningDelta
-            ) {
-              isReasoning = true;
-              reasoningBuffer.text += part.textDelta;
-              const steps = splitReasoningSteps(reasoningBuffer.text).map(
-                (step) => ({ text: step }),
-              );
-              reasoningBuffer.details = steps;
-              reasoningBuffer.duration += Date.now() - lastReasoningUpdate;
-              lastReasoningUpdate = Date.now();
-              lastReasoningDelta = part.textDelta;
-            }
-
-            if (part.type === "finish") {
-              usage = part.usage;
-            }
-
-            const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
-            );
-            const completedReasoning =
-              reasoningBuffer.text.length > 0
-                ? {
-                    text: reasoningBuffer.text,
-                    details: steps,
-                    duration: reasoningBuffer.duration,
-                    reasoningEffort: reasoningEffort,
-                  }
-                : undefined;
-
-            const now = Date.now();
-            const isFinal = part.type === "finish";
-            const shouldUpdate = isFinal || now - lastUpdate > UPDATE_INTERVAL;
-            if (shouldUpdate) {
-              lastUpdate = now;
-              await updateAiMessage({
-                messageId,
-                content: contentBuffer,
-                reasoning: completedReasoning,
-                status: isReasoning ? "reasoning" : "generating",
-                sessionToken,
-              });
-            }
-          }
-
-          if (isAborted) {
-            logger.info(`Chat stream aborted by client: ${chatId}`);
-            const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
-            );
-            const completedReasoning =
-              reasoningBuffer.text.length > 0
-                ? {
-                    text: reasoningBuffer.text,
-                    details: steps,
-                    duration: reasoningBuffer.duration,
-                    reasoningEffort: reasoningEffort,
-                  }
-                : undefined;
-            await updateAiMessage({
-              messageId,
-              content: contentBuffer,
-              reasoning: completedReasoning,
-              status: "aborted",
-              sessionToken,
-              model: selectedModel.name,
-              provider,
-              usage,
-              historyEntry: {
-                version: 1,
-                content: contentBuffer,
-                status: "aborted",
-                reasoning: completedReasoning,
-                provider,
-                model: selectedModel.name,
-                usage,
-              },
-            });
-            return;
-          }
-
-          const steps = splitReasoningSteps(reasoningBuffer.text).map(
-            (step) => ({ text: step }),
-          );
-          const completedReasoning =
-            reasoningBuffer.text.length > 0
-              ? {
-                  text: reasoningBuffer.text,
-                  details: steps,
-                  duration: reasoningBuffer.duration,
-                  reasoningEffort: reasoningEffort,
-                }
-              : undefined;
-          await updateAiMessage({
-            messageId,
-            content: contentBuffer,
-            reasoning: completedReasoning,
-            status: "finished",
-            sessionToken,
-            model: selectedModel.name,
-            provider,
-            usage,
-            historyEntry: {
-              version: 1,
-              content: contentBuffer,
-              status: "finished",
-              reasoning: completedReasoning,
-              provider,
-              model: selectedModel.name,
-              usage,
-            },
-          });
-        } catch (error) {
-          if ((error as Error).name === "AbortError") {
-            const steps = splitReasoningSteps(reasoningBuffer.text).map(
-              (step) => ({ text: step }),
-            );
-            const completedReasoning =
-              reasoningBuffer.text.length > 0
-                ? {
-                    text: reasoningBuffer.text,
-                    details: steps,
-                    duration: reasoningBuffer.duration,
-                    reasoningEffort: reasoningEffort,
-                  }
-                : undefined;
-            await updateAiMessage({
-              messageId,
-              content: contentBuffer,
-              reasoning: completedReasoning,
-              status: "aborted",
-              sessionToken,
-              model: selectedModel.name,
-              provider,
-              usage,
-              historyEntry: {
-                version: 1,
-                content: contentBuffer,
-                status: "aborted",
-                reasoning: completedReasoning,
-                provider,
-                model: selectedModel.name,
-                usage,
-              },
-            });
-          } else {
-            logger.error(
-              `Failed to update AI message during streaming: ${error}`,
-            );
-          }
-        }
+          selectedModel,
+          provider,
+          chatId,
+        );
       })();
 
       return result.toDataStreamResponse({
@@ -570,3 +493,119 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
     }
   },
 });
+
+// Streaming response processing
+const processStreamingResponse = async (
+  // biome-ignore lint/suspicious/noExplicitAny: no easy way to type this
+  result: any,
+  messageId: MessageId,
+  sessionToken: string,
+  reasoningEffort: string | undefined,
+  selectedModel: ReturnType<typeof getModelById>,
+  provider: string,
+  _chatId: Id<"chat">,
+) => {
+  const state: StreamingState = {
+    contentBuffer: "",
+    reasoningBuffer: {
+      text: "",
+      details: [],
+      duration: 0,
+      reasoningEffort,
+    },
+    lastReasoningDelta: "",
+    lastReasoningUpdate: 0,
+    usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+    isAborted: false,
+    lastUpdate: 0,
+  };
+
+  const processReasoning = (textDelta: string) => {
+    const cleanedDelta = textDelta?.replace(/\0/g, "") || "";
+    state.reasoningBuffer.text = cleanedDelta;
+    const steps = splitReasoningSteps(cleanedDelta);
+    state.reasoningBuffer.details = steps.map((step) => ({ text: step }));
+    state.lastReasoningDelta = cleanedDelta;
+    state.lastReasoningUpdate = Date.now();
+  };
+
+  const shouldUpdateMessage = () => {
+    const now = Date.now();
+    return (
+      now - state.lastUpdate > UI_CONSTANTS.POLLING_INTERVALS.UPDATE_INTERVAL ||
+      now - state.lastReasoningUpdate >
+        UI_CONSTANTS.POLLING_INTERVALS.SLOW_UPDATE
+    );
+  };
+
+  const updateMessage = async (status = "streaming") => {
+    if (!shouldUpdateMessage() && status === "streaming") return;
+
+    const currentReasoning =
+      state.reasoningBuffer.details.length > 0
+        ? state.reasoningBuffer
+        : undefined;
+    const currentUsage = state.usage.totalTokens > 0 ? state.usage : undefined;
+
+    await updateAiMessage({
+      messageId,
+      content: state.contentBuffer,
+      reasoning: currentReasoning,
+      status,
+      model: selectedModel?.name,
+      provider,
+      usage: currentUsage,
+      sessionToken,
+    });
+
+    state.lastUpdate = Date.now();
+  };
+
+  try {
+    for await (const chunk of result.fullStream) {
+      switch (chunk.type) {
+        case "text-delta":
+          state.contentBuffer += chunk.textDelta;
+          await updateMessage();
+          break;
+
+        case "reasoning":
+          processReasoning(chunk.textDelta);
+          await updateMessage();
+          break;
+
+        case "tool-call":
+          logger.info(`Tool call: ${chunk.toolName}`);
+          break;
+
+        case "error":
+          logger.error(`Streaming error: ${chunk.error}`);
+          state.isAborted = true;
+          break;
+
+        case "finish":
+          logger.info(`Streaming finished: ${chunk.finishReason}`);
+          break;
+
+        default:
+          break;
+      }
+    }
+
+    // Final update
+    if (!state.isAborted) {
+      const messageStatus = await getMessageStatus({ messageId, sessionToken });
+      if (messageStatus === "streaming") {
+        await updateMessage("completed");
+        logger.info(`Message completed: ${messageId}`);
+      }
+    }
+  } catch (error) {
+    logger.error(`Streaming processing failed: ${error}`);
+    state.isAborted = true;
+    const messageStatus = await getMessageStatus({ messageId, sessionToken });
+    if (messageStatus === "streaming") {
+      await updateMessage("failed");
+    }
+  }
+};

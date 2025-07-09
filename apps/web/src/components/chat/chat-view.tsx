@@ -162,7 +162,9 @@ export function ChatView() {
               chatId={chatId}
               sessionToken={session?.session.token ?? "skip"}
               disabled={status === "streaming"}
-              addUserMessage={(message) => append({ content: message })}
+              addUserMessage={(message, attachments) =>
+                append({ content: message, attachments })
+              }
               onStop={stop}
             />
           </ChatErrorBoundary>
