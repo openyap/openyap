@@ -380,6 +380,8 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           duration: 0,
           reasoningEffort,
         };
+        // This is used to avoid duplicate reasoning parts
+        let lastReasoningDelta = "";
         let lastReasoningUpdate = Date.now();
         let usage: MessageUsage;
         let isAborted = false;
@@ -402,7 +404,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             if (part.type === "text-delta") {
               contentBuffer += part.textDelta;
             }
-            if (part.type === "reasoning") {
+            if (part.type === "reasoning" && part.textDelta !== lastReasoningDelta) {
               isReasoning = true;
               reasoningBuffer.text += part.textDelta;
               const steps = splitReasoningSteps(reasoningBuffer.text).map(
@@ -411,6 +413,7 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
               reasoningBuffer.details = steps;
               reasoningBuffer.duration += Date.now() - lastReasoningUpdate;
               lastReasoningUpdate = Date.now();
+              lastReasoningDelta = part.textDelta;
             }
 
             if (part.type === "finish") {
