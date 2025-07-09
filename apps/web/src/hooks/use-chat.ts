@@ -40,7 +40,9 @@ export function useChat(chatId: string | undefined) {
   const [status, setStatus] = useState<ChatStatus>(ChatStatus.IDLE);
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
-  const [currentChatId, setCurrentChatId] = useState<string | undefined>(chatId);
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(
+    chatId,
+  );
 
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
@@ -65,7 +67,11 @@ export function useChat(chatId: string | undefined) {
 
   // Update messages when query data changes
   useEffect(() => {
-    if (getChatMessages && status !== ChatStatus.STREAMING && chatId === currentChatId) {
+    if (
+      getChatMessages &&
+      status !== ChatStatus.STREAMING &&
+      chatId === currentChatId
+    ) {
       setMessages(getChatMessages);
     }
   }, [getChatMessages, status, chatId, currentChatId]);

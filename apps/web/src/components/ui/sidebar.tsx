@@ -2,7 +2,7 @@
 
 import { Slot } from "@radix-ui/react-slot";
 import { type VariantProps, cva } from "class-variance-authority";
-import { PanelLeftIcon } from "lucide-react";
+import { ArrowLeftToLine, ArrowRightToLine, PanelLeftIcon } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "~/components/ui/button";
@@ -170,7 +170,8 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  const { isMobile, state, openMobile, setOpenMobile, toggleSidebar } =
+    useSidebar();
 
   if (collapsible === "none") {
     return (
@@ -251,7 +252,25 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm"
+          className={cn(
+            "flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm",
+            state === "collapsed" &&
+              "cursor-pointer transition-colors duration-200 hover:bg-sidebar-accent",
+          )}
+          onClick={state === "collapsed" ? toggleSidebar : undefined}
+          role={state === "collapsed" ? "button" : undefined}
+          aria-label={state === "collapsed" ? "Expand Sidebar" : undefined}
+          tabIndex={state === "collapsed" ? 0 : undefined}
+          onKeyDown={
+            state === "collapsed"
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleSidebar();
+                  }
+                }
+              : undefined
+          }
         >
           {children}
         </div>
@@ -265,7 +284,8 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, state } = useSidebar();
+  const [isHovered, setIsHovered] = React.useState(false);
 
   return (
     <Button
@@ -273,14 +293,34 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-7", className)}
+      className={cn("group size-7", className)}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       {...props}
     >
-      <PanelLeftIcon />
+      <PanelLeftIcon
+        className={cn(
+          "transition-opacity duration-200",
+          state === "collapsed" && "group-hover:opacity-0",
+          state === "expanded" && isHovered && "opacity-0",
+        )}
+      />
+      <ArrowRightToLine
+        className={cn(
+          "absolute opacity-0 transition-opacity duration-200",
+          state === "collapsed" && "group-hover:opacity-100",
+        )}
+      />
+      <ArrowLeftToLine
+        className={cn(
+          "absolute opacity-0 transition-opacity duration-200",
+          state === "expanded" && isHovered && "opacity-100",
+        )}
+      />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
