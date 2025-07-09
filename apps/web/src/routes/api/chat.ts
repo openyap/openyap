@@ -404,7 +404,10 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
             if (part.type === "text-delta") {
               contentBuffer += part.textDelta;
             }
-            if (part.type === "reasoning" && part.textDelta !== lastReasoningDelta) {
+            if (
+              part.type === "reasoning" &&
+              part.textDelta !== lastReasoningDelta
+            ) {
               isReasoning = true;
               reasoningBuffer.text += part.textDelta;
               const steps = splitReasoningSteps(reasoningBuffer.text).map(

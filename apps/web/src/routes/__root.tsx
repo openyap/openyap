@@ -72,11 +72,13 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
       <body>
         <ThemeProvider defaultTheme="system">
           <SidebarProvider>
-            <div className="fixed top-0 left-0 z-50 p-4">
-              <SidebarTrigger />
-            </div>
             <AppSidebar />
-            <SidebarInset>{children}</SidebarInset>
+            <SidebarInset>
+              <div className="fixed top-4 left-4 z-50 md:hidden">
+                <SidebarTrigger />
+              </div>
+              {children}
+            </SidebarInset>
           </SidebarProvider>
         </ThemeProvider>
         <Scripts />

@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { Pin, PinOff, X } from "lucide-react";
+import { Pin, PinOff, Plus, X } from "lucide-react";
 import { Moon, Sun } from "lucide-react";
 import { ProfileCard } from "~/components/auth/profile-card";
 import { useTheme } from "~/components/theme-provider";
@@ -12,11 +12,13 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from "~/components/ui/sidebar";
 import {
   Tooltip,
@@ -42,11 +44,19 @@ export function AppSidebar() {
   const unpinned = (data ?? []).filter((chat) => !chat.pinnedAt);
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="relative pt-2">
-          <h1 className="text-center font-semibold text-lg">OpenYap</h1>
-          <div className="-translate-y-1/2 absolute top-1/2 right-0">
+        <div className="flex items-center justify-between h-12">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <Link
+              to="/"
+              className="flex items-center font-semibold text-lg group-data-[collapsible=icon]:hidden"
+            >
+              OpenYap
+            </Link>
+          </div>
+          <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
             <ThemeToggle />
           </div>
         </div>
@@ -55,23 +65,26 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <Button
-                onClick={() => {
-                  navigate({ to: "/" });
-                }}
-              >
-                New Chat
-              </Button>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => {
+                    navigate({ to: "/" });
+                  }}
+                  tooltip="New Chat"
+                  className="bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>New Chat</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <Separator />
+        <Separator className="group-data-[collapsible=icon]:hidden" />
         {pinned.length > 0 && (
-          <SidebarGroup>
+          <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel>Pinned</SidebarGroupLabel>
             <SidebarGroupContent>
-              <div className="p-1 font-medium text-muted-foreground text-xs">
-                Pinned
-              </div>
               <SidebarMenu>
                 {pinned.map((chat) => (
                   <SidebarMenuItem
@@ -83,6 +96,7 @@ export function AppSidebar() {
                       isActive={
                         "chatId" in params && params.chatId === chat._id
                       }
+                      tooltip={chat.title}
                       className="group-hover/item:bg-sidebar-accent"
                     >
                       <Link
@@ -90,19 +104,10 @@ export function AppSidebar() {
                         to="/chat/$chatId"
                         params={{ chatId: chat._id }}
                       >
-                        <Tooltip>
-                          <TooltipTrigger className="truncate" asChild>
-                            <span className="block max-w-full truncate pl-1">
-                              {chat.title}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent hideWhenDetached>
-                            <p>{chat.title}</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        <span>{chat.title}</span>
                       </Link>
                     </SidebarMenuButton>
-                    <div className="absolute top-1.5 right-1 z-10 hidden flex-row items-center gap-1 group-hover/item:flex group-hover/item:bg-sidebar-accent">
+                    <div className="absolute top-1.5 right-1 z-10 hidden flex-row items-center gap-1 group-hover/item:flex group-hover/item:bg-sidebar-accent group-data-[collapsible=icon]:hidden">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <SidebarMenuAction
@@ -155,7 +160,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
-        <SidebarGroup>
+        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
           <SidebarGroupContent>
             <SidebarMenu>
               {unpinned.map((chat) => (
@@ -163,6 +168,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={"chatId" in params && params.chatId === chat._id}
+                    tooltip={chat.title}
                     className="group-hover/item:bg-sidebar-accent"
                   >
                     <Link
@@ -170,19 +176,10 @@ export function AppSidebar() {
                       to="/chat/$chatId"
                       params={{ chatId: chat._id }}
                     >
-                      <Tooltip>
-                        <TooltipTrigger className="truncate" asChild>
-                          <span className="block max-w-full truncate pl-1">
-                            {chat.title}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent hideWhenDetached>
-                          <p>{chat.title}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <span>{chat.title}</span>
                     </Link>
                   </SidebarMenuButton>
-                  <div className="absolute top-1.5 right-1 z-10 hidden flex-row items-center gap-1 group-hover/item:flex group-hover/item:bg-sidebar-accent">
+                  <div className="absolute top-1.5 right-1 z-10 hidden flex-row items-center gap-1 group-hover/item:flex group-hover/item:bg-sidebar-accent group-data-[collapsible=icon]:hidden">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <SidebarMenuAction
