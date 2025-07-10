@@ -64,7 +64,12 @@ export function ProfileCard() {
 
   if (session.isPending) {
     return (
-      <div className="flex h-12 animate-pulse items-center justify-center rounded bg-gray-200" />
+      <div className="!justify-start flex h-10 w-full min-w-8 cursor-pointer flex-row items-center gap-3 px-[2px]">
+        <div className="h-7 w-7 flex-shrink-0 animate-pulse rounded-full bg-gray-200" />
+        <div className="group-data-[collapsible=icon]:-translate-x-0.5 block w-full min-w-0 max-w-full overflow-hidden transition-all duration-200 group-data-[collapsible=icon]:opacity-0">
+          <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
+        </div>
+      </div>
     );
   }
 
@@ -74,7 +79,7 @@ export function ProfileCard() {
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
-            className="!justify-start flex h-12 w-full min-w-8 cursor-pointer flex-row items-center gap-3 px-[2px] hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground group-data-[collapsible=icon]:hover:bg-transparent"
+            className="!justify-start flex h-10 w-full min-w-8 cursor-pointer flex-row items-center gap-3 px-[2px] hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground group-data-[collapsible=icon]:hover:bg-transparent"
           >
             <Avatar className="h-7 w-7 flex-shrink-0">
               <AvatarImage src={session.data.user.image ?? ""} />
@@ -113,14 +118,19 @@ export function ProfileCard() {
   }
 
   return (
-    <div className="flex h-12 items-center justify-center rounded-md">
+    <div className="flex h-10 items-center justify-center rounded-md">
       <Button
+        variant="ghost"
         onClick={handleGoogleLogin}
-        className="h-full w-full"
+        className="!justify-start flex h-full w-full min-w-8 cursor-pointer flex-row items-center gap-3 px-[2px] hover:bg-accent hover:text-accent-foreground group-data-[collapsible=icon]:hover:bg-transparent"
         disabled={isPending}
       >
-        <DomainLogo domain="google.com" config={{ type: "symbol" }} />
-        Continue with Google
+        <div className="h-7 w-7 flex-shrink-0 flex items-center justify-center">
+          <DomainLogo domain="google.com" config={{ type: "symbol" }} />
+        </div>
+        <span className="group-data-[collapsible=icon]:-translate-x-0.5 block w-full min-w-0 max-w-full overflow-hidden truncate text-start font-medium text-sm transition-all duration-200 group-data-[collapsible=icon]:opacity-0">
+          Continue with Google
+        </span>
       </Button>
       <CaptchaWidget
         onSuccess={handleCaptchaSuccess}
