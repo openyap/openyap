@@ -69,8 +69,9 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = React.useState(false);
-  
-  const { open: responsiveOpen, setOpen: setResponsiveOpen } = useResponsiveSidebar(defaultOpen);
+
+  const { open: responsiveOpen, setOpen: setResponsiveOpen } =
+    useResponsiveSidebar(defaultOpen);
 
   const open = openProp ?? responsiveOpen;
   const setOpen = React.useCallback(
@@ -250,7 +251,7 @@ function Sidebar({
           className={cn(
             "flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm",
             state === "collapsed" &&
-              "bg-background cursor-e-resize transition-colors duration-200 hover:bg-sidebar",
+              "cursor-e-resize bg-background transition-colors duration-200 hover:bg-sidebar",
           )}
           onClick={state === "collapsed" ? toggleSidebar : undefined}
           role={state === "collapsed" ? "button" : undefined}

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useIsMobile, useIsMdScreen } from "./use-mobile";
+import { useIsMdScreen, useIsMobile } from "./use-mobile";
 
 export function useResponsiveSidebar(defaultOpen?: boolean) {
   const isMobile = useIsMobile();
@@ -24,4 +24,4 @@ export function useResponsiveSidebar(defaultOpen?: boolean) {
     setOpen,
     responsiveDefaultOpen,
   };
-} 
+}

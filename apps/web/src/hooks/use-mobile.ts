@@ -41,5 +41,3 @@ export function useIsMdScreen() {
 
   return !!isMdScreen;
 }
-
-
