@@ -26,8 +26,14 @@ export function ChatView() {
   const params = useParams({ strict: false }) as { chatId?: string };
   const chatId = params?.chatId;
   const chatsList = useChatsList();
-  const { messages, status, append, stop, setSelectedModelId, isLoadingMessages } =
-    useChat(chatId);
+  const {
+    messages,
+    status,
+    append,
+    stop,
+    setSelectedModelId,
+    isLoadingMessages,
+  } = useChat(chatId);
   const generateChatTitle = useMutation(api.functions.chat.generateChatTitle);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -48,21 +54,21 @@ export function ChatView() {
       checkScrollPosition();
     };
 
-    container.addEventListener('scroll', handleScroll);
-    
+    container.addEventListener("scroll", handleScroll);
+
     const observer = new MutationObserver(() => {
       setTimeout(checkScrollPosition, 0);
     });
-    
-    observer.observe(container, { 
-      childList: true, 
-      subtree: true 
+
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
     });
-    
+
     checkScrollPosition();
 
     return () => {
-      container.removeEventListener('scroll', handleScroll);
+      container.removeEventListener("scroll", handleScroll);
       observer.disconnect();
     };
   }, []);
@@ -120,7 +126,7 @@ export function ChatView() {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTo({
         top: messagesContainerRef.current.scrollHeight,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     }
   };
@@ -129,9 +135,9 @@ export function ChatView() {
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <div 
+      <div
         ref={messagesContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto p-4 scrollbar scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-border/80 scrollbar-w-2"
+        className="scrollbar scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-border/80 scrollbar-w-2 min-h-0 flex-1 overflow-y-auto p-4"
       >
         {isEmpty ? (
           <div className="flex h-full items-center justify-center text-foreground">

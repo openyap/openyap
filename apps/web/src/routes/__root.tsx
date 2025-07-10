@@ -39,7 +39,10 @@ export const Route = createRootRouteWithContext<{
         content: "Actually open.",
       },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+    ],
     scripts: [
       {
         children: `!function(){try{var t=localStorage.getItem("local:theme");if(t){var e=JSON.parse(t);if(e?.state?.value){var a=e.state.value;"dark"===a?document.documentElement.classList.add("dark"):"light"===a?document.documentElement.classList.add("light"):"system"===a&&window.matchMedia("(prefers-color-scheme: dark)").matches&&document.documentElement.classList.add("dark")}}}catch(t){}}();`,

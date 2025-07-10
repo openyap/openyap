@@ -125,7 +125,7 @@ export function ProfileCard() {
         className="!justify-start flex h-full w-full min-w-8 cursor-pointer flex-row items-center gap-3 px-[2px] hover:bg-accent hover:text-accent-foreground group-data-[collapsible=icon]:hover:bg-transparent"
         disabled={isPending}
       >
-        <div className="h-7 w-7 flex-shrink-0 flex items-center justify-center">
+        <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center">
           <DomainLogo domain="google.com" config={{ type: "symbol" }} />
         </div>
         <span className="group-data-[collapsible=icon]:-translate-x-0.5 block w-full min-w-0 max-w-full overflow-hidden truncate text-start font-medium text-sm transition-all duration-200 group-data-[collapsible=icon]:opacity-0">
