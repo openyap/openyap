@@ -11,7 +11,7 @@ export function LinkBlock({ token }: LinkBlockProps) {
   return (
     <a
       href={token.href}
-      className="group inline-flex items-end gap-1 rounded-sm text-primary underline-offset-4 transition-all hover:text-primary/80 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="group inline-flex items-center gap-1 rounded-md bg-accent px-2 py-0.5 text-sm text-accent-foreground transition-all hover:bg-foreground hover:text-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
       target="_blank"
       rel="noopener noreferrer"
       {...(token.title && { title: token.title })}
