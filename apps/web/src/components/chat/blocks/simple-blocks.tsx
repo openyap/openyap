@@ -97,7 +97,7 @@ export function HeadingBlock({ token }: HeadingBlockProps) {
     { className },
     token.tokens.map((subToken, index) => (
       <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
-    )),
+    ))
   );
 }
 
@@ -138,5 +138,5 @@ export function TextBlock({ token }: TextBlockProps) {
     );
   }
 
-  return <span className="text-foreground">{token.text}</span>;
+  return <span>{token.text}</span>;
 }
