@@ -1,10 +1,8 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { Pin, PinOff, Plus, X } from "lucide-react";
-import { Moon, Sun } from "lucide-react";
 import { ProfileCard } from "~/components/auth/profile-card";
 import { Logo } from "~/components/logo";
-import { useTheme } from "~/components/theme-provider";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/seperator";
 import {
@@ -57,9 +55,6 @@ export function AppSidebar() {
               <Logo size={28} />
               OpenYap
             </Link>
-          </div>
-          <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-            <ThemeToggle />
           </div>
         </div>
       </SidebarHeader>
@@ -238,24 +233,5 @@ export function AppSidebar() {
         <ProfileCard />
       </SidebarFooter>
     </Sidebar>
-  );
-}
-
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      aria-label="Toggle theme"
-      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      className="ml-2"
-    >
-      {resolvedTheme === "dark" ? (
-        <Sun className="size-4" />
-      ) : (
-        <Moon className="size-4" />
-      )}
-    </Button>
   );
 }

@@ -134,10 +134,10 @@ export function ChatView() {
   const isEmpty = !chatId || (messages.length === 0 && !isLoadingMessages);
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="relative h-screen bg-background">
       <div
         ref={messagesContainerRef}
-        className="scrollbar scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-border/80 scrollbar-w-2 min-h-0 flex-1 overflow-y-auto p-4"
+        className="scrollbar scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-border/80 scrollbar-w-2 absolute inset-0 overflow-y-auto p-4 ml-4 pb-32"
       >
         {isEmpty ? (
           <div className="flex h-full items-center justify-center text-foreground">
@@ -181,13 +181,13 @@ export function ChatView() {
         )}
       </div>
 
-      <div className="sticky bottom-0 z-10 bg-background">
-        <div className="relative px-4">
-          <div className="-top-16 -translate-x-1/2 absolute left-1/2 z-20 transform">
+      <div className="absolute bottom-0 left-0 right-0 z-10">
+        <div className="relative bg-gradient-to-t from-background via-background to-transparent px-4 pt-8 pb-4">
+          <div className="-top-12 -translate-x-1/2 absolute left-1/2 z-20 transform">
             <Button
               variant="secondary"
               size="icon"
-              className={`transition-all duration-300 ${showScrollButton ? "opacity-100" : "pointer-events-none opacity-0"} hover:bg-primary hover:text-primary-foreground`}
+              className={`transition-all duration-300 ${showScrollButton ? "opacity-100" : "pointer-events-none opacity-0"} hover:bg-primary hover:text-primary-foreground shadow-lg`}
               onClick={scrollToBottom}
             >
               <ArrowDown className="size-4" />
@@ -205,7 +205,6 @@ export function ChatView() {
             />
           </ChatErrorBoundary>
         </div>
-        <div className="h-4 bg-background" />
       </div>
     </div>
   );

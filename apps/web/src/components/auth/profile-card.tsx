@@ -1,9 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { useTransition } from "react";
 import { CaptchaWidget } from "~/components/auth/captcha-widget";
 import { DomainLogo } from "~/components/domains";
+import { useTheme } from "~/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -101,6 +102,7 @@ export function ProfileCard() {
               </p>
             </div>
             <div className="border-t pt-2">
+              <ThemeToggleButton />
               <Button
                 variant="ghost"
                 size="sm"
@@ -137,5 +139,24 @@ export function ProfileCard() {
         onError={handleCaptchaError}
       />
     </div>
+  );
+}
+
+function ThemeToggleButton() {
+  const { resolvedTheme, setTheme } = useTheme();
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="mb-1 w-full cursor-pointer justify-start"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+    >
+      {resolvedTheme === "dark" ? (
+        <Sun className="mr-2 h-4 w-4" />
+      ) : (
+        <Moon className="mr-2 h-4 w-4" />
+      )}
+      {resolvedTheme === "dark" ? "Light" : "Dark"} mode
+    </Button>
   );
 }
