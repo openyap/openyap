@@ -2,6 +2,7 @@ import {
   createServerFileRoute,
   getWebRequest,
 } from "@tanstack/react-start/server";
+import { waitUntil } from "@vercel/functions";
 import { streamText } from "ai";
 import type { Id } from "convex/_generated/dataModel";
 import type {
@@ -326,6 +327,24 @@ const processAttachmentsInBackground = async (
   }
 };
 
+const updateChatMetadata = async (
+  chatId: Id<"chat">,
+  modelId: string,
+  provider: string,
+  sessionToken: string,
+) => {
+  try {
+    await convexServer.mutation(api.functions.chat.updateChat, {
+      chatId,
+      model: modelId,
+      provider,
+      sessionToken,
+    });
+  } catch (err) {
+    logger.warn(`Failed to update chat model metadata: ${err}`);
+  }
+};
+
 export const ServerRoute = createServerFileRoute("/api/chat").methods({
   GET: ({ request: _ }) => {
     return new Response("What do you think chat?");
@@ -399,14 +418,14 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 
         // Process attachments in background (fire-and-forget) - only for new attachments
         if (newAttachments.length > 0 && userMessageId) {
-          (async () => {
-            await processAttachmentsInBackground(
+          waitUntil(
+            processAttachmentsInBackground(
               newAttachments,
               userMessageId,
               existingAttachmentIds,
               sessionToken,
-            );
-          })();
+            ),
+          );
         }
       }
     }
@@ -456,22 +475,18 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         });
       }
 
-      (async () => {
-        try {
-          await convexServer.mutation(api.functions.chat.updateChat, {
-            chatId,
-            model: selectedModel.modelId,
-            provider,
-            sessionToken,
-          });
-        } catch (err) {
-          logger.warn(`Failed to update chat model metadata: ${err}`);
-        }
-      })();
+      waitUntil(
+        updateChatMetadata(
+          chatId,
+          selectedModel.modelId,
+          provider,
+          sessionToken,
+        ),
+      );
 
       // Start streaming processing in the background
-      (async () => {
-        await processStreamingResponse(
+      waitUntil(
+        processStreamingResponse(
           result,
           messageId,
           sessionToken,
@@ -479,8 +494,8 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
           selectedModel,
           provider,
           chatId,
-        );
-      })();
+        ),
+      );
 
       return result.toDataStreamResponse({
         sendReasoning: true,
