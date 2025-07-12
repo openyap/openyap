@@ -97,7 +97,7 @@ export function HeadingBlock({ token }: HeadingBlockProps) {
     { className },
     token.tokens.map((subToken, index) => (
       <TokenBlock key={getTokenKey(subToken, index)} token={subToken} />
-    ))
+    )),
   );
 }
 
