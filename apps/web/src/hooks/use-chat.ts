@@ -1,15 +1,17 @@
 import { useMutation, useQuery } from "convex/react";
-import { useCallback, useEffect, useState } from "react";
-import { SEARCH_TOGGLE_KEY } from "~/components/chat/chat-toggles";
-import { MODEL_PERSIST_KEY } from "~/components/chat/model-selector";
-import { REASONING_EFFORT_PERSIST_KEY } from "~/components/chat/reasoning-effort-selector";
+import { useCallback, useEffect } from "react";
 import {
   type ChatMessage,
   ChatStatus,
   type MessageReasoning,
   MessageStatus,
 } from "~/components/chat/types";
-import { usePersisted } from "~/hooks/use-persisted";
+import { useChatSettings } from "~/hooks/use-chat-settings";
+import { useChatStore, useChatStoreSubscription } from "~/hooks/use-chat-store";
+import {
+  createTempMessages,
+  shouldEnablePolling,
+} from "~/hooks/use-chat-utils";
 import { usePolling } from "~/hooks/use-polling";
 import { processDataStream } from "~/lib/ai/process-chat-response";
 import { splitReasoningSteps } from "~/lib/ai/reasoning";
@@ -18,36 +20,33 @@ import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
 import type { SerializedFile } from "~/lib/file-utils";
 import { logger } from "~/lib/logger";
-import {
-  type EffortLabel,
-  ReasoningEffort,
-  getDefaultModel,
-  getModelById,
-} from "~/lib/models";
+import { getModelById } from "~/lib/models";
 
 export function useChat(chatId: string | undefined) {
   const { data: session } = authClient.useSession();
   const sessionToken = session?.session.token;
-  const { value: selectedModelId, set: setSelectedModelId } =
-    usePersisted<number>(MODEL_PERSIST_KEY, getDefaultModel().id);
-  const {
-    value: searchEnabled,
-    set: setSearchEnabled,
-    reset: resetSearchToggle,
-  } = usePersisted<boolean>(SEARCH_TOGGLE_KEY, false);
-  const { value: reasoningEffort } = usePersisted<EffortLabel>(
-    REASONING_EFFORT_PERSIST_KEY,
-    ReasoningEffort.LOW,
-  );
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [status, setStatus] = useState<ChatStatus>(ChatStatus.IDLE);
-  const [abortController, setAbortController] =
-    useState<AbortController | null>(null);
-  const [currentChatId, setCurrentChatId] = useState<string | undefined>(
+
+  const settings = useChatSettings();
+  const store = useChatStore(chatId);
+
+  const messages = useChatStoreSubscription(chatId, (state) => state.messages);
+  const status = useChatStoreSubscription(chatId, (state) => state.status);
+  const abortController = useChatStoreSubscription(
     chatId,
+    (state) => state.abortController,
   );
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [pollEnabled, setPollEnabled] = useState(false);
+  const currentChatId = useChatStoreSubscription(
+    chatId,
+    (state) => state.currentChatId,
+  );
+  const isInitialLoad = useChatStoreSubscription(
+    chatId,
+    (state) => state.isInitialLoad,
+  );
+  const pollEnabled = useChatStoreSubscription(
+    chatId,
+    (state) => state.pollEnabled,
+  );
 
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
@@ -69,45 +68,24 @@ export function useChat(chatId: string | undefined) {
 
   useEffect(() => {
     if (chatId !== currentChatId) {
-      if (abortController) {
-        abortController.abort();
-        setAbortController(null);
-      }
-      setMessages([]);
-      setStatus(ChatStatus.IDLE);
-      setCurrentChatId(chatId);
-      setIsInitialLoad(true);
-      setPollEnabled(false);
+      store.resetChat(chatId);
     }
-  }, [chatId, currentChatId, abortController]);
-
-  const shouldEnablePolling = useCallback((messages: ChatMessage[]) => {
-    const lastMessage = messages[messages.length - 1];
-    return (
-      (lastMessage &&
-        [
-          MessageStatus.GENERATING,
-          MessageStatus.REASONING,
-          MessageStatus.STREAMING,
-        ].includes(lastMessage.status as MessageStatus)) ||
-      messages.length < 2
-    );
-  }, []);
+  }, [chatId, currentChatId, store.resetChat]);
 
   useEffect(() => {
     if (!getChatMessages || chatId !== currentChatId || !sessionToken) {
       return;
     }
 
-    setMessages(getChatMessages);
+    store.setMessages(getChatMessages);
 
     if (isInitialLoad) {
-      setIsInitialLoad(false);
+      store.setInitialLoad(false);
       if (shouldEnablePolling(getChatMessages)) {
-        setPollEnabled(true);
+        store.setPollEnabled(true);
       }
     } else if (pollEnabled && !shouldEnablePolling(getChatMessages)) {
-      setPollEnabled(false);
+      store.setPollEnabled(false);
     }
   }, [
     getChatMessages,
@@ -116,7 +94,9 @@ export function useChat(chatId: string | undefined) {
     sessionToken,
     isInitialLoad,
     pollEnabled,
-    shouldEnablePolling,
+    store.setMessages,
+    store.setInitialLoad,
+    store.setPollEnabled,
   ]);
 
   const append = useCallback(
@@ -129,39 +109,21 @@ export function useChat(chatId: string | undefined) {
       }
 
       const controller = new AbortController();
-      setAbortController(controller);
+      store.setAbortController(controller);
 
-      const selectedModel = getModelById(selectedModelId);
+      const selectedModel = getModelById(settings.selectedModelId);
+      const [tempUserMessage, tempAiMessage] = createTempMessages(
+        chatId,
+        content,
+        selectedModel || null,
+      );
 
       const attachmentCount = attachments?.length ?? 0;
       logger.info(
-        `Sending message to chat ${chatId} (model: ${selectedModel?.name}, search: ${searchEnabled}, attachments: ${attachmentCount})`,
+        `Sending message to chat ${chatId} (model: ${selectedModel?.name}, search: ${settings.searchEnabled}, attachments: ${attachmentCount})`,
       );
 
-      const tempUserMessage: Partial<ChatMessage> = {
-        _id: `temp-user-${Date.now()}` as ChatMessage["_id"],
-        _creationTime: Date.now(),
-        chatId: chatId as ChatMessage["chatId"],
-        role: "user",
-        content,
-        status: MessageStatus.COMPLETED,
-        updatedAt: new Date().toISOString(),
-      };
-
-      const tempAiMessage: Partial<ChatMessage> = {
-        _id: `temp-ai-${Date.now()}` as ChatMessage["_id"],
-        _creationTime: Date.now() + 1,
-        chatId: chatId as ChatMessage["chatId"],
-        role: "assistant",
-        content: "",
-        status: MessageStatus.GENERATING,
-        provider: selectedModel?.provider,
-        model: selectedModel?.name,
-        updatedAt: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [
-        ...prev,
+      store.addMessages([
         tempUserMessage as ChatMessage,
         tempAiMessage as ChatMessage,
       ]);
@@ -172,12 +134,12 @@ export function useChat(chatId: string | undefined) {
           signal: controller.signal,
           body: JSON.stringify({
             chatId,
-            modelId: selectedModelId,
+            modelId: settings.selectedModelId,
             messages: [...messages, { role: "user", content }],
-            search: searchEnabled,
+            search: settings.searchEnabled,
             reasoningEffort:
               selectedModel && !!selectedModel.reasoningEffort
-                ? reasoningEffort
+                ? settings.reasoningEffort
                 : undefined,
             attachments,
           }),
@@ -187,40 +149,32 @@ export function useChat(chatId: string | undefined) {
           throw new Error("Failed to append message");
         }
 
-        resetSearchToggle();
+        settings.resetSearchToggle();
 
         let contentBuffer = "";
         const reasoningBuffer: MessageReasoning = {
           text: "",
           details: [],
           duration: 0,
-          reasoningEffort: reasoningEffort,
+          reasoningEffort: settings.reasoningEffort,
         };
         let lastReasoningPart = "";
 
         await processDataStream({
           stream: response.body,
           onTextPart(value) {
-            // Only update if we're still on the same chat
             if (chatId === currentChatId) {
-              setStatus(ChatStatus.STREAMING);
+              store.setStatus(ChatStatus.STREAMING);
               contentBuffer += value;
-
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                const lastMessage = newMessages[newMessages.length - 1];
-                if (lastMessage) {
-                  lastMessage.content = contentBuffer;
-                  lastMessage.status = MessageStatus.GENERATING;
-                }
-                return newMessages;
+              store.updateLastMessage({
+                content: contentBuffer,
+                status: MessageStatus.GENERATING,
               });
             }
           },
           onReasoningPart(value) {
-            // Only update if we're still on the same chat
             if (chatId === currentChatId) {
-              setStatus(ChatStatus.STREAMING);
+              store.setStatus(ChatStatus.STREAMING);
               if (value !== lastReasoningPart) {
                 reasoningBuffer.text += value;
                 lastReasoningPart = value;
@@ -235,24 +189,18 @@ export function useChat(chatId: string | undefined) {
                       text: reasoningBuffer.text,
                       details: steps,
                       duration: reasoningBuffer.duration,
-                      reasoningEffort: reasoningEffort,
+                      reasoningEffort: settings.reasoningEffort,
                     }
                   : undefined;
 
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                const lastMessage = newMessages[newMessages.length - 1];
-                if (lastMessage) {
-                  lastMessage.content = contentBuffer;
-                  lastMessage.reasoning = completedReasoning;
-                  lastMessage.status = MessageStatus.REASONING;
-                }
-                return newMessages;
+              store.updateLastMessage({
+                content: contentBuffer,
+                reasoning: completedReasoning,
+                status: MessageStatus.REASONING,
               });
             }
           },
           onFinishMessagePart() {
-            // Only update if we're still on the same chat
             if (chatId === currentChatId) {
               const steps = splitReasoningSteps(reasoningBuffer.text).map(
                 (step) => ({ text: step }),
@@ -263,53 +211,43 @@ export function useChat(chatId: string | undefined) {
                       text: reasoningBuffer.text,
                       details: steps,
                       duration: reasoningBuffer.duration,
-                      reasoningEffort: reasoningEffort,
+                      reasoningEffort: settings.reasoningEffort,
                     }
                   : undefined;
 
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                const lastMessage = newMessages[newMessages.length - 1];
-                if (lastMessage) {
-                  lastMessage.content = contentBuffer;
-                  lastMessage.reasoning = completedReasoning;
-                  lastMessage.status = MessageStatus.COMPLETED;
-                }
-                return newMessages;
+              store.updateLastMessage({
+                content: contentBuffer,
+                reasoning: completedReasoning,
+                status: MessageStatus.COMPLETED,
               });
             }
           },
         });
       } catch (error) {
         if ((error as Error).name === "AbortError") {
-          // Only update if we're still on the same chat
           if (chatId === currentChatId) {
-            setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMessage = newMessages[newMessages.length - 1];
-              if (lastMessage) {
-                lastMessage.status = MessageStatus.ABORTED;
-              }
-              return newMessages;
-            });
+            store.updateLastMessage({ status: MessageStatus.ABORTED });
           }
         }
       } finally {
-        // Only update status if we're still on the same chat
         if (chatId === currentChatId) {
-          setStatus(ChatStatus.IDLE);
+          store.setStatus(ChatStatus.IDLE);
         }
-        setAbortController(null);
+        store.setAbortController(null);
       }
     },
     [
       chatId,
       currentChatId,
-      selectedModelId,
       messages,
-      searchEnabled,
-      resetSearchToggle,
-      reasoningEffort,
+      settings.selectedModelId,
+      settings.searchEnabled,
+      settings.resetSearchToggle,
+      settings.reasoningEffort,
+      store.addMessages,
+      store.setStatus,
+      store.setAbortController,
+      store.updateLastMessage,
     ],
   );
 
@@ -330,9 +268,9 @@ export function useChat(chatId: string | undefined) {
     status,
     append,
     stop,
-    selectedModelId,
-    setSelectedModelId,
-    searchEnabled,
-    setSearchEnabled,
+    selectedModelId: settings.selectedModelId,
+    setSelectedModelId: settings.setSelectedModelId,
+    searchEnabled: settings.searchEnabled,
+    setSearchEnabled: settings.setSearchEnabled,
   } as const;
 }
