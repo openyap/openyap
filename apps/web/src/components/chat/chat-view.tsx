@@ -1,11 +1,9 @@
 import { useParams } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
 import { ArrowDown } from "lucide-react";
 import { AnimatePresence } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
 import { MemoizedMessage, Message } from "~/components/chat/message";
-import { inputStore } from "~/components/chat/stores";
 import { ChatStatus, MessageStatus } from "~/components/chat/types";
 import {
   ChatErrorBoundary,
@@ -13,11 +11,10 @@ import {
 } from "~/components/error-boundary";
 import { Button } from "~/components/ui/button";
 import { useChat } from "~/hooks/use-chat";
+import { useChatScroll } from "~/hooks/use-chat-scroll";
 import { useChatsList } from "~/hooks/use-chats-list";
+import { useFirstMessage } from "~/hooks/use-first-message";
 import { authClient } from "~/lib/auth/client";
-import { STORAGE_KEYS } from "~/lib/constants";
-import { api } from "~/lib/db/server";
-import { isConvexId } from "~/lib/db/utils";
 import { models } from "~/lib/models";
 
 export function ChatView() {
@@ -33,46 +30,10 @@ export function ChatView() {
     setSelectedModelId,
     isLoadingMessages,
   } = useChat(chatId);
-  const generateChatTitle = useMutation(api.functions.chat.generateChatTitle);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  const [showScrollButton, setShowScrollButton] = useState(false);
+  const { messagesContainerRef, bottomRef, showScrollButton, scrollToBottom } =
+    useChatScroll();
 
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const checkScrollPosition = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
-      setShowScrollButton(!isAtBottom);
-    };
-
-    const handleScroll = () => {
-      checkScrollPosition();
-    };
-
-    container.addEventListener("scroll", handleScroll);
-
-    const observer = new MutationObserver(() => {
-      setTimeout(checkScrollPosition, 0);
-    });
-
-    observer.observe(container, {
-      childList: true,
-      subtree: true,
-    });
-
-    checkScrollPosition();
-
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-      observer.disconnect();
-    };
-  }, []);
-
-  // Restore model sync hook
   useEffect(() => {
     if (!chatId || !chatsList.data) return;
     const chat = (
@@ -86,57 +47,18 @@ export function ChatView() {
     }
   }, [chatId, chatsList.data, setSelectedModelId]);
 
-  // Default scroll to bottom
   useEffect(() => {
     if (messages.length > 0 && messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
         messagesContainerRef.current.scrollHeight;
     }
-  }, [messages.length]);
+  }, [messages.length, messagesContainerRef]);
 
-  // Send first message hook
-  useEffect(() => {
-    async function sendFirstMessage() {
-      const firstMessage = localStorage.getItem(STORAGE_KEYS.FIRST_MESSAGE);
-      const firstMessageAttachments = inputStore
-        .getState()
-        .getPendingAttachments();
-
-      if (
-        chatId &&
-        isConvexId<"chat">(chatId) &&
-        (firstMessage !== null || firstMessageAttachments.length > 0)
-      ) {
-        if (firstMessage !== null) {
-          localStorage.removeItem(STORAGE_KEYS.FIRST_MESSAGE);
-        }
-        if (firstMessageAttachments.length > 0) {
-          inputStore.getState().clearFiles();
-        }
-
-        const titleMessage = firstMessage || "Shared an attachment";
-        await generateChatTitle({
-          message: titleMessage,
-          chatId,
-          sessionToken: session?.session.token ?? "skip",
-        });
-        await append({
-          content: firstMessage || "",
-          attachments: firstMessageAttachments,
-        });
-      }
-    }
-    sendFirstMessage();
-  }, [chatId, session?.session.token, append, generateChatTitle]);
-
-  const scrollToBottom = () => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  };
+  useFirstMessage({
+    chatId,
+    sessionToken: session?.session.token,
+    append,
+  });
 
   const isEmpty = !chatId || (messages.length === 0 && !isLoadingMessages);
 
@@ -184,7 +106,7 @@ export function ChatView() {
               variant="secondary"
               size="icon"
               className={`transition-all duration-300 ${showScrollButton ? "opacity-100" : "pointer-events-none opacity-0"} shadow-lg hover:bg-primary hover:text-primary-foreground`}
-              onClick={scrollToBottom}
+              onClick={() => scrollToBottom()}
             >
               <ArrowDown className="size-4" />
             </Button>
