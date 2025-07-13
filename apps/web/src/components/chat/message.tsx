@@ -12,7 +12,6 @@ import type {
   MessageReasoning,
   MessageStatus,
 } from "~/components/chat/types";
-import type { MessageId } from "~/components/chat/types";
 import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
 import { Button } from "~/components/ui/button";
 import {
@@ -23,6 +22,7 @@ import {
 import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
+import { isConvexId } from "~/lib/db/utils";
 import { getTokenKey } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 
@@ -149,9 +149,9 @@ function MessageAttachments({ messageId }: { messageId: string }) {
   const { data: session } = authClient.useSession();
   const attachments = useQuery(
     api.functions.attachment.getMessageAttachments,
-    session?.session.token
+    isConvexId<"message">(messageId) && session?.session.token
       ? {
-          messageId: messageId as MessageId,
+          messageId: messageId,
           sessionToken: session.session.token,
         }
       : "skip",

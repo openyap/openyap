@@ -3,7 +3,6 @@ import type { Doc } from "convex/_generated/dataModel";
 export type ChatMessage = Doc<"message">;
 export enum ChatStatus {
   IDLE = "idle",
-  LOADING = "loading",
   STREAMING = "streaming",
 }
 

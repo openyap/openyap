@@ -11,7 +11,6 @@ import {
   ChatErrorBoundary,
   MessageErrorBoundary,
 } from "~/components/error-boundary";
-import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
 import { Button } from "~/components/ui/button";
 import { useChat } from "~/hooks/use-chat";
 import { useChatsList } from "~/hooks/use-chats-list";
@@ -148,15 +147,9 @@ export function ChatView() {
             <AnimatePresence initial={false}>
               {messages.map((m, index) => {
                 if (
-                  status === ChatStatus.LOADING &&
+                  status === ChatStatus.STREAMING &&
                   index === messages.length - 1 &&
                   m.status !== "finished"
-                )
-                  return null;
-
-                if (
-                  status === ChatStatus.STREAMING &&
-                  index === messages.length - 1
                 )
                   return (
                     <MessageErrorBoundary key={m._id}>
@@ -171,11 +164,6 @@ export function ChatView() {
                 );
               })}
             </AnimatePresence>
-            {status === ChatStatus.LOADING && (
-              <div className="px-3 pt-2">
-                <AnimatedShinyText>Loading</AnimatedShinyText>
-              </div>
-            )}
             <div ref={bottomRef} />
           </div>
         )}

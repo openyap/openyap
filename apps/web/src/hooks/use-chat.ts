@@ -43,6 +43,7 @@ export function useChat(chatId: string | undefined) {
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(
     chatId,
   );
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
@@ -62,6 +63,7 @@ export function useChat(chatId: string | undefined) {
       setMessages([]);
       setStatus(ChatStatus.IDLE);
       setCurrentChatId(chatId);
+      setIsInitialLoad(true);
     }
   }, [chatId, currentChatId, abortController]);
 
@@ -69,12 +71,20 @@ export function useChat(chatId: string | undefined) {
   useEffect(() => {
     if (
       getChatMessages &&
-      status !== ChatStatus.STREAMING &&
-      chatId === currentChatId
+      chatId === currentChatId &&
+      session?.session.token &&
+      isInitialLoad
     ) {
       setMessages(getChatMessages);
+      setIsInitialLoad(false);
     }
-  }, [getChatMessages, status, chatId, currentChatId]);
+  }, [
+    getChatMessages,
+    chatId,
+    currentChatId,
+    session?.session.token,
+    isInitialLoad,
+  ]);
 
   const append = useCallback(
     async ({
@@ -85,8 +95,6 @@ export function useChat(chatId: string | undefined) {
         return;
       }
 
-      setStatus(ChatStatus.LOADING);
-
       const controller = new AbortController();
       setAbortController(controller);
 
@@ -96,6 +104,34 @@ export function useChat(chatId: string | undefined) {
       logger.info(
         `Sending message to chat ${chatId} (model: ${selectedModel?.name}, search: ${searchEnabled}, attachments: ${attachmentCount})`,
       );
+
+      const tempUserMessage: Partial<ChatMessage> = {
+        _id: `temp-user-${Date.now()}` as ChatMessage["_id"],
+        _creationTime: Date.now(),
+        chatId: chatId as ChatMessage["chatId"],
+        role: "user",
+        content,
+        status: "completed",
+        updatedAt: new Date().toISOString(),
+      };
+
+      const tempAiMessage: Partial<ChatMessage> = {
+        _id: `temp-ai-${Date.now()}` as ChatMessage["_id"],
+        _creationTime: Date.now() + 1,
+        chatId: chatId as ChatMessage["chatId"],
+        role: "assistant",
+        content: "",
+        status: "generating",
+        provider: selectedModel?.provider,
+        model: selectedModel?.name,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [
+        ...prev,
+        tempUserMessage as ChatMessage,
+        tempAiMessage as ChatMessage,
+      ]);
 
       try {
         const response = await fetch("/api/chat", {
@@ -257,7 +293,7 @@ export function useChat(chatId: string | undefined) {
 
   return {
     messages,
-    isLoadingMessages: !getChatMessages,
+    isLoadingMessages: !getChatMessages || !session?.session.token,
     status,
     append,
     stop,

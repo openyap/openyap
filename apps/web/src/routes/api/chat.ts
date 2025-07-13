@@ -369,11 +369,10 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
     } = await request.json();
 
     const lastMessage = messages[messages.length - 1];
-    let userMessageId: MessageId | null = null;
     let transformedMessages = messages;
 
     if (lastMessage.role === "user") {
-      userMessageId = await convexServer.mutation(
+      const userMessageId = await convexServer.mutation(
         api.functions.message.createUserMessage,
         {
           chatId,
