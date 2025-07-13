@@ -81,6 +81,7 @@ export function ProfileCard() {
           <Button
             variant="ghost"
             className="!justify-start flex h-10 w-full min-w-8 cursor-pointer flex-row items-center gap-3 px-[2px] hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground group-data-[collapsible=icon]:hover:bg-transparent"
+            onClick={(e) => e.stopPropagation()}
           >
             <Avatar className="h-7 w-7 flex-shrink-0">
               <AvatarImage src={session.data.user.image ?? ""} />
@@ -123,7 +124,10 @@ export function ProfileCard() {
     <div className="flex h-10 items-center justify-center rounded-md">
       <Button
         variant="ghost"
-        onClick={handleGoogleLogin}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleGoogleLogin();
+        }}
         className="!justify-start flex h-full w-full min-w-8 cursor-pointer flex-row items-center gap-3 px-[2px] hover:bg-accent hover:text-accent-foreground group-data-[collapsible=icon]:hover:bg-transparent"
         disabled={isPending}
       >

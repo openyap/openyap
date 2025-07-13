@@ -64,7 +64,8 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     navigate({ to: "/" });
                   }}
                   tooltip="New Chat"
