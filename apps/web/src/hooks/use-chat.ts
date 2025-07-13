@@ -10,6 +10,7 @@ import {
   MessageStatus,
 } from "~/components/chat/types";
 import { usePersisted } from "~/hooks/use-persisted";
+import { usePolling } from "~/hooks/use-polling";
 import { processDataStream } from "~/lib/ai/process-chat-response";
 import { splitReasoningSteps } from "~/lib/ai/reasoning";
 import { authClient } from "~/lib/auth/client";
@@ -26,6 +27,7 @@ import {
 
 export function useChat(chatId: string | undefined) {
   const { data: session } = authClient.useSession();
+  const sessionToken = session?.session.token;
   const { value: selectedModelId, set: setSelectedModelId } =
     usePersisted<number>(MODEL_PERSIST_KEY, getDefaultModel().id);
   const {
@@ -45,16 +47,26 @@ export function useChat(chatId: string | undefined) {
     chatId,
   );
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [pollEnabled, setPollEnabled] = useState(false);
 
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
-    isConvexId<"chat">(chatId)
-      ? { chatId: chatId, sessionToken: session?.session.token }
+    isConvexId<"chat">(chatId) && sessionToken && (isInitialLoad || pollEnabled)
+      ? { chatId: chatId, sessionToken }
       : "skip",
   );
 
-  // Handle chat switching
+  usePolling({
+    enabled: pollEnabled,
+    onPoll: () => {
+      const lastMessage = messages[messages.length - 1];
+      logger.debug(
+        `Polling for message updates in chat ${chatId} (${messages.length} messages, last status: ${lastMessage?.status || "none"})`,
+      );
+    },
+  });
+
   useEffect(() => {
     if (chatId !== currentChatId) {
       if (abortController) {
@@ -65,26 +77,46 @@ export function useChat(chatId: string | undefined) {
       setStatus(ChatStatus.IDLE);
       setCurrentChatId(chatId);
       setIsInitialLoad(true);
+      setPollEnabled(false);
     }
   }, [chatId, currentChatId, abortController]);
 
-  // Update messages when query data changes
+  const shouldEnablePolling = useCallback((messages: ChatMessage[]) => {
+    const lastMessage = messages[messages.length - 1];
+    return (
+      (lastMessage &&
+        [
+          MessageStatus.GENERATING,
+          MessageStatus.REASONING,
+          MessageStatus.STREAMING,
+        ].includes(lastMessage.status as MessageStatus)) ||
+      messages.length < 2
+    );
+  }, []);
+
   useEffect(() => {
-    if (
-      getChatMessages &&
-      chatId === currentChatId &&
-      session?.session.token &&
-      isInitialLoad
-    ) {
-      setMessages(getChatMessages);
+    if (!getChatMessages || chatId !== currentChatId || !sessionToken) {
+      return;
+    }
+
+    setMessages(getChatMessages);
+
+    if (isInitialLoad) {
       setIsInitialLoad(false);
+      if (shouldEnablePolling(getChatMessages)) {
+        setPollEnabled(true);
+      }
+    } else if (pollEnabled && !shouldEnablePolling(getChatMessages)) {
+      setPollEnabled(false);
     }
   }, [
     getChatMessages,
     chatId,
     currentChatId,
-    session?.session.token,
+    sessionToken,
     isInitialLoad,
+    pollEnabled,
+    shouldEnablePolling,
   ]);
 
   const append = useCallback(
@@ -286,15 +318,15 @@ export function useChat(chatId: string | undefined) {
       updateAiMessage({
         messageId: messages[messages.length - 1]._id,
         status: MessageStatus.ABORTED,
-        sessionToken: session?.session.token ?? "skip",
+        sessionToken: sessionToken ?? "skip",
       });
       abortController.abort();
     }
-  }, [abortController, messages, updateAiMessage, session?.session.token]);
+  }, [abortController, messages, updateAiMessage, sessionToken]);
 
   return {
     messages,
-    isLoadingMessages: !getChatMessages || !session?.session.token,
+    isLoadingMessages: !getChatMessages || !sessionToken,
     status,
     append,
     stop,
