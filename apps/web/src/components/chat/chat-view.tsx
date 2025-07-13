@@ -86,6 +86,14 @@ export function ChatView() {
     }
   }, [chatId, chatsList.data, setSelectedModelId]);
 
+  // Default scroll to bottom
+  useEffect(() => {
+    if (messages.length > 0 && messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+    }
+  }, [messages.length]);
+
   // Send first message hook
   useEffect(() => {
     async function sendFirstMessage() {
