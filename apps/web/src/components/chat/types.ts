@@ -10,7 +10,6 @@ export enum MessageStatus {
   COMPLETED = "completed",
   GENERATING = "generating",
   REASONING = "reasoning",
-  FINISHED = "finished",
   ABORTED = "aborted",
   FAILED = "failed",
   STREAMING = "streaming",

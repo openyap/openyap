@@ -241,7 +241,7 @@ export function useChat(chatId: string | undefined) {
                 if (lastMessage) {
                   lastMessage.content = contentBuffer;
                   lastMessage.reasoning = completedReasoning;
-                  lastMessage.status = MessageStatus.FINISHED;
+                  lastMessage.status = MessageStatus.COMPLETED;
                 }
                 return newMessages;
               });

@@ -149,7 +149,7 @@ export function ChatView() {
                 if (
                   status === ChatStatus.STREAMING &&
                   index === messages.length - 1 &&
-                  m.status !== MessageStatus.FINISHED
+                  m.status !== MessageStatus.COMPLETED
                 )
                   return (
                     <MessageErrorBoundary key={m._id}>
