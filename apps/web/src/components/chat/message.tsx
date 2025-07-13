@@ -64,7 +64,7 @@ const ReasoningCollapsible = memo(function ReasoningCollapsible({
   if (!reasoning) return null;
   const [reasoningOpen, setReasoningOpen] = useState(false);
   const reasoningHidden = reasoning.text.length === 0;
-  const isReasoning = status === "reasoning";
+  const isReasoning = status === MessageStatus.REASONING;
   const reasoningTitle = `Thought ${reasoning.duration ? `for ${formatSeconds(reasoning.duration)} seconds` : ""}`;
 
   return (

@@ -5,11 +5,12 @@ import {
 import { waitUntil } from "@vercel/functions";
 import { streamText } from "ai";
 import type { Id } from "convex/_generated/dataModel";
-import type {
-  AttachmentId,
-  MessageId,
-  MessageReasoning,
-  MessageUsage,
+import {
+  type AttachmentId,
+  type MessageId,
+  type MessageReasoning,
+  MessageStatus,
+  type MessageUsage,
 } from "~/components/chat/types";
 import { splitReasoningSteps } from "~/lib/ai/reasoning";
 import { webSearch } from "~/lib/ai/webSearch";
@@ -552,8 +553,8 @@ const processStreamingResponse = async (
     );
   };
 
-  const updateMessage = async (status = "streaming") => {
-    if (!shouldUpdateMessage() && status === "streaming") return;
+  const updateMessage = async (status = MessageStatus.STREAMING) => {
+    if (!shouldUpdateMessage() && status === MessageStatus.STREAMING) return;
 
     const currentReasoning =
       state.reasoningBuffer.details.length > 0
@@ -609,8 +610,8 @@ const processStreamingResponse = async (
     // Final update
     if (!state.isAborted) {
       const messageStatus = await getMessageStatus({ messageId, sessionToken });
-      if (messageStatus === "streaming") {
-        await updateMessage("completed");
+      if (messageStatus === MessageStatus.STREAMING) {
+        await updateMessage(MessageStatus.COMPLETED);
         logger.info(`Message completed: ${messageId}`);
       }
     }
@@ -618,8 +619,8 @@ const processStreamingResponse = async (
     logger.error(`Streaming processing failed: ${error}`);
     state.isAborted = true;
     const messageStatus = await getMessageStatus({ messageId, sessionToken });
-    if (messageStatus === "streaming") {
-      await updateMessage("failed");
+    if (messageStatus === MessageStatus.STREAMING) {
+      await updateMessage(MessageStatus.FAILED);
     }
   }
 };

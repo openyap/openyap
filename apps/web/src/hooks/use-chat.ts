@@ -7,6 +7,7 @@ import {
   type ChatMessage,
   ChatStatus,
   type MessageReasoning,
+  MessageStatus,
 } from "~/components/chat/types";
 import { usePersisted } from "~/hooks/use-persisted";
 import { processDataStream } from "~/lib/ai/process-chat-response";
@@ -111,7 +112,7 @@ export function useChat(chatId: string | undefined) {
         chatId: chatId as ChatMessage["chatId"],
         role: "user",
         content,
-        status: "completed",
+        status: MessageStatus.COMPLETED,
         updatedAt: new Date().toISOString(),
       };
 
@@ -121,7 +122,7 @@ export function useChat(chatId: string | undefined) {
         chatId: chatId as ChatMessage["chatId"],
         role: "assistant",
         content: "",
-        status: "generating",
+        status: MessageStatus.GENERATING,
         provider: selectedModel?.provider,
         model: selectedModel?.name,
         updatedAt: new Date().toISOString(),
@@ -178,7 +179,7 @@ export function useChat(chatId: string | undefined) {
                 const lastMessage = newMessages[newMessages.length - 1];
                 if (lastMessage) {
                   lastMessage.content = contentBuffer;
-                  lastMessage.status = "generating";
+                  lastMessage.status = MessageStatus.GENERATING;
                 }
                 return newMessages;
               });
@@ -212,7 +213,7 @@ export function useChat(chatId: string | undefined) {
                 if (lastMessage) {
                   lastMessage.content = contentBuffer;
                   lastMessage.reasoning = completedReasoning;
-                  lastMessage.status = "reasoning";
+                  lastMessage.status = MessageStatus.REASONING;
                 }
                 return newMessages;
               });
@@ -240,7 +241,7 @@ export function useChat(chatId: string | undefined) {
                 if (lastMessage) {
                   lastMessage.content = contentBuffer;
                   lastMessage.reasoning = completedReasoning;
-                  lastMessage.status = "finished";
+                  lastMessage.status = MessageStatus.FINISHED;
                 }
                 return newMessages;
               });
@@ -255,7 +256,7 @@ export function useChat(chatId: string | undefined) {
               const newMessages = [...prev];
               const lastMessage = newMessages[newMessages.length - 1];
               if (lastMessage) {
-                lastMessage.status = "aborted";
+                lastMessage.status = MessageStatus.ABORTED;
               }
               return newMessages;
             });
@@ -284,7 +285,7 @@ export function useChat(chatId: string | undefined) {
     if (abortController) {
       updateAiMessage({
         messageId: messages[messages.length - 1]._id,
-        status: "aborted",
+        status: MessageStatus.ABORTED,
         sessionToken: session?.session.token ?? "skip",
       });
       abortController.abort();

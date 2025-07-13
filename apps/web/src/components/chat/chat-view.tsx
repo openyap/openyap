@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChatInput } from "~/components/chat/chat-input";
 import { MemoizedMessage, Message } from "~/components/chat/message";
 import { inputStore } from "~/components/chat/stores";
-import { ChatStatus } from "~/components/chat/types";
+import { ChatStatus, MessageStatus } from "~/components/chat/types";
 import {
   ChatErrorBoundary,
   MessageErrorBoundary,
@@ -149,7 +149,7 @@ export function ChatView() {
                 if (
                   status === ChatStatus.STREAMING &&
                   index === messages.length - 1 &&
-                  m.status !== "finished"
+                  m.status !== MessageStatus.FINISHED
                 )
                   return (
                     <MessageErrorBoundary key={m._id}>
@@ -185,7 +185,7 @@ export function ChatView() {
             <ChatInput
               chatId={chatId}
               sessionToken={session?.session.token ?? "skip"}
-              disabled={status === "streaming"}
+              disabled={status === ChatStatus.STREAMING}
               addUserMessage={(message, attachments) =>
                 append({ content: message, attachments })
               }
