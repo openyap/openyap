@@ -91,6 +91,7 @@ export const getSystemPrompt = (
     "- Do NOT use mathEvaluation for equations (expressions with '='), unknowns (like 'x'), or word problems.",
     "- For equations like '3x + 7 = 22', solve them algebraically and then use mathEvaluation to verify intermediate steps.",
     "- Break complex problems into computable parts: first solve algebraically, then verify with mathEvaluation.",
+    "- When displaying math tool results, always wrap the numerical result in inline code blocks using backticks (e.g., `42`).",
   );
 
   if (searchEnabled) {
