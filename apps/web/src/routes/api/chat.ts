@@ -4,6 +4,7 @@ import {
 } from "@tanstack/react-start/server";
 import { waitUntil } from "@vercel/functions";
 import { streamText } from "ai";
+import type { Tool, ToolSet } from "ai";
 import type { Id } from "convex/_generated/dataModel";
 import {
   type AttachmentId,
@@ -12,6 +13,7 @@ import {
   MessageStatus,
   type MessageUsage,
 } from "~/components/chat/types";
+import { mathEvaluation } from "~/lib/ai/mathEvaluation";
 import { splitReasoningSteps } from "~/lib/ai/reasoning";
 import { webSearch } from "~/lib/ai/webSearch";
 import { auth } from "~/lib/auth/server";
@@ -448,8 +450,10 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         ? { openrouter: { reasoning: { effort: reasoningEffort } } }
         : undefined;
 
-    const tools = search ? { webSearch } : undefined;
-    const maxSteps = search ? 3 : 1;
+    const toolSet = (
+      search ? { mathEvaluation, webSearch } : { mathEvaluation }
+    ) as ToolSet;
+    const maxSteps = search ? 5 : 3;
 
     try {
       const result = streamText({
@@ -458,8 +462,8 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
         messages: transformedMessages,
         abortSignal: request.signal,
         ...(providerOptions ? { providerOptions } : {}),
-        tools: tools,
-        maxSteps: maxSteps,
+        tools: toolSet,
+        maxSteps,
       });
 
       const messageId = await createAiMessage({

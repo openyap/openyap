@@ -82,10 +82,19 @@ export const getSystemPrompt = (
     "- For text formatting, only use markdown formatting.",
   ];
 
+  // Add tool-use instructions
+  directives.push(
+    "\n",
+    "Tool-use rules (read carefully):",
+    "- Use mathEvaluation ONLY for mathematical expressions that can be computed to a single numeric result.",
+    "- Examples of what to use mathEvaluation for: '2 + 2', 'sqrt(16)', 'sin(pi/2)', 'log(100)', '5*6-3'.",
+    "- Do NOT use mathEvaluation for equations (expressions with '='), unknowns (like 'x'), or word problems.",
+    "- For equations like '3x + 7 = 22', solve them algebraically and then use mathEvaluation to verify intermediate steps.",
+    "- Break complex problems into computable parts: first solve algebraically, then verify with mathEvaluation.",
+  );
+
   if (searchEnabled) {
     directives.push(
-      "\n",
-      "Tool-use rules (read carefully):",
       "- You may call webSearch at most ONCE per response.",
       "- After receiving the JSON result, immediately answer the user. Do NOT call any tool again.",
       "- If you are at least 70 % confident you already know the answer, skip the tool.",
