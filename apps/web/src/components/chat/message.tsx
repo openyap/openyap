@@ -10,8 +10,9 @@ import { TokenBlock } from "~/components/chat/blocks";
 import type {
   ChatMessage,
   MessageReasoning,
-  MessageStatus,
+  MessageStatusType,
 } from "~/components/chat/types";
+import { MessageStatus } from "~/components/chat/types";
 import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
 import { Button } from "~/components/ui/button";
 import {
@@ -28,7 +29,7 @@ import { cn } from "~/lib/utils";
 
 interface ReasoningCollapsibleProps {
   readonly reasoning: MessageReasoning;
-  readonly status: MessageStatus;
+  readonly status: MessageStatusType;
 }
 
 function formatSeconds(duration: number) {
