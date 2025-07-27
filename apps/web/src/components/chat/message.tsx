@@ -7,11 +7,8 @@ import { memo, useMemo, useState } from "react";
 import { ProfileAvatar } from "~/components/auth/profile-avatar";
 import { AttachmentList } from "~/components/chat/attachment-preview";
 import { TokenBlock } from "~/components/chat/blocks";
-import type {
-  ChatMessage,
-  MessageReasoning,
-  MessageStatus,
-} from "~/components/chat/types";
+import type { ChatMessage, MessageReasoning } from "~/components/chat/types";
+import { MessageStatus } from "~/components/chat/types";
 import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
 import { Button } from "~/components/ui/button";
 import {
