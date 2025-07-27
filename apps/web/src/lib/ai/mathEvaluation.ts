@@ -24,7 +24,7 @@ export const mathEvaluation = tool({
         .min(1)
         .max(UI_CONSTANTS.TITLE_LIMITS.MAX_LENGTH)
         .describe(
-          "A mathematical expression to evaluate. Examples: '2 + 2', 'sqrt(16)', 'sin(pi/2)', 'log(100)', '5*6-3'. Do NOT use for equations with '=' or unknowns like 'x'.",
+          "A mathematical expression to evaluate. Examples: '2 + 2', 'sqrt(16)', 'sin(pi/2)', 'log(100)', 'ln(1.5)', '5*6-3'. Do NOT use for equations with '=' or unknowns like 'x'. Note: Both 'log()' (natural log) and 'ln()' are supported.",
         ),
     })
     .strict(),
@@ -34,7 +34,15 @@ export const mathEvaluation = tool({
     return Effect.runSync(
       Effect.try({
         try: () => {
-          const result = evaluate(expression);
+          let correctedExpression = expression;
+          if (expression.includes("ln(")) {
+            correctedExpression = expression.replace(/ln\(/g, "log(");
+            logger.info(
+              `Auto-corrected 'ln(' to 'log(' in expression: "${correctedExpression}"`,
+            );
+          }
+
+          const result = evaluate(correctedExpression);
           let resultStr = String(result);
 
           if (resultStr.length > MAX_RESULT_LENGTH) {
