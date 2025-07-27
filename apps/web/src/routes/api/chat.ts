@@ -70,6 +70,8 @@ type StreamingState = {
   };
   isAborted: boolean;
   lastUpdate: number;
+  finishReason?: string;
+  hasToolErrors: boolean;
 };
 
 // Database operations
@@ -537,6 +539,8 @@ const processStreamingResponse = async (
     usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
     isAborted: false,
     lastUpdate: 0,
+    finishReason: undefined,
+    hasToolErrors: false,
   };
 
   const processReasoning = (textDelta: string) => {
@@ -597,13 +601,47 @@ const processStreamingResponse = async (
           logger.info(`Tool call: ${chunk.toolName}`);
           break;
 
-        case "error":
-          logger.error(`Streaming error: ${chunk.error}`);
-          state.isAborted = true;
+        case "tool-result":
+          logger.info(`Tool result: ${chunk.toolName}`);
+          if (
+            chunk.result &&
+            typeof chunk.result === "object" &&
+            "error" in chunk.result
+          ) {
+            logger.warn(
+              `Tool execution error in ${chunk.toolName}: ${chunk.result.error}`,
+            );
+            state.hasToolErrors = true;
+          }
           break;
 
+        case "error": {
+          const errorString = String(chunk.error);
+          if (errorString.includes("AI_ToolExecutionError")) {
+            logger.warn(`Tool execution error: ${errorString}`);
+            state.hasToolErrors = true;
+          } else {
+            logger.error(`Streaming error: ${chunk.error}`);
+            state.isAborted = true;
+          }
+          break;
+        }
+
         case "finish":
+          state.finishReason = chunk.finishReason;
           logger.info(`Streaming finished: ${chunk.finishReason}`);
+
+          if (chunk.finishReason === "stop" && state.hasToolErrors) {
+            logger.warn(
+              "Model stopped early likely due to tool execution errors - completing message gracefully",
+            );
+          } else if (chunk.finishReason === "length") {
+            logger.warn(
+              "Model stopped due to length limit - message may be truncated",
+            );
+          } else if (chunk.finishReason === "tool-calls") {
+            logger.info("Model finished after tool calls");
+          }
           break;
 
         default:
@@ -611,12 +649,27 @@ const processStreamingResponse = async (
       }
     }
 
-    // Final update
     if (!state.isAborted) {
       const messageStatus = await getMessageStatus({ messageId, sessionToken });
       if (messageStatus === MessageStatus.STREAMING) {
-        await updateMessage(MessageStatus.COMPLETED);
-        logger.info(`Message completed: ${messageId}`);
+        let finalStatus = MessageStatus.COMPLETED;
+
+        if (state.finishReason === "stop" && state.hasToolErrors) {
+          logger.info(
+            `Completing message gracefully despite early stop due to tool errors: ${messageId}`,
+          );
+          finalStatus = MessageStatus.COMPLETED;
+        } else if (state.finishReason === "length") {
+          logger.info(
+            `Message completed but may be truncated due to length: ${messageId}`,
+          );
+          finalStatus = MessageStatus.COMPLETED;
+        }
+
+        await updateMessage(finalStatus);
+        logger.info(
+          `Message completed with status ${finalStatus}: ${messageId}`,
+        );
       }
     }
   } catch (error) {

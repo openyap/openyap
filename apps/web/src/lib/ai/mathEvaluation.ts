@@ -59,6 +59,16 @@ export const mathEvaluation = tool({
             logger.warn(
               `Math evaluation failed - equation detected: "${expression}"`,
             );
+          } else if (errorMessage.includes("Undefined function")) {
+            if (expression.includes("ln(")) {
+              helpfulError =
+                "Function 'ln' is not available. Use 'log' for natural logarithm or 'log10' for base-10 logarithm.";
+            } else {
+              helpfulError = `${errorMessage}. Check the function name - common functions include: sin, cos, tan, log (natural), log10, sqrt, abs, exp.`;
+            }
+            logger.warn(
+              `Math evaluation failed - undefined function: "${expression}"`,
+            );
           } else if (errorMessage.includes("Undefined symbol")) {
             helpfulError = `${errorMessage}. Variables like 'x' cannot be evaluated. Use mathEvaluation only for numeric expressions.`;
             logger.warn(
