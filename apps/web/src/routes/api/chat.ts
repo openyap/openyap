@@ -368,12 +368,14 @@ export const ServerRoute = createServerFileRoute("/api/chat").methods({
 			search = false,
 			reasoningEffort,
 			attachments = [],
+			isRegeneration = false, // New flag to indicate if this is a regeneration
 		} = await request.json();
 
 		const lastMessage = messages[messages.length - 1];
 		let transformedMessages = messages;
 
-		if (lastMessage.role === "user") {
+		// Only create a new user message if this is NOT a regeneration
+		if (lastMessage.role === "user" && !isRegeneration) {
 			const userMessageId = await convexServer.mutation(
 				api.functions.message.createUserMessage,
 				{
