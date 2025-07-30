@@ -233,20 +233,25 @@ export const Message = function Message({
     }
 
     try {
+      // First edit the message and wait for it to complete
       await editMessage({
         messageId: data._id,
         content: editText.trim(),
         sessionToken: session.session.token,
       });
+
       setIsEditing(false);
 
-      // Trigger AI regeneration if callback is provided
-      if (onMessageEdit) {
-        onMessageEdit();
-      }
+      // Wait a bit for Convex to propagate the changes
+      setTimeout(() => {
+        // Trigger AI regeneration if callback is provided
+        if (onMessageEdit) {
+          onMessageEdit();
+        }
+      }, 200);
     } catch (error) {
       console.error("Failed to edit message:", error);
-      // Optionally handle error UI here
+      setIsEditing(false);
     }
   };
 
