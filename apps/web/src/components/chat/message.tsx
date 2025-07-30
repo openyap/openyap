@@ -181,7 +181,7 @@ function MessageAttachments({ messageId }: { messageId: string }) {
 interface MessageProps {
   readonly data: ChatMessage;
   readonly user?: User;
-  readonly onMessageEdit?: () => void;
+  readonly onMessageEdit?: (editedContent: string) => void;
 }
 
 export const Message = function Message({
@@ -244,9 +244,9 @@ export const Message = function Message({
 
       // Wait a bit for Convex to propagate the changes
       setTimeout(() => {
-        // Trigger AI regeneration if callback is provided
+        // Trigger AI regeneration if callback is provided with the edited content
         if (onMessageEdit) {
-          onMessageEdit();
+          onMessageEdit(editText.trim());
         }
       }, 200);
     } catch (error) {

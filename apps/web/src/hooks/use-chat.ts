@@ -252,7 +252,7 @@ export function useChat(chatId: string | undefined) {
   );
 
   const regenerate = useCallback(
-    async (upToMessageId: string) => {
+    async (upToMessageId: string, editedContent?: string) => {
       if (!isConvexId<"chat">(chatId) || !sessionToken) {
         return;
       }
@@ -262,7 +262,19 @@ export function useChat(chatId: string | undefined) {
       if (messageIndex === -1) return;
 
       // Get all messages up to and including the edited message
-      const messagesForRegeneration = messages.slice(0, messageIndex + 1);
+      // If editedContent is provided, update the last user message with it
+      const messagesForRegeneration = messages
+        .slice(0, messageIndex + 1)
+        .map((msg, idx) => {
+          if (
+            idx === messageIndex &&
+            editedContent !== undefined &&
+            msg.role === "user"
+          ) {
+            return { ...msg, content: editedContent };
+          }
+          return msg;
+        });
 
       const controller = new AbortController();
       store.setAbortController(controller);

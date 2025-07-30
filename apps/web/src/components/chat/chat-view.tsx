@@ -77,11 +77,11 @@ export function ChatView() {
           <div className="mx-auto max-w-[752px] space-y-3 pt-5">
             <AnimatePresence initial={false}>
               {messages.map((m, index) => {
-                const handleMessageEdit = () => {
+                const handleMessageEdit = (editedContent: string) => {
                   // Only regenerate if this is a user message
                   if (m.role === "user") {
-                    // Trigger AI regeneration from the edited message
-                    regenerate(m._id);
+                    // Trigger AI regeneration from the edited message with the new content
+                    regenerate(m._id, editedContent);
                   }
                 };
 
