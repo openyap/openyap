@@ -76,6 +76,14 @@ export function ChatView() {
           <div className="mx-auto max-w-[752px] space-y-3 pt-5">
             <AnimatePresence initial={false}>
               {messages.map((m, index) => {
+                const handleMessageEdit = () => {
+                  // Only regenerate if this is a user message and not the last message
+                  if (m.role === "user" && index < messages.length - 1) {
+                    // Trigger AI regeneration with the edited message content
+                    append({ content: "" });
+                  }
+                };
+
                 if (
                   status === ChatStatus.STREAMING &&
                   index === messages.length - 1 &&
@@ -83,13 +91,21 @@ export function ChatView() {
                 )
                   return (
                     <MessageErrorBoundary key={m._id}>
-                      <Message data={m} user={session?.user} />
+                      <Message
+                        data={m}
+                        user={session?.user}
+                        onMessageEdit={handleMessageEdit}
+                      />
                     </MessageErrorBoundary>
                   );
 
                 return (
                   <MessageErrorBoundary key={m._id}>
-                    <MemoizedMessage data={m} user={session?.user} />
+                    <MemoizedMessage
+                      data={m}
+                      user={session?.user}
+                      onMessageEdit={handleMessageEdit}
+                    />
                   </MessageErrorBoundary>
                 );
               })}

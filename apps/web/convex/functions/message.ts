@@ -78,6 +78,75 @@ export const updateUserMessage = mutation({
   },
 });
 
+export const editUserMessage = mutation({
+  args: {
+    messageId: v.id("message"),
+    content: v.string(),
+    sessionToken: v.string(),
+  },
+  returns: v.id("message"),
+  handler: async (ctx, args): Promise<Id<"message">> => {
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken: args.sessionToken,
+    });
+
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    const message = await ctx.runQuery(internal.functions.message.getMessage, {
+      messageId: args.messageId,
+    });
+
+    if (!message || message.role !== "user") {
+      throw new Error("Invalid message");
+    }
+
+    const userId = session.userId as Id<"user">;
+    if (message.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    // Get all messages in the chat that come after this message
+    const allMessages = await ctx.db
+      .query("message")
+      .withIndex("by_chatId", (q) => q.eq("chatId", message.chatId))
+      .collect();
+
+    // Sort messages by creation time
+    const sortedMessages = allMessages.sort(
+      (a, b) => a._creationTime - b._creationTime,
+    );
+
+    // Find the index of the message being edited
+    const messageIndex = sortedMessages.findIndex(
+      (msg) => msg._id === args.messageId,
+    );
+
+    // Delete all messages after this one
+    const messagesToDelete = sortedMessages.slice(messageIndex + 1);
+    for (const msg of messagesToDelete) {
+      await ctx.runMutation(internal.functions.message.deleteMessage, {
+        messageId: msg._id,
+      });
+    }
+
+    // Update the message content with history
+    const currentVersion = message.history?.length ?? 0;
+    await ctx.runMutation(internal.functions.message.updateMessage, {
+      messageId: args.messageId,
+      content: args.content,
+      historyEntry: {
+        version: currentVersion + 1,
+        content: args.content,
+        status: "edited",
+      },
+    });
+
+    return args.messageId;
+  },
+});
+
 export const createAiMessage = mutation({
   args: {
     chatId: v.id("chat"),
