@@ -25,6 +25,7 @@ import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
 import { isConvexId } from "~/lib/db/utils";
+import { logger } from "~/lib/logger";
 import { getTokenKey } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 
@@ -243,24 +244,20 @@ export const Message = function Message({
     }
 
     try {
-      // First edit the message and wait for it to complete
       await editMessage({
         messageId: data._id,
         content: editText.trim(),
         sessionToken: session.session.token,
       });
 
-      setIsEditing(false);
-
-      // Wait a bit for Convex to propagate the changes
       setTimeout(() => {
-        // Trigger AI regeneration if callback is provided with the edited content
         if (onMessageEdit) {
           onMessageEdit(editText.trim());
         }
       }, 200);
     } catch (error) {
-      console.error("Failed to edit message:", error);
+      logger.error(`Failed to edit message: ${error}`);
+    } finally {
       setIsEditing(false);
     }
   };
@@ -314,7 +311,7 @@ export const Message = function Message({
                       ref={textareaRef}
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
-                      className="min-h-12 resize-none whitespace-pre-wrap break-words rounded-none border-0 p-0 text-sm shadow-none focus-visible:ring-0"
+                      className="min-h-12 resize-none whitespace-pre-wrap break-words rounded-none border-0 p-0 shadow-none focus-visible:ring-0 md:text-base"
                       style={{ lineHeight: "1.4" }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -376,7 +373,7 @@ export const Message = function Message({
                     )}
                   </div>
                   <div
-                    className="min-w-0 whitespace-pre-wrap break-words text-sm"
+                    className="min-w-0 whitespace-pre-wrap break-words"
                     style={{ lineHeight: "1.4" }}
                   >
                     {contentTokens.map((token, index) => (

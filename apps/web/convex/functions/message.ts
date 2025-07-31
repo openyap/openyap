@@ -107,23 +107,19 @@ export const editUserMessage = mutation({
       throw new Error("Unauthorized");
     }
 
-    // Get all messages in the chat that come after this message
     const allMessages = await ctx.db
       .query("message")
       .withIndex("by_chatId", (q) => q.eq("chatId", message.chatId))
       .collect();
 
-    // Sort messages by creation time
     const sortedMessages = allMessages.sort(
       (a, b) => a._creationTime - b._creationTime,
     );
 
-    // Find the index of the message being edited
     const messageIndex = sortedMessages.findIndex(
       (msg) => msg._id === args.messageId,
     );
 
-    // Delete all messages after this one
     const messagesToDelete = sortedMessages.slice(messageIndex + 1);
     for (const msg of messagesToDelete) {
       await ctx.runMutation(internal.functions.message.deleteMessage, {
@@ -131,7 +127,6 @@ export const editUserMessage = mutation({
       });
     }
 
-    // Update the message content with history
     const currentVersion = message.history?.length ?? 0;
     await ctx.runMutation(internal.functions.message.updateMessage, {
       messageId: args.messageId,
