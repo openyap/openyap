@@ -51,7 +51,7 @@ export function useChat(chatId: string | undefined) {
   const updateAiMessage = useMutation(api.functions.message.updateAiMessage);
   const getChatMessages = useQuery(
     api.functions.chat.getChatMessages,
-    isConvexId<"chat">(chatId) && sessionToken && (isInitialLoad || pollEnabled)
+    isConvexId<"chat">(chatId) && sessionToken
       ? { chatId: chatId, sessionToken }
       : "skip",
   );
@@ -251,6 +251,179 @@ export function useChat(chatId: string | undefined) {
     ],
   );
 
+  const regenerate = useCallback(
+    async (upToMessageId: string, editedContent?: string) => {
+      if (!isConvexId<"chat">(chatId) || !sessionToken) {
+        return;
+      }
+
+      // Find the index of the message we're regenerating from
+      const messageIndex = messages.findIndex((m) => m._id === upToMessageId);
+      if (messageIndex === -1) return;
+
+      // Get all messages up to and including the edited message
+      // If editedContent is provided, update the last user message with it
+      const messagesForRegeneration = messages
+        .slice(0, messageIndex + 1)
+        .map((msg, idx) => {
+          if (
+            idx === messageIndex &&
+            editedContent !== undefined &&
+            msg.role === "user"
+          ) {
+            return { ...msg, content: editedContent };
+          }
+          return msg;
+        });
+
+      const controller = new AbortController();
+      store.setAbortController(controller);
+
+      const selectedModel = getModelById(settings.selectedModelId);
+      const tempAiMessage = createTempMessages(
+        chatId,
+        "",
+        selectedModel || null,
+      )[1];
+
+      logger.info(
+        `Regenerating AI response after message edit in chat ${chatId} (model: ${selectedModel?.name})`,
+      );
+
+      // Enable polling to ensure we get the latest messages
+      store.setPollEnabled(true);
+
+      // Only add the AI message to the store
+      store.addMessages([tempAiMessage as ChatMessage]);
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          signal: controller.signal,
+          body: JSON.stringify({
+            chatId,
+            modelId: settings.selectedModelId,
+            messages: messagesForRegeneration.map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
+            search: settings.searchEnabled,
+            reasoningEffort:
+              selectedModel && !!selectedModel.reasoningEffort
+                ? settings.reasoningEffort
+                : undefined,
+            isRegeneration: true, // Flag to prevent creating a new user message
+          }),
+        });
+
+        if (!response.ok || !response.body) {
+          throw new Error("Failed to regenerate response");
+        }
+
+        settings.resetSearchToggle();
+
+        let contentBuffer = "";
+        const reasoningBuffer: MessageReasoning = {
+          text: "",
+          details: [],
+          duration: 0,
+          reasoningEffort: settings.reasoningEffort,
+        };
+        let lastReasoningPart = "";
+
+        await processDataStream({
+          stream: response.body,
+          onTextPart(value) {
+            if (chatId === currentChatId) {
+              store.setStatus(ChatStatus.STREAMING);
+              contentBuffer += value;
+              store.updateLastMessage({
+                content: contentBuffer,
+                status: MessageStatus.GENERATING,
+              });
+            }
+          },
+          onReasoningPart(value) {
+            if (chatId === currentChatId) {
+              store.setStatus(ChatStatus.STREAMING);
+              if (value !== lastReasoningPart) {
+                reasoningBuffer.text += value;
+                lastReasoningPart = value;
+              }
+
+              const steps = splitReasoningSteps(reasoningBuffer.text).map(
+                (step) => ({ text: step }),
+              );
+              const completedReasoning =
+                reasoningBuffer.text.length > 0
+                  ? {
+                      text: reasoningBuffer.text,
+                      details: steps,
+                      duration: reasoningBuffer.duration,
+                      reasoningEffort: settings.reasoningEffort,
+                    }
+                  : undefined;
+
+              store.updateLastMessage({
+                content: contentBuffer,
+                reasoning: completedReasoning,
+                status: MessageStatus.REASONING,
+              });
+            }
+          },
+          onFinishMessagePart() {
+            if (chatId === currentChatId) {
+              const steps = splitReasoningSteps(reasoningBuffer.text).map(
+                (step) => ({ text: step }),
+              );
+              const completedReasoning =
+                reasoningBuffer.text.length > 0
+                  ? {
+                      text: reasoningBuffer.text,
+                      details: steps,
+                      duration: reasoningBuffer.duration,
+                      reasoningEffort: settings.reasoningEffort,
+                    }
+                  : undefined;
+
+              store.updateLastMessage({
+                content: contentBuffer,
+                reasoning: completedReasoning,
+                status: MessageStatus.COMPLETED,
+              });
+            }
+          },
+        });
+      } catch (error) {
+        if ((error as Error).name === "AbortError") {
+          if (chatId === currentChatId) {
+            store.updateLastMessage({ status: MessageStatus.ABORTED });
+          }
+        }
+      } finally {
+        if (chatId === currentChatId) {
+          store.setStatus(ChatStatus.IDLE);
+        }
+        store.setAbortController(null);
+      }
+    },
+    [
+      chatId,
+      currentChatId,
+      messages,
+      sessionToken,
+      settings.selectedModelId,
+      settings.searchEnabled,
+      settings.resetSearchToggle,
+      settings.reasoningEffort,
+      store.addMessages,
+      store.setStatus,
+      store.setAbortController,
+      store.updateLastMessage,
+      store.setPollEnabled,
+    ],
+  );
+
   const stop = useCallback(() => {
     if (abortController) {
       updateAiMessage({
@@ -267,6 +440,7 @@ export function useChat(chatId: string | undefined) {
     isLoadingMessages: !getChatMessages || !sessionToken,
     status,
     append,
+    regenerate,
     stop,
     selectedModelId: settings.selectedModelId,
     setSelectedModelId: settings.setSelectedModelId,

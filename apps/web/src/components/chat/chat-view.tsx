@@ -26,6 +26,7 @@ export function ChatView() {
     messages,
     status,
     append,
+    regenerate,
     stop,
     setSelectedModelId,
     isLoadingMessages,
@@ -76,6 +77,14 @@ export function ChatView() {
           <div className="mx-auto max-w-[752px] space-y-3 pt-5">
             <AnimatePresence initial={false}>
               {messages.map((m, index) => {
+                const handleMessageEdit = (editedContent: string) => {
+                  // Only regenerate if this is a user message
+                  if (m.role === "user") {
+                    // Trigger AI regeneration from the edited message with the new content
+                    regenerate(m._id, editedContent);
+                  }
+                };
+
                 if (
                   status === ChatStatus.STREAMING &&
                   index === messages.length - 1 &&
@@ -83,13 +92,21 @@ export function ChatView() {
                 )
                   return (
                     <MessageErrorBoundary key={m._id}>
-                      <Message data={m} user={session?.user} />
+                      <Message
+                        data={m}
+                        user={session?.user}
+                        onMessageEdit={handleMessageEdit}
+                      />
                     </MessageErrorBoundary>
                   );
 
                 return (
                   <MessageErrorBoundary key={m._id}>
-                    <MemoizedMessage data={m} user={session?.user} />
+                    <MemoizedMessage
+                      data={m}
+                      user={session?.user}
+                      onMessageEdit={handleMessageEdit}
+                    />
                   </MessageErrorBoundary>
                 );
               })}

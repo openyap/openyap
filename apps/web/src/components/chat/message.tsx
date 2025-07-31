@@ -1,9 +1,9 @@
 import { Icon } from "@iconify/react";
 import type { User } from "better-auth";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { marked } from "marked";
-import { motion } from "motion/react";
-import { memo, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ProfileAvatar } from "~/components/auth/profile-avatar";
 import { AttachmentList } from "~/components/chat/attachment-preview";
 import { TokenBlock } from "~/components/chat/blocks";
@@ -20,6 +20,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
+import { Textarea } from "~/components/ui/text-area";
 import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
@@ -181,10 +182,23 @@ function MessageAttachments({ messageId }: { messageId: string }) {
 interface MessageProps {
   readonly data: ChatMessage;
   readonly user?: User;
+  readonly onMessageEdit?: (editedContent: string) => void;
 }
 
-export const Message = function Message({ data, user }: MessageProps) {
+export const Message = function Message({
+  data,
+  user,
+  onMessageEdit,
+}: MessageProps) {
   const { isCopied, copy } = useClipboardCopy();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(data.content);
+  const [viewHeight, setViewHeight] = useState<number | undefined>(undefined);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
+  const { data: session } = authClient.useSession();
+  const editMessage = useMutation(api.functions.message.editUserMessage);
+
   const contentTokens = useMemo(
     () => marked.lexer(data.content),
     [data.content],
@@ -195,6 +209,61 @@ export const Message = function Message({ data, user }: MessageProps) {
   const name = user?.name ?? "Unknown";
   const date = formatDate(new Date(data?._creationTime));
   const error = "error" in data && data.error ? data.error : null;
+
+  useEffect(() => {
+    if (!isEditing && viewRef.current) {
+      const height = viewRef.current.offsetHeight;
+      setViewHeight(height);
+    }
+  }, [isEditing]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditText(data.content);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(
+          textareaRef.current.value.length,
+          textareaRef.current.value.length,
+        );
+      }
+    }, 0);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditText(data.content);
+  };
+
+  const handleSave = async () => {
+    if (!session?.session.token || editText.trim() === data.content.trim()) {
+      handleCancel();
+      return;
+    }
+
+    try {
+      // First edit the message and wait for it to complete
+      await editMessage({
+        messageId: data._id,
+        content: editText.trim(),
+        sessionToken: session.session.token,
+      });
+
+      setIsEditing(false);
+
+      // Wait a bit for Convex to propagate the changes
+      setTimeout(() => {
+        // Trigger AI regeneration if callback is provided with the edited content
+        if (onMessageEdit) {
+          onMessageEdit(editText.trim());
+        }
+      }, 200);
+    } catch (error) {
+      console.error("Failed to edit message:", error);
+      setIsEditing(false);
+    }
+  };
 
   return (
     <div className="group flex max-w-full flex-col gap-y-2">
@@ -213,39 +282,140 @@ export const Message = function Message({ data, user }: MessageProps) {
             status={data.status}
           />
         )}
-        <div className="flex min-w-0 gap-x-3">
-          {isUser && (
-            <ProfileAvatar
-              image={user?.image ?? ""}
-              name={user?.name ?? ""}
-              className="size-6"
-            />
+        <AnimatePresence mode="wait">
+          {isEditing ? (
+            <motion.div
+              key="edit"
+              initial={{ height: viewHeight || "auto" }}
+              animate={{ height: "auto" }}
+              exit={{ height: viewHeight || "auto" }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <div className="flex min-w-0 gap-x-3">
+                {isUser && (
+                  <ProfileAvatar
+                    image={user?.image ?? ""}
+                    name={user?.name ?? ""}
+                    className="size-6"
+                  />
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-y-0.5">
+                  <div className="flex items-center gap-x-1.5">
+                    {isUser && (
+                      <div className="text-gray-500 text-xs">{name}</div>
+                    )}
+                    {isUser && (
+                      <div className="text-gray-500 text-xs">{date}</div>
+                    )}
+                  </div>
+                  <div className="my-1.5 min-w-0">
+                    <Textarea
+                      ref={textareaRef}
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="min-h-12 resize-none whitespace-pre-wrap break-words rounded-none border-0 p-0 text-sm shadow-none focus-visible:ring-0"
+                      style={{ lineHeight: "1.4" }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                          e.preventDefault();
+                          handleSave();
+                        } else if (e.key === "Escape") {
+                          e.preventDefault();
+                          handleCancel();
+                        }
+                      }}
+                    />
+                    <div className="mt-2 flex justify-end gap-x-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCancel}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        onClick={handleSave}
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="view"
+              ref={viewRef}
+              initial={{ height: viewHeight || "auto" }}
+              animate={{ height: "auto" }}
+              exit={{ height: viewHeight || "auto" }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <div className="flex min-w-0 gap-x-3">
+                {isUser && (
+                  <ProfileAvatar
+                    image={user?.image ?? ""}
+                    name={user?.name ?? ""}
+                    className="size-6"
+                  />
+                )}
+                <div className="flex min-w-0 flex-col gap-y-0.5">
+                  <div className="flex items-center gap-x-1.5">
+                    {isUser && (
+                      <div className="text-gray-500 text-xs">{name}</div>
+                    )}
+                    {isUser && (
+                      <div className="text-gray-500 text-xs">{date}</div>
+                    )}
+                  </div>
+                  <div
+                    className="min-w-0 whitespace-pre-wrap break-words text-sm"
+                    style={{ lineHeight: "1.4" }}
+                  >
+                    {contentTokens.map((token, index) => (
+                      <TokenBlock
+                        key={getTokenKey(token, index)}
+                        token={token}
+                      />
+                    ))}
+                  </div>
+                  <MessageAttachments messageId={data._id} />
+                </div>
+              </div>
+            </motion.div>
           )}
-          <div className="flex min-w-0 flex-col gap-y-0.5">
-            <div className="flex items-center gap-x-1.5">
-              {isUser && <div className="text-gray-500 text-xs">{name}</div>}
-              {isUser && <div className="text-gray-500 text-xs">{date}</div>}
-            </div>
-            <div className="min-w-0 whitespace-pre-wrap break-words">
-              {contentTokens.map((token, index) => (
-                <TokenBlock key={getTokenKey(token, index)} token={token} />
-              ))}
-            </div>
-            <MessageAttachments messageId={data._id} />
-          </div>
-        </div>
+        </AnimatePresence>
       </div>
       <div className="flex min-h-[1.25rem] items-center justify-between gap-x-2 px-3">
         <div className="min-w-0 flex-1 truncate text-red-500 text-xs">
           {error}
         </div>
         <div className="flex items-center gap-x-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          {isUser && !isEditing && (
+            <Button
+              type="button"
+              onMouseDown={handleEdit}
+              variant="ghost"
+              className="h-4 w-4 rounded p-3"
+            >
+              <Icon
+                icon="lucide:pencil"
+                className="bg-transparent text-gray-500"
+              />
+            </Button>
+          )}
           <Button
             type="button"
             onMouseDown={() => copy(data.content)}
             variant="ghost"
-            size="icon"
-            className="h-4 w-4"
+            className="h-4 w-4 rounded p-3"
           >
             <Icon
               icon={isCopied ? "lucide:check" : "lucide:copy"}
