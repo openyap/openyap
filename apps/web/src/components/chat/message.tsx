@@ -2,8 +2,8 @@ import { Icon } from "@iconify/react";
 import type { User } from "better-auth";
 import { useMutation, useQuery } from "convex/react";
 import { marked } from "marked";
-import { motion } from "motion/react";
-import { memo, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ProfileAvatar } from "~/components/auth/profile-avatar";
 import { AttachmentList } from "~/components/chat/attachment-preview";
 import { TokenBlock } from "~/components/chat/blocks";
@@ -20,6 +20,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
+import { Textarea } from "~/components/ui/text-area";
 import { useClipboardCopy } from "~/hooks/use-clipboard-copy";
 import { authClient } from "~/lib/auth/client";
 import { api } from "~/lib/db/server";
@@ -192,7 +193,9 @@ export const Message = function Message({
   const { isCopied, copy } = useClipboardCopy();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(data.content);
+  const [viewHeight, setViewHeight] = useState<number | undefined>(undefined);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
   const { data: session } = authClient.useSession();
   const editMessage = useMutation(api.functions.message.editUserMessage);
 
@@ -206,6 +209,13 @@ export const Message = function Message({
   const name = user?.name ?? "Unknown";
   const date = formatDate(new Date(data?._creationTime));
   const error = "error" in data && data.error ? data.error : null;
+
+  useEffect(() => {
+    if (!isEditing && viewRef.current) {
+      const height = viewRef.current.offsetHeight;
+      setViewHeight(height);
+    }
+  }, [isEditing]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -272,65 +282,116 @@ export const Message = function Message({
             status={data.status}
           />
         )}
-        <div className="flex min-w-0 gap-x-3">
-          {isUser && (
-            <ProfileAvatar
-              image={user?.image ?? ""}
-              name={user?.name ?? ""}
-              className="size-6"
-            />
-          )}
-          <div className="flex min-w-0 flex-col gap-y-0.5">
-            <div className="flex items-center gap-x-1.5">
-              {isUser && <div className="text-gray-500 text-xs">{name}</div>}
-              {isUser && <div className="text-gray-500 text-xs">{date}</div>}
-            </div>
-            {isEditing ? (
-              <div className="w-full space-y-2">
-                <textarea
-                  ref={textareaRef}
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  className="min-h-[80px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                      e.preventDefault();
-                      handleSave();
-                    } else if (e.key === "Escape") {
-                      e.preventDefault();
-                      handleCancel();
-                    }
-                  }}
-                />
-                <div className="flex justify-end gap-x-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCancel}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    onClick={handleSave}
-                  >
-                    Save
-                  </Button>
+        <AnimatePresence mode="wait">
+          {isEditing ? (
+            <motion.div
+              key="edit"
+              initial={{ height: viewHeight || "auto" }}
+              animate={{ height: "auto" }}
+              exit={{ height: viewHeight || "auto" }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <div className="flex min-w-0 gap-x-3">
+                {isUser && (
+                  <ProfileAvatar
+                    image={user?.image ?? ""}
+                    name={user?.name ?? ""}
+                    className="size-6"
+                  />
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-y-0.5">
+                  <div className="flex items-center gap-x-1.5">
+                    {isUser && (
+                      <div className="text-gray-500 text-xs">{name}</div>
+                    )}
+                    {isUser && (
+                      <div className="text-gray-500 text-xs">{date}</div>
+                    )}
+                  </div>
+                  <div className="my-1.5 min-w-0">
+                    <Textarea
+                      ref={textareaRef}
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="min-h-12 resize-none whitespace-pre-wrap break-words rounded-none border-0 p-0 text-sm shadow-none focus-visible:ring-0"
+                      style={{ lineHeight: "1.4" }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                          e.preventDefault();
+                          handleSave();
+                        } else if (e.key === "Escape") {
+                          e.preventDefault();
+                          handleCancel();
+                        }
+                      }}
+                    />
+                    <div className="mt-2 flex justify-end gap-x-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCancel}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        onClick={handleSave}
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <div className="min-w-0 whitespace-pre-wrap break-words">
-                {contentTokens.map((token, index) => (
-                  <TokenBlock key={getTokenKey(token, index)} token={token} />
-                ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="view"
+              ref={viewRef}
+              initial={{ height: viewHeight || "auto" }}
+              animate={{ height: "auto" }}
+              exit={{ height: viewHeight || "auto" }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <div className="flex min-w-0 gap-x-3">
+                {isUser && (
+                  <ProfileAvatar
+                    image={user?.image ?? ""}
+                    name={user?.name ?? ""}
+                    className="size-6"
+                  />
+                )}
+                <div className="flex min-w-0 flex-col gap-y-0.5">
+                  <div className="flex items-center gap-x-1.5">
+                    {isUser && (
+                      <div className="text-gray-500 text-xs">{name}</div>
+                    )}
+                    {isUser && (
+                      <div className="text-gray-500 text-xs">{date}</div>
+                    )}
+                  </div>
+                  <div
+                    className="min-w-0 whitespace-pre-wrap break-words text-sm"
+                    style={{ lineHeight: "1.4" }}
+                  >
+                    {contentTokens.map((token, index) => (
+                      <TokenBlock
+                        key={getTokenKey(token, index)}
+                        token={token}
+                      />
+                    ))}
+                  </div>
+                  <MessageAttachments messageId={data._id} />
+                </div>
               </div>
-            )}
-            <MessageAttachments messageId={data._id} />
-          </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
       <div className="flex min-h-[1.25rem] items-center justify-between gap-x-2 px-3">
         <div className="min-w-0 flex-1 truncate text-red-500 text-xs">
@@ -342,8 +403,7 @@ export const Message = function Message({
               type="button"
               onMouseDown={handleEdit}
               variant="ghost"
-              size="icon"
-              className="h-4 w-4"
+              className="h-4 w-4 rounded p-3"
             >
               <Icon
                 icon="lucide:pencil"
@@ -355,8 +415,7 @@ export const Message = function Message({
             type="button"
             onMouseDown={() => copy(data.content)}
             variant="ghost"
-            size="icon"
-            className="h-4 w-4"
+            className="h-4 w-4 rounded p-3"
           >
             <Icon
               icon={isCopied ? "lucide:check" : "lucide:copy"}

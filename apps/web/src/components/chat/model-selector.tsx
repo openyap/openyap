@@ -107,7 +107,10 @@ const ModelSelector = memo(function ModelSelector() {
             return haystack.includes(needle) ? 1 : 0;
           }}
         >
-          <CommandInput placeholder="Search model..." className="h-9" />
+          <CommandInput
+            placeholder="Search model..."
+            className="h-9 rounded-none"
+          />
           <CommandList>
             <CommandEmpty>No model found.</CommandEmpty>
             <CommandGroup>
