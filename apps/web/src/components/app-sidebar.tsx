@@ -3,8 +3,7 @@ import { useMutation } from "convex/react";
 import { Pin, PinOff, Plus, X } from "lucide-react";
 import { ProfileCard } from "~/components/auth/profile-card";
 import { Logo } from "~/components/logo";
-import { Button } from "~/components/ui/button";
-import { Separator } from "~/components/ui/seperator";
+import { Separator } from "~/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,

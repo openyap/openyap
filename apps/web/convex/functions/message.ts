@@ -263,6 +263,46 @@ export const getMessageStatus = query({
   },
 });
 
+export const getMessageHistory = query({
+  args: { messageId: v.id("message"), sessionToken: v.string() },
+  returns: v.union(
+    v.array(
+      v.object({
+        version: v.number(),
+        content: v.string(),
+        createdAt: v.string(),
+        status: v.string(),
+      }),
+    ),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const session = await ctx.runQuery(internal.betterAuth.getSession, {
+      sessionToken: args.sessionToken,
+    });
+
+    if (!session) {
+      return null;
+    }
+
+    const message = await ctx.db.get(args.messageId);
+    if (!message || !message.history || message.history.length === 0) {
+      return null;
+    }
+
+    // Return history sorted by version, with formatted timestamps
+    return message.history
+      .map((entry) => ({
+        version: entry.version,
+        content: entry.content,
+        createdAt:
+          entry.createdAt || new Date(message._creationTime).toISOString(),
+        status: entry.status,
+      }))
+      .sort((a, b) => a.version - b.version);
+  },
+});
+
 // CRUD operations for messages
 
 export const createMessage = internalMutation({

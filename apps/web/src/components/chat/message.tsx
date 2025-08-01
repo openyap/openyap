@@ -3,10 +3,11 @@ import type { User } from "better-auth";
 import { useMutation, useQuery } from "convex/react";
 import { marked } from "marked";
 import { AnimatePresence, motion } from "motion/react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProfileAvatar } from "~/components/auth/profile-avatar";
 import { AttachmentList } from "~/components/chat/attachment-preview";
 import { TokenBlock } from "~/components/chat/blocks";
+import { EditHistoryPopover } from "~/components/chat/edit-history-popover";
 import type {
   ChatMessage,
   MessageReasoning,
@@ -195,7 +196,7 @@ export const Message = function Message({
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(data.content);
   const [viewHeight, setViewHeight] = useState<number | undefined>(undefined);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
   const viewRef = useRef<HTMLDivElement>(null);
   const { data: session } = authClient.useSession();
   const editMessage = useMutation(api.functions.message.editUserMessage);
@@ -213,31 +214,21 @@ export const Message = function Message({
 
   useEffect(() => {
     if (!isEditing && viewRef.current) {
-      const height = viewRef.current.offsetHeight;
-      setViewHeight(height);
+      const rect = viewRef.current.getBoundingClientRect();
+      const height = rect.height;
+      if (height > 0) {
+        setViewHeight(height);
+      }
     }
   }, [isEditing]);
 
-  const handleEdit = () => {
-    setIsEditing(true);
-    setEditText(data.content);
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(
-          textareaRef.current.value.length,
-          textareaRef.current.value.length,
-        );
-      }
-    }, 0);
-  };
-
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
+    setIsAnimating(false);
     setIsEditing(false);
     setEditText(data.content);
-  };
+  }, [data.content]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!session?.session.token || editText.trim() === data.content.trim()) {
       handleCancel();
       return;
@@ -258,8 +249,28 @@ export const Message = function Message({
     } catch (error) {
       logger.error(`Failed to edit message: ${error}`);
     } finally {
+      setIsAnimating(false);
       setIsEditing(false);
     }
+  }, [
+    session?.session.token,
+    editText,
+    data.content,
+    data._id,
+    editMessage,
+    onMessageEdit,
+    handleCancel,
+  ]);
+
+  const handleEdit = () => {
+    if (viewRef.current) {
+      const rect = viewRef.current.getBoundingClientRect();
+      const height = rect.height;
+      setViewHeight(height);
+      setIsAnimating(true);
+    }
+    setIsEditing(true);
+    setEditText(data.content);
   };
 
   return (
@@ -283,10 +294,14 @@ export const Message = function Message({
           {isEditing ? (
             <motion.div
               key="edit"
-              initial={{ height: viewHeight || "auto" }}
+              initial={{ height: isAnimating ? viewHeight : "auto" }}
               animate={{ height: "auto" }}
-              exit={{ height: viewHeight || "auto" }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              exit={{ height: isAnimating ? viewHeight : "auto" }}
+              transition={
+                isAnimating
+                  ? { duration: 0.3, ease: "easeInOut" }
+                  : { duration: 0, ease: "easeInOut" }
+              }
               style={{ overflow: "hidden" }}
             >
               <div className="flex min-w-0 gap-x-3">
@@ -305,14 +320,18 @@ export const Message = function Message({
                     {isUser && (
                       <div className="text-gray-500 text-xs">{date}</div>
                     )}
+                    {isUser && data.history && data.history.length > 1 && (
+                      <EditHistoryPopover messageId={data._id}>
+                        <span>(edited)</span>
+                      </EditHistoryPopover>
+                    )}
                   </div>
-                  <div className="my-1.5 min-w-0">
+                  <div className="min-w-0">
                     <Textarea
-                      ref={textareaRef}
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
-                      className="min-h-12 resize-none whitespace-pre-wrap break-words rounded-none border-0 p-0 shadow-none focus-visible:ring-0 md:text-base"
-                      style={{ lineHeight: "1.4" }}
+                      className="min-h-12 resize-none rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 md:text-base"
+                      rows={Math.max(2, editText.split("\n").length)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                           e.preventDefault();
@@ -322,8 +341,9 @@ export const Message = function Message({
                           handleCancel();
                         }
                       }}
+                      autoFocus
                     />
-                    <div className="mt-2 flex justify-end gap-x-2">
+                    <div className="flex justify-end gap-x-2">
                       <Button
                         type="button"
                         variant="ghost"
@@ -349,10 +369,14 @@ export const Message = function Message({
             <motion.div
               key="view"
               ref={viewRef}
-              initial={{ height: viewHeight || "auto" }}
+              initial={{ height: isAnimating ? viewHeight : "auto" }}
               animate={{ height: "auto" }}
-              exit={{ height: viewHeight || "auto" }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              exit={{ height: isAnimating ? viewHeight : "auto" }}
+              transition={
+                isAnimating
+                  ? { duration: 0.3, ease: "easeInOut" }
+                  : { duration: 0, ease: "easeInOut" }
+              }
               style={{ overflow: "hidden" }}
             >
               <div className="flex min-w-0 gap-x-3">
@@ -371,17 +395,31 @@ export const Message = function Message({
                     {isUser && (
                       <div className="text-gray-500 text-xs">{date}</div>
                     )}
+                    {isUser && data.history && data.history.length > 1 && (
+                      <EditHistoryPopover messageId={data._id}>
+                        <span>(edited)</span>
+                      </EditHistoryPopover>
+                    )}
                   </div>
-                  <div
-                    className="min-w-0 whitespace-pre-wrap break-words"
-                    style={{ lineHeight: "1.4" }}
-                  >
-                    {contentTokens.map((token, index) => (
-                      <TokenBlock
-                        key={getTokenKey(token, index)}
-                        token={token}
+                  <div className="min-w-0">
+                    {isUser ? (
+                      <Textarea
+                        value={data.content}
+                        readOnly
+                        className="min-h-0 cursor-text resize-none rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 md:text-base"
+                        rows={Math.max(1, data.content.split("\n").length)}
+                        tabIndex={-1}
                       />
-                    ))}
+                    ) : (
+                      <div className="whitespace-pre-wrap break-words">
+                        {contentTokens.map((token, index) => (
+                          <TokenBlock
+                            key={getTokenKey(token, index)}
+                            token={token}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <MessageAttachments messageId={data._id} />
                 </div>
