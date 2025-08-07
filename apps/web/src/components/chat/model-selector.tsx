@@ -36,6 +36,8 @@ const ModelSelector = memo(function ModelSelector() {
 
   const selectedModel = models.find((m) => m.id === selectedModelId);
 
+  const sortedModels = [...models].sort((a, b) => b.id - a.id);
+
   const renderModelContent = (model: (typeof models)[number]) => {
     const iconName = getCompanyIcon(model);
 
@@ -114,7 +116,7 @@ const ModelSelector = memo(function ModelSelector() {
           <CommandList>
             <CommandEmpty>No model found.</CommandEmpty>
             <CommandGroup>
-              {models.map((model) => (
+              {sortedModels.map((model) => (
                 <CommandItem
                   key={model.id}
                   value={model.id.toString()}

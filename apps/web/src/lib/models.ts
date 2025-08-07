@@ -241,4 +241,15 @@ export const models: readonly Model[] = [
 		inputModalities: ["text", "image"],
 		recentlyUpdated: true,
 	},
+	{
+		id: 10,
+		name: "GPT-5",
+		modelId: "openai/gpt-5",
+		provider: "openrouter",
+		company: "openai",
+		premium: true,
+		reasoningEffort: true,
+		inputModalities: ["text", "image"],
+		recentlyUpdated: true,
+	},
 ] as const;
