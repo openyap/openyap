@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { usePersisted } from "~/hooks/use-persisted";
 
 export type Theme = "dark" | "light" | "system";
 
 interface ThemeProviderProps {
   readonly children: React.ReactNode;
   readonly defaultTheme?: Theme;
+  readonly serverTheme?: Theme;
 }
 
 interface ThemeProviderState {
@@ -22,14 +22,20 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
+const THEME_COOKIE_NAME = "theme";
+const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+
 export function ThemeProvider({
   children,
   defaultTheme = "system",
+  serverTheme,
 }: ThemeProviderProps) {
-  const { value: theme, set: setTheme } = usePersisted<Theme>(
-    "theme",
-    defaultTheme,
-  );
+  const [theme, setThemeState] = useState<Theme>(serverTheme ?? defaultTheme);
+
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+    document.cookie = `${THEME_COOKIE_NAME}=${newTheme}; path=/; max-age=${THEME_COOKIE_MAX_AGE}`;
+  };
 
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") {

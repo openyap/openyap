@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   createRootRouteWithContext,
+  useRouteContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { scan } from "react-scan";
@@ -15,6 +16,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "~/components/ui/sidebar";
+import { getSidebarState, getTheme } from "~/lib/sidebar";
 
 import { useEffect } from "react";
 import appCss from "~/styles.css?url";
@@ -22,6 +24,13 @@ import appCss from "~/styles.css?url";
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
 }>()({
+  beforeLoad: async () => {
+    const [defaultOpen, theme] = await Promise.all([
+      getSidebarState(),
+      getTheme(),
+    ]);
+    return { defaultOpen, theme };
+  },
   head: () => ({
     meta: [
       {
@@ -43,11 +52,6 @@ export const Route = createRootRouteWithContext<{
       { rel: "stylesheet", href: appCss },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
     ],
-    scripts: [
-      {
-        children: `!function(){try{var t=localStorage.getItem("local:theme");if(t){var e=JSON.parse(t);if(e?.state?.value){var a=e.state.value;"dark"===a?document.documentElement.classList.add("dark"):"light"===a?document.documentElement.classList.add("light"):"system"===a&&window.matchMedia("(prefers-color-scheme: dark)").matches&&document.documentElement.classList.add("dark")}}}catch(t){}}();`,
-      },
-    ],
   }),
   component: RootComponent,
 });
@@ -61,20 +65,27 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: { readonly children: React.ReactNode }) {
+  const { defaultOpen, theme } = useRouteContext({ from: "__root__" });
+
   useEffect(() => {
     scan({
       enabled: process.env.NODE_ENV === "development",
     });
   }, []);
 
+  const resolvedTheme =
+    theme === "system"
+      ? "light"
+      : theme;
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={resolvedTheme}>
       <head>
         <HeadContent />
       </head>
       <body>
-        <ThemeProvider defaultTheme="system">
-          <SidebarProvider>
+        <ThemeProvider defaultTheme="system" serverTheme={theme}>
+          <SidebarProvider defaultOpen={defaultOpen}>
             <AppSidebar />
             <SidebarInset>
               <div className="fixed top-4 left-4 z-50 md:hidden">
