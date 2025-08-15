@@ -58,27 +58,31 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="no-scrollbar">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate({ to: "/" });
-                  }}
-                  tooltip="New Chat"
-                  className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>New Chat</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <Separator className="group-data-[collapsible=icon]:hidden" />
-        {pinned.length > 0 && (
+        {session?.user && (
+          <>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate({ to: "/" });
+                      }}
+                      tooltip="New Chat"
+                      className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>New Chat</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <Separator className="group-data-[collapsible=icon]:hidden" />
+          </>
+        )}
+        {session?.user && pinned.length > 0 && (
           <SidebarGroup className="group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel>Pinned</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -157,77 +161,85 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
-        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {unpinned.map((chat) => (
-                <SidebarMenuItem key={chat._id} className="group/item relative">
-                  <SidebarMenuButton
-                    asChild
-                    isActive={"chatId" in params && params.chatId === chat._id}
-                    tooltip={chat.title}
-                    className="group-hover/item:bg-sidebar-accent"
+        {session?.user && (
+          <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel>Chats</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {unpinned.map((chat) => (
+                  <SidebarMenuItem
+                    key={chat._id}
+                    className="group/item relative"
                   >
-                    <Link
-                      key={chat._id}
-                      to="/chat/$chatId"
-                      params={{ chatId: chat._id }}
+                    <SidebarMenuButton
+                      asChild
+                      isActive={
+                        "chatId" in params && params.chatId === chat._id
+                      }
+                      tooltip={chat.title}
+                      className="group-hover/item:bg-sidebar-accent"
                     >
-                      <span>{chat.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                  <div className="absolute top-1.5 right-1 z-10 hidden flex-row items-center gap-1 group-hover/item:flex group-hover/item:bg-sidebar-accent group-data-[collapsible=icon]:hidden">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <SidebarMenuAction
-                          showOnHover
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            await pinChat({
-                              chatId: chat._id,
-                              sessionToken: session?.session.token ?? "",
-                            });
-                          }}
-                          className="static hover:cursor-pointer hover:text-blue-500"
-                        >
-                          <Pin className="size-4" />
-                        </SidebarMenuAction>
-                      </TooltipTrigger>
-                      <TooltipContent hideWhenDetached>
-                        <p>Pin</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <SidebarMenuAction
-                          showOnHover
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            await deleteChat({
-                              chatId: chat._id,
-                              sessionToken: session?.session.token ?? "",
-                            });
-                            if (params.chatId === chat._id) {
-                              navigate({ to: "/" });
-                            }
-                          }}
-                          className="static hover:cursor-pointer hover:text-destructive"
-                        >
-                          <X className="size-4" />
-                        </SidebarMenuAction>
-                      </TooltipTrigger>
-                      <TooltipContent hideWhenDetached>
-                        <p>Delete</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                      <Link
+                        key={chat._id}
+                        to="/chat/$chatId"
+                        params={{ chatId: chat._id }}
+                      >
+                        <span>{chat.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    <div className="absolute top-1.5 right-1 z-10 hidden flex-row items-center gap-1 group-hover/item:flex group-hover/item:bg-sidebar-accent group-data-[collapsible=icon]:hidden">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuAction
+                            showOnHover
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              await pinChat({
+                                chatId: chat._id,
+                                sessionToken: session?.session.token ?? "",
+                              });
+                            }}
+                            className="static hover:cursor-pointer hover:text-blue-500"
+                          >
+                            <Pin className="size-4" />
+                          </SidebarMenuAction>
+                        </TooltipTrigger>
+                        <TooltipContent hideWhenDetached>
+                          <p>Pin</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuAction
+                            showOnHover
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              await deleteChat({
+                                chatId: chat._id,
+                                sessionToken: session?.session.token ?? "",
+                              });
+                              if (params.chatId === chat._id) {
+                                navigate({ to: "/" });
+                              }
+                            }}
+                            className="static hover:cursor-pointer hover:text-destructive"
+                          >
+                            <X className="size-4" />
+                          </SidebarMenuAction>
+                        </TooltipTrigger>
+                        <TooltipContent hideWhenDetached>
+                          <p>Delete</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <ProfileCard />
