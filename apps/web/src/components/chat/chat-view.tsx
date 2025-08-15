@@ -64,10 +64,10 @@ export function ChatView() {
 	const isEmpty = !chatId || (messages.length === 0 && !isLoadingMessages);
 
 	return (
-		<div className="relative flex h-dvh flex-col bg-background md:h-screen">
+		<div className="relative flex h-dvh flex-col overflow-hidden bg-background md:h-screen">
 			<div
 				ref={messagesContainerRef}
-				className="scrollbar scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-border/80 scrollbar-w-2 ml-4 flex-1 overflow-y-auto p-4 pb-2"
+				className="scrollbar scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-border/80 scrollbar-w-2 ml-4 min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-2"
 			>
 				{isEmpty ? (
 					<div className="flex h-full items-center justify-center text-foreground">
